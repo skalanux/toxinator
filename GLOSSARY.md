@@ -27,16 +27,48 @@ El conjunto de servicios que la consola ofrece a todos los juegos. No incluye re
 _Avoid_: framework, engine
 
 **Juego (Game)**:
-Un plugin de Python con metadata y ciclo de vida que la consola carga; contiene uno o más modos.
+Un plugin de Python con manifest y ciclo de vida que implementa el contrato de juego y contiene uno o más modos.
 _Avoid_: app, título
 
+**Contrato de juego (Game contract)**:
+La interfaz `Game` y el `GameContext` que un juego implementa y consume; define lifecycle, servicios y límites.
+_Avoid_: plugin API, SDK
+
+**Contexto de juego (GameContext)**:
+El paquete explícito de escena, viewports y servicios que la consola entrega a un juego.
+_Avoid_: environment, globals
+
+**Host de juego (GameHost)**:
+El adaptador del runtime que descubre, carga, ejecuta y descarga juegos; in-process ahora, subprocess después.
+_Avoid_: loader, runner
+
+**API de la consola (Console API)**:
+La versión semver del contrato que un juego declara en `requires_api`.
+_Avoid_: SDK version, engine version
+
+**Servicio de plataforma (Platform service)**:
+Una capacidad que la consola ofrece a los juegos a través del contexto: input, audio, assets, settings, save, i18n o logging.
+_Avoid_: singleton, global
+
+**Escena (Scene)**:
+Un estado o pantalla del juego con update/render/input que el juego empuja o popea en el stack de la consola.
+_Avoid_: screen, state (en docs; `Scene` en código)
+
 **Manifiesto de juego (Game manifest)**:
-La metadata que declara id, nombre, versión, jugadores y capacidades requeridas/opcionales de un juego.
+La metadata que declara id, nombre, versión, `requires_api`, jugadores, capacidades, modos, icono y descripción de un juego.
 _Avoid_: config, descriptor
 
 **Modo (Mode)**:
-Una variante jugable dentro de un juego, como un deporte o un minijuego de una colección.
+Una variante jugable dentro de un juego, como un deporte o un minijuego; el manifest puede declararla como modo lanzable.
 _Avoid_: minijuego (cuando es solo una variante), nivel
+
+**Pausa de sistema (System pause)**:
+El overlay de la consola para desconexión, pérdida de foco o errores; suspende el juego.
+_Avoid_: pause menu, game pause
+
+**Pausa de juego (Game pause)**:
+El menú del propio juego para reanudar, reiniciar, ajustar o volver al menú.
+_Avoid_: system pause
 
 **Overlay de plataforma (Platform overlay)**:
 La UI de la consola que se dibuja sobre un juego para pausa, errores o desconexión de mandos.
@@ -55,6 +87,10 @@ _Avoid_: store (el repositorio no implica pago), market
 **Juego instalado (Installed game)**:
 Un paquete de juego descubierto por la consola y listo para lanzar.
 _Avoid_: biblioteca, library
+
+**Hot reload**:
+La recarga en caliente de un juego local en desarrollo, sin reiniciar la consola.
+_Avoid_: live reload, hot swap
 
 ## Sesión
 
