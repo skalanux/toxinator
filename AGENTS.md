@@ -11,3 +11,7 @@ Default canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `read
 ### Domain docs
 
 Single-context: `GLOSSARY.md` at the repo root and ADRs in `docs/adr/`. See `docs/agents/domain.md`.
+
+### Wayfinder
+
+El mapa de decisiones vive en [issue #1](https://github.com/skalanux/toxinator/issues/1). Antes de elegir trabajo, leé **Decisions so far** y la frontera. Los findings de research están en branches `research/*` (no mergeadas); los punteros están en el mapa y en el README.
