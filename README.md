@@ -30,6 +30,19 @@ git fetch origin research/wiimote-linux research/python-3d-engine research/andro
 git show origin/research/wiimote-linux:research/wiimote-linux.md
 ```
 
+## Desarrollo (planificado)
+
+```bash
+uv sync
+uv run toxinator
+uv run toxinator dev phone
+uv run pytest
+uv run ruff check
+uv run mypy
+```
+
+El primer corte es `toxinator dev phone`: QR + PWA + WSS + InputHub + escena 3D mínima, con el celular Android como mando.
+
 ## Continuar desde otra máquina
 
 ```bash

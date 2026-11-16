@@ -46,6 +46,10 @@ _Avoid_: loader, runner
 La versión semver del contrato que un juego declara en `requires_api`.
 _Avoid_: SDK version, engine version
 
+**Frontera de API (API boundary)**:
+La regla de que `toxinator.api` es el único módulo del runtime que un juego puede importar.
+_Avoid_: internal API, public API (ambiguo)
+
 **Servicio de plataforma (Platform service)**:
 Una capacidad que la consola ofrece a los juegos a través del contexto: input, audio, assets, settings, save, i18n o logging.
 _Avoid_: singleton, global
@@ -91,6 +95,14 @@ _Avoid_: biblioteca, library
 **Hot reload**:
 La recarga en caliente de un juego local en desarrollo, sin reiniciar la consola.
 _Avoid_: live reload, hot swap
+
+**Corte vertical (Vertical slice)**:
+Una rebanada fina que atraviesa todas las capas (input → juego → render → launcher) y valida el camino completo antes de ampliar.
+_Avoid_: MVP (puede ser más amplio), demo
+
+**Corte phone-only (Phone-only slice)**:
+El primer corte vertical, con el celular Android como único mando y una escena 3D mínima; el Wiimote llega después.
+_Avoid_: mobile-first (demasiado amplio), phone demo
 
 ## Sesión
 
