@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+
+# Tooling
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local session artifacts
+session.json
+.toxinator/
+
+# Secrets and local certs
+.env
+.env.*
+*.pem
+*.key
