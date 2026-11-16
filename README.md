@@ -6,6 +6,8 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 El proyecto está en fase de diseño. El **mapa de decisiones** y la frontera actual viven en el issue [#1](https://github.com/skalanux/toxinator/issues/1). Cada decisión cerrada está en su ticket y resumida en el mapa.
 
+El repo todavía **no tiene código ejecutable**: contiene el mapa, el glosario, los ADRs y la documentación de agentes. Los comandos de la sección **Desarrollo** son el objetivo del primer corte, no algo que ya funcione.
+
 ## Documentos
 
 - [GLOSSARY.md](GLOSSARY.md): vocabulario canónico.
