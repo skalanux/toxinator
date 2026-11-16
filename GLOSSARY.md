@@ -76,32 +76,68 @@ _Avoid_: configuración, preferencias
 
 ## Input
 
+**Hub de input (InputHub)**:
+El servicio de la consola que reúne las fuentes de mandos, normaliza sus datos y publica un `InputState` por frame.
+_Avoid_: input manager, device manager
+
 **Mando (Controller)**:
 Un dispositivo físico o virtual que produce `ControllerFrame`s: Wiimote, celular Android, gamepad o teclado/mouse.
 _Avoid_: controlador, control, dispositivo
 
+**Descriptor de mando (ControllerInfo)**:
+La identidad y las capacidades de un mando conectado, separadas del estado instantáneo: id, source, capabilities, slot, conexión y batería.
+_Avoid_: device, controller config
+
 **Slot de jugador (Player slot)**:
-Un asiento lógico de 1 a 4 al que se asigna un mando durante una partida.
+Un asiento lógico de 1 a 4 al que se asigna un mando durante una partida; conserva el mando durante la gracia de desconexión.
 _Avoid_: player index, jugador
 
 **ControllerFrame**:
-Una muestra normalizada del estado de un mando en un instante: botones, movimiento, puntero y touch, con timestamp.
+Una muestra inmutable y normalizada del estado de un mando en un instante: botones físicos, ejes, aceleración, gyro, orientación, pointer y touch, con timestamp.
 _Avoid_: frame, paquete, estado
 
+**Estado de input (InputState)**:
+El snapshot inmutable de todos los mandos y slots que el juego lee al inicio de cada frame.
+_Avoid_: snapshot, world state
+
+**Evento de input (InputEvent)**:
+Un cambio de ciclo de vida (join, leave, asignación, desconexión o calibración) que el hub entrega además del estado.
+_Avoid_: callback, signal
+
 **Capacidad (Capability)**:
-Una característica que un mando o un juego declara, como `motion`, `pointer`, `buttons`, `touch`, `haptics` o `screen`; el launcher negocia las requeridas y opcionales.
+Una característica que un mando o un juego declara: `buttons`, `axes`, `motion`, `gyro`, `pointer`, `touch`, `haptics`, `screen` o `battery`; el launcher negocia las requeridas y opcionales.
 _Avoid_: feature, flag
 
+**Acción (Action)**:
+Una intención semántica del juego (`throw`, `gas`, `brake`) producida por el mapeo de input, distinta de un botón físico.
+_Avoid_: comando, input
+
+**Mapeo de input (InputMap)**:
+La configuración por juego y jugador que traduce botones y ejes a acciones, con deadzone, sensibilidad, inversión y hold/toggle.
+_Avoid_: keybinding, controls
+
 **Gesto (Gesture)**:
-Un patrón de movimiento reconocido a partir de `ControllerFrame`s, como swing, throw, tilt o aim.
+Un patrón de movimiento reconocido a partir de `ControllerFrame`s, como swing, throw, tilt o aim; se emite como evento con fase, dirección y confianza.
 _Avoid_: acción, movimiento
 
+**Pose neutra (Neutral pose)**:
+La orientación de referencia que el jugador adopta al empezar; base de la calibración y de los gestos relativos.
+_Avoid_: zero pose, rest pose
+
 **Calibración (Calibration)**:
-El ajuste de los sensores de un mando para que sus datos tengan una orientación y escala consistentes.
+El ajuste de los sensores de un mando (offset/escala de accel, bias de gyro, homografía de pointer) para que sus datos sean consistentes.
 _Avoid_: setup, configuración
 
+**Pointer**:
+Una coordenada de apuntado normalizada de 0 a 1, válida solo si el mando tiene pointer calibrado (IR o touch/gyro).
+_Avoid_: cursor, mouse position
+
+**Eje (Axis)**:
+Un valor analógico normalizado de un stick o gatillo; los sticks van de -1 a 1 y los gatillos de 0 a 1.
+_Avoid_: stick, trigger (cuando se habla del valor)
+
 **Traza de input (Input trace)**:
-Una secuencia grabada de `ControllerFrame`s usada para tests, replay o depuración.
+Una secuencia grabada de `ControllerFrame`s y eventos usada para tests, replay o depuración.
 _Avoid_: log, grabación
 
 **Simulador de mandos (Controller simulator)**:
