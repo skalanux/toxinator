@@ -42,6 +42,20 @@ _Avoid_: minijuego (cuando es solo una variante), nivel
 La UI de la consola que se dibuja sobre un juego para pausa, errores o desconexión de mandos.
 _Avoid_: HUD (el HUD es del juego)
 
+## Distribución
+
+**Paquete de juego (Game package)**:
+La distribución instalable de un juego, con su manifest, versión y punto de entrada.
+_Avoid_: repo, plugin (el plugin es el objeto que corre; el paquete es la distribución)
+
+**Repositorio de juegos (Game registry)**:
+El índice que lista paquetes de juego, versiones y compatibilidad con la API de la consola.
+_Avoid_: store (el repositorio no implica pago), market
+
+**Juego instalado (Installed game)**:
+Un paquete de juego descubierto por la consola y listo para lanzar.
+_Avoid_: biblioteca, library
+
 ## Sesión
 
 **Partida (Match)**:
