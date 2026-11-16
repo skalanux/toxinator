@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues and specs live as GitHub issues in `skalanux/wiIAsports`; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues and specs live as GitHub issues in `skalanux/toxinator`; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

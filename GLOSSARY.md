@@ -1,6 +1,16 @@
-# Consola 3D multijuego
+# Toxinator 3
 
-Contexto de la consola personal de juegos 3D en Python, sus mandos y el primer vertical slice de bolos. Los términos canónicos están en español; el código usa el identificador en inglés entre paréntesis.
+Contexto de Toxinator 3, la consola personal de juegos 3D en Python, sus mandos y el primer vertical slice de bolos. Los términos canónicos están en español; el código usa el identificador en inglés entre paréntesis.
+
+## Productos
+
+**Toxinator 3 (Toxinator)**:
+La consola; el nombre público incluye el `3`, mientras que el paquete e import son `toxinator`.
+_Avoid_: Toxinator sin 3 (para el nombre público), wiIAsports (nombre viejo del repo)
+
+**Maldito Pino, hijo de pu&#42;&#42;**:
+El primer juego, de bolos. El título canónico es `Maldito Pino, hijo de pu**` y se mantiene en español en ambas locales; “Maldito Pino” es la forma corta. Paquete `maldito-pino`, import `maldito_pino`.
+_Avoid_: Pleno (nombre descartado)
 
 ## Plataforma
 
