@@ -62,6 +62,14 @@ _Avoid_: biblioteca, library
 Una sesión de juego con sus reglas (10 turnos de bolos, 3 vueltas de kart). No es el software.
 _Avoid_: juego, sesión
 
+**Hot-seat**:
+Modo local por turnos en el que los jugadores comparten pantalla y, opcionalmente, un mando.
+_Avoid_: pass-and-play (en docs), local versus
+
+**Mando compartido (Shared controller)**:
+Un solo mando que se pasa entre jugadores en hot-seat; el hub lo reasigna al slot activo.
+_Avoid_: pass-the-controller (en docs), shared pad
+
 **Perfil local (Local profile)**:
 Una identidad de jugador guardada en la consola: nombre, color/avatar y mando preferido. No hay cuenta ni nube.
 _Avoid_: cuenta, usuario
@@ -171,6 +179,54 @@ _Avoid_: frame
 **Tiro de bolos (Delivery)**:
 El lanzamiento de la bola en un turno de bolos.
 _Avoid_: tiro (sin calificar)
+
+**Pino (Pin)**:
+Cada uno de los 10 objetivos del bolos; el slice no tiene otros tipos de pinos.
+_Avoid_: bolo (para el objeto), target
+
+**Bola (Ball)**:
+La bola única que se lanza en el slice; no hay selección de bolas.
+_Avoid_: balón, pelota
+
+**Pleno (Strike)**:
+Derribar los 10 pinos con el primer tiro de un turno.
+_Avoid_: strike (en docs), full
+
+**Spare**:
+Derribar los pinos restantes con el segundo tiro de un turno.
+_Avoid_: medio pleno, semipleno
+
+**Turno abierto (Open frame)**:
+Un turno que termina sin pleno ni spare.
+_Avoid_: frame abierto, open
+
+**Canaleta (Gutter)**:
+El canal lateral de la pista; una bola que cae ahí cuenta 0 pinos.
+_Avoid_: gutter (en docs), cuneta
+
+**Efecto (Spin)**:
+La rotación aplicada a la bola que curva su trayectoria.
+_Avoid_: spin (en docs), curva (la curva es la trayectoria resultante)
+
+**Suelta (Release)**:
+El momento en que la bola sale de la mano; en el juego, soltar B al final del swing.
+_Avoid_: release (en docs), lanzamiento (el lanzamiento incluye el swing)
+
+**Apuntado (Aim)**:
+El ajuste de posición/ángulo antes del tiro.
+_Avoid_: aim (en docs), puntería
+
+**Marcador (Scoreboard)**:
+La tarjeta de 10 turnos con los totales y los símbolos de pleno/spare.
+_Avoid_: score, tabla de puntos
+
+**Práctica (Practice)**:
+El modo sin puntaje, con tiros ilimitados y reset de pinos por tiro.
+_Avoid_: entrenamiento, training
+
+**Ronda de desempate (Tie-breaker roll)**:
+Un tiro extra por jugador para desempatar una partida; se repite hasta que haya un ganador.
+_Avoid_: tie-break, muerte súbita (en docs; se usa como explicación)
 
 **Golpe (Stroke)**:
 El movimiento de raqueta que impacta la pelota en tenis.
