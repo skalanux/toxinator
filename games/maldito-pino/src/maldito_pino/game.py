@@ -53,6 +53,8 @@ class MalditoPinoGame:
         self.swing_time: float | None = None
         self.swing_origin: tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.camera_switched = False
+        self.tilt_frame: OnscreenText | None = None
+        self.tilt_dot: OnscreenText | None = None
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -263,7 +265,7 @@ class MalditoPinoGame:
     def _build_hand(self) -> None:
         assert self.ctx is not None
         self.hand = self.ctx.scene.attach_new_node("phone-hand")
-        self._box(self.hand, (0.0, 0.0, 0.0), (0.14, 0.03, 0.24), Vec4(0.04, 0.05, 0.08, 1.0))
+        self._box(self.hand, (0.0, 0.0, 0.0), (0.14, 0.03, 0.24), Vec4(0.93, 0.90, 0.82, 1.0))
         self.hand_screen = self._box(
             self.hand, (0.0, -0.019, 0.0), (0.11, 0.004, 0.18), JADE
         )
@@ -396,6 +398,30 @@ class MalditoPinoGame:
         self._hud["title"].setText("MALDITO PINO")
         self._hud["score"].setText("")
 
+        assert self.ctx is not None
+        self.tilt_frame = OnscreenText(
+            text="+-------+\n|       |\n|       |\n+-------+",
+            parent=self.ctx.ui,
+            pos=(1.10, -0.76),
+            scale=0.030,
+            fg=MUTED,
+            align=TextNode.ACenter,
+        )
+        self.tilt_dot = OnscreenText(
+            text="*",
+            parent=self.ctx.ui,
+            pos=(1.10, -0.81),
+            scale=0.050,
+            fg=GOLD,
+            shadow=Vec4(0.0, 0.0, 0.0, 0.8),
+            mayChange=True,
+            align=TextNode.ACenter,
+        )
+        self.tilt_dot.setBin("fixed", 60)
+        self.tilt_dot.setDepthTest(False)
+        self._text("tilt_label", pos=(1.10, -0.64), scale=0.030, color=MUTED)
+        self._hud["tilt_label"].setText("MANO")
+
     def _update_hud(self, frame: ControllerFrame | None) -> None:
         if not self._hud:
             return
@@ -424,7 +450,14 @@ class MalditoPinoGame:
         if frame is None:
             self._hud["prompt"].setText("Conectá el celular desde el QR")
             self._hud["power"].setText("")
+            if self.tilt_dot is not None:
+                self.tilt_dot.setPos(1.10, -0.84)
             return
+
+        if self.tilt_dot is not None:
+            beta = max(-45.0, min(45.0, frame.orientation[1]))
+            gamma = max(-45.0, min(45.0, frame.orientation[2]))
+            self.tilt_dot.setPos(1.10 + gamma / 45.0 * 0.060, -0.84 + beta / 45.0 * 0.060)
 
         if match.game_over:
             self._hud["prompt"].setText("A para otra partida")
