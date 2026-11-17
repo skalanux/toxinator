@@ -122,6 +122,6 @@ Los prototipos viven en branches y no se mergean:
 - Panda3D 1.10.16 (XWayland)
 - `aiohttp` para HTTPS + WebSocket del controlador
 - `qrcode` para el QR del terminal
-- Bullet para física (prototipo validado; integración pendiente)
+- Bullet para física (Maldito Pino y prototipo)
 - Wiimote por `hid-wiimote` + `python-evdev` (pendiente)
 - Celular Android por PWA HTTPS + WSS (primer corte)
