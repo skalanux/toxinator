@@ -150,17 +150,21 @@ class MalditoPinoGame:
         self.last_spin = self._spin_from()
         self._pose_hand(charging=True)
         assert self.lane is not None
-        self.lane.show_power(self.charge)
+        self.lane.show_power(self._power_level())
         if not frame.button("A"):
             self._throw(frame)
 
     def _spin_from(self) -> float:
         return max(-1.0, min(1.0, self.hand_gamma / 30.0)) * 12.0
 
+    def _power_level(self) -> float:
+        beta_power = max(-1.0, min(1.0, self.hand_beta / 45.0))
+        return max(0.0, min(1.0, 0.70 * self.charge + 0.30 * (0.5 + 0.5 * beta_power)))
+
     def _throw(self, frame: ControllerFrame) -> None:
         assert self.lane is not None
         spin = self._spin_from()
-        speed = 6.0 + 4.0 * self.charge
+        speed = 5.5 + 4.5 * self._power_level()
         self.last_spin = spin
         self._start_swing()
         self.lane.throw(speed, self.aim_x, spin)
@@ -311,19 +315,18 @@ class MalditoPinoGame:
         if self.hand is None:
             return
         self.hand.show()
-        pitch = max(-60.0, min(60.0, self.hand_beta * 0.85))
-        roll = max(-45.0, min(45.0, self.hand_gamma * 0.70))
-        lift = max(-0.05, min(0.05, self.hand_beta * 0.0009))
+        pitch = max(-85.0, min(85.0, self.hand_beta * 0.95))
+        lift = max(-0.06, min(0.06, self.hand_beta * 0.001))
         if charging:
             self.hand.set_pos(
                 self._hand_x(),
                 -0.45 - 0.10 * self.charge,
                 0.68 + lift + 0.04 * self.charge,
             )
-            pitch -= 8.0 * self.charge
+            pitch = max(-88.0, min(88.0, pitch - 8.0 * self.charge))
         else:
             self.hand.set_pos(self._hand_x(), -0.35, 0.68 + lift)
-        self.hand.set_hpr(0.0, pitch, roll)
+        self.hand.set_hpr(0.0, pitch, 0.0)
         if self.hand_screen is not None:
             self.hand_screen.set_color(GOLD if charging else JADE)
 
@@ -339,7 +342,7 @@ class MalditoPinoGame:
         self.swing_origin = (
             self._hand_x(),
             -0.45 - 0.10 * self.charge,
-            0.68 + max(-0.05, min(0.05, self.hand_beta * 0.0009)) + 0.04 * self.charge,
+            0.68 + max(-0.06, min(0.06, self.hand_beta * 0.001)) + 0.04 * self.charge,
         )
         self.swing_time = 0.0
         self.hand.set_pos(*self.swing_origin)
@@ -477,8 +480,7 @@ class MalditoPinoGame:
 
         if self.tilt_dot is not None:
             beta = max(-60.0, min(60.0, self.hand_beta))
-            gamma = max(-60.0, min(60.0, self.hand_gamma))
-            self.tilt_dot.setPos(1.10 + gamma / 60.0 * 0.065, -0.84 + beta / 60.0 * 0.065)
+            self.tilt_dot.setPos(1.10, -0.84 + beta / 60.0 * 0.065)
 
         if match.game_over:
             self._hud["prompt"].setText("A para otra partida")
@@ -491,7 +493,7 @@ class MalditoPinoGame:
                 f"OBJETIVO {self.aim_x:+.2f} m  |  EFECTO {self.last_spin:+.0f}"
             )
         elif self.state == "charge":
-            filled = int(self.charge * 10)
+            filled = int(self._power_level() * 10)
             bar = "#" * filled + "-" * (10 - filled)
             self._hud["prompt"].setText("Soltá A para tirar")
             self._hud["power"].setText(f"POTENCIA [{bar}]")

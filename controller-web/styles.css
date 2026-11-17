@@ -242,15 +242,17 @@ button {
 
 .actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .a-button {
   display: grid;
+  order: 2;
   place-items: center;
-  width: 104px;
-  height: 104px;
+  width: 116px;
+  height: 116px;
   padding: 0;
   color: var(--navy);
   background: var(--gold);
@@ -282,13 +284,17 @@ button {
 
 .secondary-stack {
   display: flex;
-  flex: 1;
-  flex-direction: column;
+  order: 1;
+  flex-direction: row;
   gap: 8px;
+  width: 100%;
+  max-width: 420px;
   min-width: 0;
 }
 
 .secondary {
+  flex: 1;
+  max-width: 180px;
   min-height: 44px;
   padding: 8px 10px;
   color: var(--bone);
