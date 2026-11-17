@@ -200,6 +200,44 @@ _Avoid_: log, grabación
 Un mando falso controlado por teclado, mouse o gamepad que produce `ControllerFrame`s para desarrollar y testear sin hardware.
 _Avoid_: emulador, fake controller
 
+## Física
+
+**PhysicsWorld (Mundo físico)**:
+El servicio de plataforma que envuelve Bullet, corre a paso fijo y expone cuerpos, materiales y queries.
+_Avoid_: physics engine, world manager
+
+**Cuerpo rígido (Rigid body)**:
+Un cuerpo con masa que Bullet integra; puede ser dinámico o estático.
+_Avoid_: body (en docs), objeto físico
+
+**Cuerpo kinemático (Kinematic body)**:
+Un cuerpo de masa infinita que se mueve por transform y empuja a los dinámicos.
+_Avoid_: static body, animated collider
+
+**Material físico (Physics material)**:
+La combinación de fricción y restitución que se aplica a un cuerpo o superficie.
+_Avoid_: surface, material (ambiguo)
+
+**Paso fijo (Fixed step)**:
+El intervalo constante de simulación (1/120 s) independiente del framerate.
+_Avoid_: tick, frame step
+
+**CCD (Continuous Collision Detection)**:
+La detección de colisiones entre pasos para cuerpos rápidos; usa una swept sphere.
+_Avoid_: tunneling fix, sweep
+
+**Escala de tiempo (Time scale)**:
+El multiplicador de tiempo de la simulación; 0.25 para slow-motion y 0 para pausa.
+_Avoid_: slow motion factor, time dilation
+
+**Interpolación (Interpolation)**:
+El suavizado de transforms entre pasos físicos para renderizar a 60 FPS.
+_Avoid_: smoothing, lerp
+
+**Pino caído (Knocked pin)**:
+Un pino cuya orientación o posición supera el umbral de caída; se usa para el scoring.
+_Avoid_: fallen pin, down pin
+
 ## Render y UI
 
 **Viewport**:
@@ -235,6 +273,10 @@ _Avoid_: bolo (para el objeto), target
 **Bola (Ball)**:
 La bola única que se lanza en el slice; no hay selección de bolas.
 _Avoid_: balón, pelota
+
+**Pocket**:
+La abertura entre el pino 1 y el 3 (o el 1 y el 2) donde entra la bola para maximizar el pleno.
+_Avoid_: bolsa, bolsillo
 
 **Pleno (Strike)**:
 Derribar los 10 pinos con el primer tiro de un turno.
