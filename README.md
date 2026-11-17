@@ -6,7 +6,7 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-Ya corren dos cortes: `toxinator dev phone` (servidor HTTPS/WSS, QR, PWA del celular y escena mínima) y `toxinator play maldito-pino` (un jugador, 10 turnos, tiro con el celular y scoring). El Wiimote, el launcher y el hot-seat de 1–4 jugadores todavía no están integrados.
+Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
 
 ## Documentos
 
@@ -40,11 +40,46 @@ git show origin/research/wiimote-linux:research/wiimote-linux.md
 
 ```bash
 uv sync --all-packages
-uv run toxinator dev phone
+uv run toxinator
 uv run toxinator play maldito-pino
+uv run toxinator dev phone
 uv run pytest
 uv run ruff check
 uv run mypy
+```
+
+## Launcher LIGA
+
+```bash
+uv sync --all-packages
+uv run toxinator
+```
+
+Abre **LIGA · Noche**, la pantalla de inicio de la consola:
+
+- **Contendiente destacado**: Maldito Pino, con rank, evento, récord, formatos y
+  los botones **JUGAR** y **FICHA**.
+- **Próximos desafíos**: Kart y Tenis como contendientes futuros.
+- **Plantel**: los 4 slots; el celular aparece como P1 cuando escanea el QR del
+  terminal.
+- **Ajustes** y **sumar celular** con la URL de la sesión.
+
+Controles:
+
+- **Flechas**: navegar.
+- **Enter**: elegir / jugar.
+- **D**: ficha del desafío.
+- **S**: ajustes.
+- **Esc**: volver o cerrar la liga.
+- **A del celular**: confirma el foco actual.
+- **Mouse**: los botones también responden.
+
+Al elegir **JUGAR**, el launcher cede la pantalla al juego; **Esc** en el juego
+vuelve a la liga. El servidor del celular sigue vivo entre launcher y juego.
+
+```bash
+uv run toxinator launcher --demo        # P1 sintético
+uv run toxinator launcher --offscreen --screenshot /tmp/liga.png
 ```
 
 ## Primer corte: `toxinator dev phone`

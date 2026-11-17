@@ -1,5 +1,5 @@
-"""Console core services."""
+"""Game catalog."""
 
-from toxinator.core.game_host import GameHost
+from toxinator.core.games import GameEntry, find_game, load_catalog
 
-__all__ = ["GameHost"]
+__all__ = ["GameEntry", "find_game", "load_catalog"]

@@ -42,6 +42,7 @@ def start_phone_session(
     port: int = 8443,
     token: str | None = None,
     demo: bool = False,
+    demo_buttons: bool = True,
 ) -> PhoneSession:
     lan_host = host or get_lan_ip()
     if lan_host in {"0.0.0.0", ""}:
@@ -56,7 +57,7 @@ def start_phone_session(
     registry = PhoneRegistry(max_slots=4)
     sources: list[ControllerSource] = [PhoneSource(registry)]
     if demo:
-        sources.append(DemoSource())
+        sources.append(DemoSource(buttons=demo_buttons))
 
     hub = InputHub(sources)
     hub.start()

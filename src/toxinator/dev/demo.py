@@ -14,8 +14,9 @@ class DemoSource:
 
     name = "demo"
 
-    def __init__(self, slot: int = 0) -> None:
+    def __init__(self, slot: int = 0, *, buttons: bool = True) -> None:
         self._slot = slot
+        self._buttons = buttons
         self._started_at: float | None = None
 
     def start(self) -> None:
@@ -33,7 +34,8 @@ class DemoSource:
             30.0 * math.sin(elapsed * 1.2),
             35.0 * math.cos(elapsed * 0.9),
         )
-        buttons = frozenset({"A"}) if int(elapsed) % 2 == 0 else frozenset()
+        pressed = self._buttons and int(elapsed) % 2 == 0
+        buttons = frozenset({"A"}) if pressed else frozenset()
         frame = ControllerFrame(
             controller_id="demo-1",
             timestamp=now,
