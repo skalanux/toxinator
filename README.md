@@ -109,6 +109,7 @@ certificado local confiable con `mkcert`:
 
 ```bash
 mkcert -install
+mkdir -p ~/.config/toxinator
 mkcert -cert-file ~/.config/toxinator/lan.pem \
        -key-file ~/.config/toxinator/lan-key.pem 192.168.0.141
 
@@ -117,12 +118,14 @@ uv run toxinator launcher \
   --key ~/.config/toxinator/lan-key.pem
 ```
 
-En Android, instalá `rootCA.pem` (el que imprime `mkcert -CAROOT`) como
-**certificado de CA de usuario** desde Ajustes → Seguridad. Después abrí
-`https://192.168.0.141:8443/` una vez y verificá el candado. La IP o el nombre
-del certificado tienen que coincidir con el host del QR (`--host` si usás un
-nombre). `--cert` y `--key` también funcionan en `toxinator play` y
-`toxinator dev phone`.
+En Android, instalá el archivo `rootCA.pem` que está dentro de la carpeta que
+imprime `mkcert -CAROOT`, como **certificado de CA de usuario** desde Ajustes →
+Seguridad. Después abrí `https://192.168.0.141:8443/` una vez y verificá el
+candado. La IP o el nombre del certificado tienen que coincidir con el host del
+QR (`--host` si usás un nombre). `--cert` y `--key` también funcionan en
+`toxinator play` y `toxinator dev phone`. Si tu versión de Android no confía en
+la CA de usuario, la alternativa es publicar la consola por un túnel HTTPS con
+certificado público.
 
 Por defecto, el token cambia cada vez que arranca la consola. Si la PWA queda en
 **Token inválido**, volvé a escanear el QR desde la propia app (no hace falta
