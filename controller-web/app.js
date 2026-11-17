@@ -188,6 +188,15 @@ async function start() {
     return;
   }
 
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === "function") {
+      await screen.orientation.lock("portrait");
+    }
+  } catch {
+    // Orientation lock is best-effort; the layout and axes assume portrait.
+    setStatus("Sensores listos; mantené el teléfono en vertical");
+  }
+
   started = true;
   overlay.classList.add("hidden");
   connect();

@@ -71,9 +71,9 @@ class PhonePrototype(ShowBase):
         ground.setZ(-1.0)
         ground.setColor(0.08, 0.16, 0.12, 1)
 
-        paddle_maker = CardMaker("paddle")
-        paddle_maker.setFrame(-0.9, 0.9, -0.22, 0.22)
-        self.paddle = self.render.attachNewNode(paddle_maker.generate())
+        self.paddle = self.loader.loadModel("models/box")
+        self.paddle.reparentTo(self.render)
+        self.paddle.setScale(0.9, 0.12, 0.22)
         self.paddle.setPos(0, 0, 0)
         self.paddle.setColor(0.2, 0.8, 0.9, 1)
 
@@ -152,7 +152,9 @@ class PhonePrototype(ShowBase):
         alpha = float(raw.get("alpha", 0.0))
         beta = float(raw.get("beta", 0.0))
         gamma = float(raw.get("gamma", 0.0))
-        self.paddle.setHpr(-gamma * 2.0, beta, -alpha)
+        # Phone Euler axes: alpha = Z (yaw), beta = X (pitch), gamma = Y (roll).
+        # Map them directly so forward/back tilt pitches instead of spinning.
+        self.paddle.setHpr(alpha, beta, gamma)
 
         accel = frame.accel
         gyro = frame.gyro

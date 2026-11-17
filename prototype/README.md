@@ -90,6 +90,17 @@ Si la IP cambia, regenerá el certificado con la IP nueva. Si Chrome sigue
 mostrando advertencia, el CA no quedó instalado como CA de usuario; no sigas
 haciendo click en “continuar”, porque el contexto seguro no es confiable.
 
+## Mapeo de orientación
+
+El prototipo usa los Euler del teléfono directamente:
+
+- `alpha` → yaw (H)
+- `beta` → pitch (P)
+- `gamma` → roll (R)
+
+Mantené el teléfono en vertical. Si el tilt se siente invertido, se cambia el signo
+del eje correspondiente; eso es parte de lo que estamos validando.
+
 ## Qué mirar
 
 - ¿La paleta sigue el tilt sin saltos?
