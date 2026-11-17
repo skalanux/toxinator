@@ -50,6 +50,8 @@ class MalditoPinoGame:
         self._hud: dict[str, OnscreenText] = {}
         self.hand: NodePath | None = None
         self.hand_screen: NodePath | None = None
+        self.hand_beta = 0.0
+        self.hand_gamma = 0.0
         self.swing_time: float | None = None
         self.swing_origin: tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.camera_switched = False
@@ -103,6 +105,7 @@ class MalditoPinoGame:
         state = self.ctx.input_state
         frame = state.frame(0)
         self._frame = frame
+        self._smooth_hand(frame, dt)
 
         if self.match.game_over:
             if frame is not None and frame.button("A"):
@@ -126,9 +129,10 @@ class MalditoPinoGame:
     def _update_aim(self, frame: ControllerFrame | None) -> None:
         assert self.lane is not None
         if frame is None:
+            self._pose_hand(charging=False)
             return
-        self.last_spin = self._spin_from(frame)
-        self._pose_hand(frame, charging=False)
+        self.last_spin = self._spin_from()
+        self._pose_hand(charging=False)
         self.lane.hide_power()
         if frame.touch:
             self.aim_x = max(-0.45, min(0.45, -0.2 + 0.55 * frame.touch[0].x))
@@ -143,20 +147,19 @@ class MalditoPinoGame:
         self.charge = min(1.0, self.charge + dt * 0.85)
         if frame is None:
             return
-        self.last_spin = self._spin_from(frame)
-        self._pose_hand(frame, charging=True)
+        self.last_spin = self._spin_from()
+        self._pose_hand(charging=True)
         assert self.lane is not None
         self.lane.show_power(self.charge)
         if not frame.button("A"):
             self._throw(frame)
 
-    @staticmethod
-    def _spin_from(frame: ControllerFrame) -> float:
-        return max(-1.0, min(1.0, frame.orientation[2] / 30.0)) * 12.0
+    def _spin_from(self) -> float:
+        return max(-1.0, min(1.0, self.hand_gamma / 30.0)) * 12.0
 
     def _throw(self, frame: ControllerFrame) -> None:
         assert self.lane is not None
-        spin = self._spin_from(frame)
+        spin = self._spin_from()
         speed = 6.0 + 4.0 * self.charge
         self.last_spin = spin
         self._start_swing()
@@ -265,43 +268,61 @@ class MalditoPinoGame:
     def _build_hand(self) -> None:
         assert self.ctx is not None
         self.hand = self.ctx.scene.attach_new_node("phone-hand")
-        self._box(self.hand, (0.0, 0.0, 0.0), (0.14, 0.03, 0.24), Vec4(0.93, 0.90, 0.82, 1.0))
-        self.hand_screen = self._box(
-            self.hand, (0.0, -0.019, 0.0), (0.11, 0.004, 0.18), JADE
+        # The pivot is the wrist/fist; the phone sits above it. Rotating around
+        # the wrist keeps positive and negative tilt visually symmetric.
+        self._box(
+            self.hand, (0.0, 0.0, 0.17), (0.14, 0.03, 0.24), Vec4(0.93, 0.90, 0.82, 1.0)
         )
-        self._box(self.hand, (0.0, -0.022, -0.10), (0.016, 0.004, 0.016), GOLD)
+        self.hand_screen = self._box(
+            self.hand, (0.0, -0.019, 0.17), (0.11, 0.004, 0.18), JADE
+        )
+        self._box(self.hand, (0.0, -0.022, 0.07), (0.016, 0.004, 0.016), GOLD)
 
         fist = self.base.loader.loadModel("models/misc/sphere")
         fist.set_texture_off(1)
         fist.set_scale(0.09)
         fist.set_color(SKIN)
-        fist.set_pos(0.0, 0.02, -0.17)
+        fist.set_pos(0.0, 0.02, 0.0)
         fist.reparent_to(self.hand)
 
         self._box(
-            self.hand, (0.0, 0.03, -0.27), (0.11, 0.11, 0.09), Vec4(0.05, 0.06, 0.09, 1.0)
+            self.hand, (0.0, 0.03, -0.10), (0.11, 0.11, 0.09), Vec4(0.05, 0.06, 0.09, 1.0)
         )
 
     def _hand_x(self) -> float:
         return 0.15 + (self.aim_x - 0.15) * 0.5
 
-    def _pose_hand(self, frame: ControllerFrame | None, *, charging: bool) -> None:
+    def _smooth_hand(self, frame: ControllerFrame | None, dt: float) -> None:
+        target_beta = frame.orientation[1] if frame is not None else 0.0
+        target_gamma = frame.orientation[2] if frame is not None else 0.0
+        if abs(target_beta) < 2.5:
+            target_beta = 0.0
+        if abs(target_gamma) < 2.5:
+            target_gamma = 0.0
+        alpha = 1.0 - math.exp(-max(0.0, dt) / 0.22)
+        self.hand_beta += (target_beta - self.hand_beta) * alpha
+        self.hand_gamma += (target_gamma - self.hand_gamma) * alpha
+        if abs(self.hand_beta) < 0.4:
+            self.hand_beta = 0.0
+        if abs(self.hand_gamma) < 0.4:
+            self.hand_gamma = 0.0
+
+    def _pose_hand(self, *, charging: bool) -> None:
         if self.hand is None:
             return
         self.hand.show()
-        beta = frame.orientation[1] if frame is not None else 0.0
-        gamma = frame.orientation[2] if frame is not None else 0.0
-        pitch = max(-30.0, min(30.0, beta * 0.6))
-        roll = max(-35.0, min(35.0, gamma * 0.6))
+        pitch = max(-60.0, min(60.0, self.hand_beta * 0.85))
+        roll = max(-45.0, min(45.0, self.hand_gamma * 0.70))
+        lift = max(-0.05, min(0.05, self.hand_beta * 0.0009))
         if charging:
             self.hand.set_pos(
                 self._hand_x(),
                 -0.45 - 0.10 * self.charge,
-                0.86 + 0.04 * self.charge,
+                0.68 + lift + 0.04 * self.charge,
             )
-            pitch -= 10.0 * self.charge
+            pitch -= 8.0 * self.charge
         else:
-            self.hand.set_pos(self._hand_x(), -0.35, 0.85)
+            self.hand.set_pos(self._hand_x(), -0.35, 0.68 + lift)
         self.hand.set_hpr(0.0, pitch, roll)
         if self.hand_screen is not None:
             self.hand_screen.set_color(GOLD if charging else JADE)
@@ -310,7 +331,7 @@ class MalditoPinoGame:
         if self.hand is None:
             return
         self.hand.show()
-        self._pose_hand(self._frame, charging=False)
+        self._pose_hand(charging=False)
 
     def _start_swing(self) -> None:
         if self.hand is None:
@@ -318,7 +339,7 @@ class MalditoPinoGame:
         self.swing_origin = (
             self._hand_x(),
             -0.45 - 0.10 * self.charge,
-            0.86 + 0.04 * self.charge,
+            0.68 + max(-0.05, min(0.05, self.hand_beta * 0.0009)) + 0.04 * self.charge,
         )
         self.swing_time = 0.0
         self.hand.set_pos(*self.swing_origin)
@@ -403,7 +424,7 @@ class MalditoPinoGame:
             text="+-------+\n|       |\n|       |\n+-------+",
             parent=self.ctx.ui,
             pos=(1.10, -0.76),
-            scale=0.030,
+            scale=0.036,
             fg=MUTED,
             align=TextNode.ACenter,
         )
@@ -411,7 +432,7 @@ class MalditoPinoGame:
             text="*",
             parent=self.ctx.ui,
             pos=(1.10, -0.81),
-            scale=0.050,
+            scale=0.060,
             fg=GOLD,
             shadow=Vec4(0.0, 0.0, 0.0, 0.8),
             mayChange=True,
@@ -455,9 +476,9 @@ class MalditoPinoGame:
             return
 
         if self.tilt_dot is not None:
-            beta = max(-45.0, min(45.0, frame.orientation[1]))
-            gamma = max(-45.0, min(45.0, frame.orientation[2]))
-            self.tilt_dot.setPos(1.10 + gamma / 45.0 * 0.060, -0.84 + beta / 45.0 * 0.060)
+            beta = max(-60.0, min(60.0, self.hand_beta))
+            gamma = max(-60.0, min(60.0, self.hand_gamma))
+            self.tilt_dot.setPos(1.10 + gamma / 60.0 * 0.065, -0.84 + beta / 60.0 * 0.065)
 
         if match.game_over:
             self._hud["prompt"].setText("A para otra partida")
