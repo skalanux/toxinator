@@ -15,35 +15,50 @@ python3 -m http.server 8080
 Abrí:
 
 ```text
-http://localhost:8080/prototype/launcher/?variant=C&theme=feria
+http://localhost:8080/prototype/launcher/?variant=D&theme=liga
 ```
 
 También podés abrir `index.html` directo, pero el Gamepad API funciona mejor por
 `localhost`.
 
-## Dirección visual: La Feria Maldita
+## Concepto: LIGA
 
-La variante C dejó de ser una grilla de tarjetas y pasó a ser el **cartel de una
-feria de juegos malditos**. La consola es una carpa: los juegos son atracciones,
-los mandos son entradas y el pin es el número principal.
+La consola es la mesa de una **liga de barrio de héroes raros**. Cada juego es un
+**desafío**, cada jugador es un **contendiente** y los mandos son el **plantel**.
+El primer desafío, **Maldito Pino**, es el rival de la fecha: un pin con vincha,
+estrella y mala leche. No hay IP de Marvel ni de anime; la liga, el escudo y los
+personajes son propios.
 
-- **Paleta**: lona `#0D3532`, papel `#F2E3C6`, oxblood `#8E1F1F`, mostaza
-  `#E0A526`, coral `#E85C3A`, tinta `#17110C`.
-- **Tipografía**: Nimbus Sans Narrow para carteles y titulares; Liberation Sans
-  para la interfaz; Liberation Mono solo para datos de entrada. La versión final
-  puede usar una woodtype/display licenciada.
-- **Estructura**: marquesina con bombillas, carteles de papel con chinchetas,
-  borde punteado en el cartel seleccionado y una **entrada general** perforada
-  como hoja inferior.
-- **Marca**: Toxinator 3 como la feria; tagline **LA FERIA MALDITA**; marca de
-  ticket con pin; mascota **pin barker** con sombrero y moño.
-- **Principios**: material físico (lona, papel, tinta), una sola pieza memorable
-  (la marquesina/ticket), cero neón/glass/gradientes suaves. Las etiquetas
-  funcionales van en sentence case; las mayúsculas quedan para los carteles.
+- **Paleta**: hielo `#F3F5FF`, tinta `#11121A`, cobalto `#1F4BFF`, coral
+  `#FF4F5E`, solar `#FFD52E`, menta `#2EE6C8`.
+- **Tipografía**: Archivo Black para carteles y titulares; IBM Plex Sans para la
+  interfaz; IBM Plex Mono solo para ranks, récords y datos. Los stacks del
+  prototipo usan Nimbus Sans Narrow / Liberation Sans como placeholders.
+- **Layout**: ficha del contendiente destacado, escalera de próximos desafíos,
+  plantel abajo y ficha de combate para el detalle.
+- **Marca**: escudo + wordmark LIGA + tagline **LA LIGA DE LOS JUEGOS**; el pin
+  héroe es la mascota/contendiente.
+- **Principios**: equipo antes que catálogo; una pieza valiente (la ficha del
+  contendiente); estructura de liga, no grilla de cards; etiquetas funcionales
+  claras; cero neón/glass/gradientes suaves.
 
-La barra inferior cambia variante (`V`) y tema (`T`): **Feria**, **Cómic** y
-**Neón**. Cómic y Neón quedan para comparar; Tóxica y Bolera 78 se descartaron
-(quedan en el historial del branch). Actualiza `?variant=` / `?theme=`.
+```text
+┌────────────────────────────────────────────────────────────┐
+│ [ESCUDO] LIGA   TEMPORADA 01 · FECHA 03     [2/4] [AJUSTES]│
+├──────────────────────────────────┬─────────────────────────┤
+│  CONTENDIENTE DESTACADO          │  PRÓXIMOS DESAFÍOS      │
+│  MALDITO PINO                    │  KART        RANK C     │
+│  [pin héroe]                     │  TENIS       RANK C     │
+│  RANK A · 1–4 JUGADORES          │  + SUMAR DESAFÍO        │
+│  [ JUGAR ] [ FICHA ]             │                         │
+├──────────────────────────────────┴─────────────────────────┤
+│  PLANTEL   [P1 LISTO] [P2 ESPERA] [P3 ...] [P4 ...]        │
+└────────────────────────────────────────────────────────────┘
+```
+
+La barra inferior cambia variante (`V`) y tema (`T`): **Liga**, **Cómic** y
+**Neón**. Cómic y Neón quedan para comparar; Feria se archivó. Actualiza
+`?variant=` / `?theme=`.
 
 ## Estados para revisar
 
@@ -66,10 +81,10 @@ Agregá `&screen=` a la URL:
 - `Enter` / `A`: seleccionar.
 - `Esc` / `B`: volver.
 - `S` / `Start`: ajustes.
-- `P`: jugadores y mandos.
-- `C`: conectar teléfono (QR mock).
+- `P`: plantel y mandos.
+- `C`: sumar celular (QR mock).
 - `E`: error de capacidades.
-- `0`: biblioteca vacía.
+- `0`: liga vacía.
 - `Q`: apagar.
 - `L`: idioma ES/EN.
 - `H`: ayuda y estado actual.
@@ -80,20 +95,14 @@ Agregá `&screen=` a la URL:
 
 ## Capturas
 
-**La Feria Maldita (variante C)**
-
-- [Home](screenshots/feria-home.png)
-- [Jugadores](screenshots/feria-players.png)
-- [Ajustes](screenshots/feria-settings.png)
-- [Conectar teléfono](screenshots/feria-connecting.png)
-- [Error de capacidades](screenshots/feria-error.png)
-- [Biblioteca vacía](screenshots/feria-empty.png)
-
-**Layouts alternativos (tema Neón, el anterior)**
-
-- [Variante A](screenshots/home-a.png)
-- [Variante B](screenshots/home-b.png)
-- [Variante C](screenshots/home-c.png)
+- [Home](screenshots/liga-home.png)
+- [Plantel](screenshots/liga-players.png)
+- [Ajustes](screenshots/liga-settings.png)
+- [Ficha del desafío](screenshots/liga-detail.png)
+- [Sumar celular](screenshots/liga-connecting.png)
+- [Partido suspendido](screenshots/liga-error.png)
+- [Liga vacía](screenshots/liga-empty.png)
+- [Entrando a la cancha](screenshots/liga-launching.png)
 
 **Comparación**
 
@@ -102,11 +111,12 @@ Agregá `&screen=` a la URL:
 
 ## Qué evaluar
 
-- ¿La feria se siente propia de Toxinator 3 y no de cualquier launcher?
-- ¿La marca funciona? (ticket-pin, pin barker, tagline, carteles)
-- ¿La lona verde + papel + oxblood/mostaza es la paleta correcta?
-- ¿La tipografía condensada va en esa dirección?
-- ¿El cartel seleccionado con borde punteado y la entrada general se leen bien?
+- ¿LIGA se siente una consola propia y no un dashboard gamer?
+- ¿La ficha del contendiente, la escalera y el plantel se entienden?
+- ¿La paleta hielo/cobalto/solar/coral/menta funciona para Marvel/anime sin ser
+  una copia?
+- ¿El pin héroe y el escudo son una marca creíble?
+- ¿La tipografía condensada/italic va en esa dirección?
 - ¿Qué partes de Cómic o Neón todavía querés conservar?
 - ¿La navegación y los estados se entienden?
 

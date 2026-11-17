@@ -4,16 +4,21 @@
 /* Data                                                                */
 /* ------------------------------------------------------------------ */
 
-const VARIANTS = ["A", "B", "C"];
-const VARIANT_NAMES = { A: "Carousel", B: "Biblioteca", C: "Mosaico" };
-const THEMES = ["feria", "comic", "neon"];
+const VARIANTS = ["A", "B", "C", "D"];
+const VARIANT_NAMES = {
+  A: "Carousel",
+  B: "Biblioteca",
+  C: "Mosaico",
+  D: "Liga",
+};
+const THEMES = ["liga", "comic", "neon"];
 const THEME_NAMES = {
-  feria: "Feria",
+  liga: "Liga",
   comic: "Cómic",
   neon: "Neón",
 };
 const THEME_TAGLINES = {
-  feria: "LA FERIA MALDITA",
+  liga: "LA LIGA DE LOS JUEGOS",
   comic: "CÓMIC DE BARRIO",
   neon: "NEÓN",
 };
@@ -42,6 +47,9 @@ const GAMES = [
     icon: "pin",
     players: [1, 4],
     version: "1.0.0",
+    rank: "A",
+    record: "12–3",
+    event: "01",
     requires: ["motion", "buttons"],
     modes: [
       {
@@ -75,6 +83,9 @@ const GAMES = [
     icon: "kart",
     players: [1, 4],
     version: "—",
+    rank: "C",
+    record: "—",
+    event: "02",
     requires: ["motion", "buttons"],
     modes: [
       {
@@ -100,6 +111,9 @@ const GAMES = [
     icon: "tennis",
     players: [1, 4],
     version: "—",
+    rank: "C",
+    record: "—",
+    event: "03",
     requires: ["motion", "buttons"],
     modes: [
       {
@@ -341,6 +355,55 @@ const I18N = {
   },
 };
 
+const THEME_COPY = {
+  liga: {
+    es: {
+      players: "Plantel",
+      connectPhone: "Sumar celular",
+      connecting: "Sumar celular",
+      simulateJoin: "Sumar jugador",
+      emptyTitle: "No hay desafíos",
+      emptyBody: "Cuando haya un juego instalado, va a aparecer en la liga.",
+      errorTitle: "Partido suspendido",
+      quitQuestion: "¿Cerrar la liga?",
+      quitBody: "Se termina la fecha y volvés al sistema. En el prototipo, la consola se apagaría.",
+      helpTitle: "Programa de la liga",
+      helpIntro: "Tres variantes de UI para reaccionar. La dirección LIGA es la nueva propuesta.",
+      gameDetails: "Ficha del desafío",
+      ready: "Listo para entrar",
+      noController: "Falta un contendiente",
+      requiredCaps: "Requisitos",
+      mode: "Formato",
+      launching: "Entrando a la cancha",
+      launchReady: "La cancha está lista. El juego se habría abierto.",
+      backToLauncher: "Volver a la liga",
+      emptyBack: "Volver",
+    },
+    en: {
+      players: "Roster",
+      connectPhone: "Add phone",
+      connecting: "Add phone",
+      simulateJoin: "Add player",
+      emptyTitle: "No challenges",
+      emptyBody: "When a game is installed, it will show up in the league.",
+      errorTitle: "Match suspended",
+      quitQuestion: "Close the league?",
+      quitBody: "The round ends and you return to the system. In the prototype, the console would turn off.",
+      helpTitle: "League program",
+      helpIntro: "Three UI variants to react to. LIGA is the new direction.",
+      gameDetails: "Challenge card",
+      ready: "Ready to enter",
+      noController: "Missing a contender",
+      requiredCaps: "Requirements",
+      mode: "Format",
+      launching: "Entering the arena",
+      launchReady: "The arena is ready. The game would have opened.",
+      backToLauncher: "Back to the league",
+      emptyBack: "Back",
+    },
+  },
+};
+
 const CAP_LABELS = {
   es: {
     motion: "Movimiento",
@@ -371,8 +434,8 @@ const CAP_LABELS = {
 /* ------------------------------------------------------------------ */
 
 const query = new URLSearchParams(location.search);
-const requestedVariant = (query.get("variant") || "C").toUpperCase();
-const requestedTheme = (query.get("theme") || "feria").toLowerCase();
+const requestedVariant = (query.get("variant") || "D").toUpperCase();
+const requestedTheme = (query.get("theme") || "liga").toLowerCase();
 const KNOWN_SCREENS = [
   "home",
   "detail",
@@ -390,8 +453,8 @@ const screenFromQuery =
   requestedScreen === "empty" ? "home" : requestedScreen;
 
 const state = {
-  variant: VARIANTS.includes(requestedVariant) ? requestedVariant : "C",
-  theme: THEMES.includes(requestedTheme) ? requestedTheme : "feria",
+  variant: VARIANTS.includes(requestedVariant) ? requestedVariant : "D",
+  theme: THEMES.includes(requestedTheme) ? requestedTheme : "liga",
   screen: KNOWN_SCREENS.includes(screenFromQuery) ? screenFromQuery : "home",
   language: "es",
   selectedGame: 0,
@@ -422,7 +485,11 @@ let launchToken = 0;
 /* ------------------------------------------------------------------ */
 
 function t(key) {
-  return I18N[state.language][key] ?? key;
+  return THEME_COPY[state.theme]?.[state.language]?.[key] ?? I18N[state.language][key] ?? key;
+}
+
+function bilingual(es, en) {
+  return state.language === "es" ? es : en;
 }
 
 function localized(value) {
@@ -525,6 +592,10 @@ function icon(name, size = 24) {
       return `<svg ${attrs}><path d="M24 6h16v6H24z"/><path d="M19 12h26"/><path d="M32 14c-5.4 0-9 4-9 8.8 0 3 1.4 5 3.2 7.3 1.8 2.4 2.3 4.2 2.3 7.7v11.5c0 2.4 1.3 4.2 3.5 4.2s3.5-1.8 3.5-4.2V37.8c0-3.5.5-5.3 2.3-7.7 1.8-2.3 3.2-4.3 3.2-7.3 0-4.8-3.6-8.8-9-8.8Z"/><circle cx="28.5" cy="23" r="1.2" fill="currentColor"/><circle cx="35.5" cy="23" r="1.2" fill="currentColor"/><path d="M29 30c1.8 1.3 4.2 1.3 6 0"/><path d="M26 45l-6 3 6 3 6-3Z"/><path d="M38 45l6 3-6 3-6-3Z"/><circle cx="32" cy="48" r="1.5" fill="currentColor"/></svg>`;
     case "ticket-pin":
       return `<svg ${attrs}><path d="M8 14h48v9a7 7 0 0 0 0 14v9H8v-9a7 7 0 0 0 0-14v-9Z"/><path d="M18 20v22" stroke-dasharray="2 3"/><path d="M32 22c-4 0-6.5 2.8-6.5 6.2 0 2.2 1 3.5 2.2 5 1.4 1.8 1.8 3.2 1.8 5.8v7c0 1.6.9 2.8 2.5 2.8s2.5-1.2 2.5-2.8v-7c0-2.6.4-4 1.8-5.8 1.2-1.5 2.2-2.8 2.2-5C38.5 24.8 36 22 32 22Z"/><circle cx="29.5" cy="28" r="1" fill="currentColor"/><circle cx="34.5" cy="28" r="1" fill="currentColor"/></svg>`;
+    case "crest":
+      return `<svg ${attrs}><path d="M32 6 54 14v18c0 12-9 22-22 26C19 54 10 44 10 32V14L32 6Z"/><path d="M32 18l3.2 6.5 7.1 1-5.1 5 1.2 7.1L32 34.3l-6.4 3.3 1.2-7.1-5.1-5 7.1-1L32 18Z"/></svg>`;
+    case "pin-hero":
+      return `<svg ${attrs}><path d="M23 16h18" stroke-width="6"/><path d="M21 16l-4 5M43 16l4 5"/><path d="M32 22c-5.4 0-9 4-9 8.8 0 3 1.4 5 3.2 7.3 1.8 2.4 2.3 4.2 2.3 7.7v9.5c0 2.4 1.3 4.2 3.5 4.2s3.5-1.8 3.5-4.2V45.8c0-3.5.5-5.3 2.3-7.7 1.8-2.3 3.2-4.3 3.2-7.3 0-4.8-3.6-8.8-9-8.8Z"/><circle cx="28.5" cy="30" r="1.2" fill="currentColor"/><circle cx="35.5" cy="30" r="1.2" fill="currentColor"/><path d="M29 37c1.8 1.3 4.2 1.3 6 0"/><path d="M32 42l2 4 4.5.7-3.2 3.1.8 4.4-4.1-2.2-4.1 2.2.8-4.4-3.2-3.1 4.5-.7 2-4Z" fill="currentColor" stroke="none"/></svg>`;
     case "kart":
       return `<svg ${attrs}><circle cx="32" cy="32" r="19"/><circle cx="32" cy="32" r="6"/><path d="M32 26V13M27 34 15 41M37 34l12 7"/><path d="M20 18c8 2 16 2 24 0"/></svg>`;
     case "tennis":
@@ -571,11 +642,20 @@ function controllerIcon(controller, size = 22) {
 }
 
 function gameIconName(game) {
-  return state.theme === "feria" && game.id === "maldito-pino" ? "pin-barker" : game.icon;
+  if (state.theme === "liga" && game.id === "maldito-pino") return "pin-hero";
+  if (state.theme === "feria" && game.id === "maldito-pino") return "pin-barker";
+  return game.icon;
 }
 
 function brandMarkIcon(size) {
-  return icon(state.theme === "feria" ? "ticket-pin" : "pin", size);
+  if (state.theme === "liga") return icon("crest", size);
+  if (state.theme === "feria") return icon("ticket-pin", size);
+  return icon("pin", size);
+}
+
+function brandHTML(size = 30) {
+  const isLiga = state.theme === "liga";
+  return `<div class="brand"><span class="mark">${brandMarkIcon(size)}</span>${isLiga ? "Liga" : "Toxinator"}${isLiga ? "" : "<small>3</small>"}<span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>`;
 }
 
 function gameArt(game, extra = "") {
@@ -588,7 +668,7 @@ function gameArt(game, extra = "") {
 
 function renderTopbar() {
   return `<header class="topbar">
-    <div class="brand"><span class="mark">${brandMarkIcon(28)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
+    ${brandHTML(28)}
     <div class="topbar-center">${t("home")}</div>
     <div class="topbar-actions">
       <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
@@ -608,7 +688,7 @@ function renderTopC() {
     .join("");
 
   return `<header class="top-c">
-    <div class="brand"><span class="mark">${brandMarkIcon(26)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
+    ${brandHTML(26)}
     <div class="topbar-actions">
       <div class="status-dots">${dots}<span class="badge">${connectedCount()}/4</span></div>
       <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
@@ -794,9 +874,128 @@ function renderHomeC() {
   </div>`;
 }
 
+function renderTopD() {
+  return `<header class="topbar top-d">
+    ${brandHTML(30)}
+    <div class="season-d">
+      <span class="season-kicker">${bilingual("TEMPORADA", "SEASON")} 01</span>
+      <span class="season-round">${bilingual("FECHA", "ROUND")} 03</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
+      <button class="pill-button" data-action="players">${icon("players", 18)}<span class="label">${t("players")}</span><span class="badge accent">${connectedCount()}/4</span></button>
+      <button class="pill-button icon-only" data-action="settings" aria-label="${t("settings")}">${icon("settings", 18)}</button>
+    </div>
+  </header>`;
+}
+
+function renderFeaturedD() {
+  const game = currentGame();
+  const mode = currentMode();
+  return `<section class="featured-d" style="--game-accent:${game.accent}">
+    <div class="featured-copy">
+      <div class="rank-row">
+        <span class="rank-badge">RANK ${escapeHtml(game.rank)}</span>
+        <span class="event-number">${bilingual("EVENTO", "EVENT")} ${escapeHtml(game.event)}</span>
+      </div>
+      <h2>${escapeHtml(game.title)}</h2>
+      <p class="featured-sub">${escapeHtml(game.subtitle)}</p>
+      <p class="featured-desc">${escapeHtml(localized(game.description))}</p>
+      <div class="featured-stats">
+        <div><span>${bilingual("JUGADORES", "PLAYERS")}</span><strong>${game.players[0]}–${game.players[1]}</strong></div>
+        <div><span>${bilingual("FORMATOS", "FORMATS")}</span><strong>${game.modes.length}</strong></div>
+        <div><span>${bilingual("RÉCORD", "RECORD")}</span><strong>${escapeHtml(game.record)}</strong></div>
+      </div>
+      <div class="featured-actions">
+        <button class="primary-button" data-action="launch" ${game.installed ? "" : "disabled"}>${icon("play", 18)}${t("play")}</button>
+        <button class="secondary-button" data-action="open-detail">${t("gameDetails")}</button>
+      </div>
+    </div>
+    <div class="featured-art-d">
+      <span class="featured-number">${escapeHtml(game.event)}</span>
+      ${icon(gameIconName(game), 170)}
+      <span class="featured-mode">${escapeHtml(localized(mode.name))}</span>
+    </div>
+  </section>`;
+}
+
+function renderLadderRow(game, index) {
+  return `<button class="ladder-row ${game.installed ? "installed" : ""}" data-action="open-detail" data-game="${index}">
+    <span class="ladder-rank rank-${game.rank.toLowerCase()}">${escapeHtml(game.rank)}</span>
+    <span class="ladder-copy">
+      <span class="ladder-title">${escapeHtml(game.title)}</span>
+      <span class="ladder-sub">${game.installed ? escapeHtml(game.subtitle) : bilingual("Próximamente", "Coming soon")}</span>
+    </span>
+    <span class="ladder-status">${game.installed ? bilingual("ABIERTO", "OPEN") : bilingual("PRONTO", "SOON")}</span>
+  </button>`;
+}
+
+function renderLadderD() {
+  const others = GAMES.map((game, index) => ({ game, index })).filter(
+    (entry) => entry.index !== state.selectedGame
+  );
+  return `<aside class="ladder-d">
+    <div class="ladder-head">
+      <span>${bilingual("PRÓXIMOS DESAFÍOS", "NEXT CHALLENGES")}</span>
+      <span class="ladder-count">${others.length}</span>
+    </div>
+    <div class="ladder-list">
+      ${others.map(({ game, index }) => renderLadderRow(game, index)).join("")}
+      <button class="ladder-add" data-action="empty">${bilingual("+ SUMAR DESAFÍO", "+ ADD CHALLENGE")}</button>
+    </div>
+    <p class="ladder-note">${bilingual("La liga se juega en casa.", "The league is played at home.")}</p>
+  </aside>`;
+}
+
+function renderBenchSlot(controller, index) {
+  const missing = missingCaps(controller);
+  const selected = index === state.selectedSlot;
+  const classes = [
+    "bench-slot",
+    controller.connected ? "online" : "offline",
+    missing.length ? "warn" : "",
+    selected ? "selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const benchStatus = controller.type ? controllerStatus(controller) : t("emptySlot");
+  return `<button class="${classes}" data-action="players" data-slot="${index}">
+    <span class="bench-number">P${index + 1}</span>
+    <span class="bench-body">
+      <span class="bench-name">${escapeHtml(controllerDisplayName(controller))}</span>
+      <span class="bench-status">${escapeHtml(benchStatus)}</span>
+    </span>
+    <span class="bench-icon">${controllerIcon(controller, 18)}</span>
+  </button>`;
+}
+
+function renderBenchD() {
+  return `<section class="bench-d">
+    <div class="bench-head">
+      <span class="bench-title">${t("players")}</span>
+      <span class="bench-count">${connectedCount()}/4</span>
+      <button class="bench-manage" data-action="players">${bilingual("GESTIONAR", "MANAGE")}</button>
+    </div>
+    <div class="bench-slots">${state.controllers.map(renderBenchSlot).join("")}</div>
+  </section>`;
+}
+
+function renderHomeD() {
+  return `<div class="launcher home-d">
+    ${renderTopD()}
+    <div class="league-d">
+      ${renderFeaturedD()}
+      ${renderLadderD()}
+    </div>
+    ${renderBenchD()}
+    ${renderHints()}
+  </div>`;
+}
+
 function renderEmptyHome() {
   return `<div class="launcher">
-    ${renderTopbar()}
+    ${state.variant === "D" ? renderTopD() : renderTopbar()}
     <div class="empty-home">
       ${icon("plus", 54)}
       <h2>${t("emptyTitle")}</h2>
@@ -809,6 +1008,7 @@ function renderEmptyHome() {
 
 function renderHome() {
   if (state.emptyLibrary) return renderEmptyHome();
+  if (state.variant === "D") return renderHomeD();
   if (state.variant === "B") return renderHomeB();
   if (state.variant === "C") return renderHomeC();
   return renderHomeA();
@@ -1060,7 +1260,7 @@ function renderQuitOverlay() {
 function renderOffOverlay() {
   return `<div class="overlay">
     <div class="off-screen">
-      <div class="brand" style="justify-content:center"><span class="mark">${brandMarkIcon(30)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
+      <div style="display:flex;justify-content:center">${brandHTML(30)}</div>
       <h2>${t("offTitle")}</h2>
       <p>${t("offBody")}</p>
       <div><button class="secondary-button" data-action="back">${t("back")}</button></div>
