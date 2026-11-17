@@ -84,6 +84,9 @@ class ConsoleApp(ShowBase):
         self.pending: GameEntry | None = None
         self.launch_timer = 0.0
         self._last_a = False
+        self._has_controller = False
+        self._pairing_dismissed = False
+        self._phone_waiting = False
         self._slot_texts: list[tuple[Any, Any, Any, Any]] = []
 
         self.featured = next(
@@ -590,7 +593,7 @@ class ConsoleApp(ShowBase):
         )
         self.overlay_dim.setBin("fixed", 100)
 
-        self.detail_root, self.detail_title = self._overlay_panel(
+        self.detail_root, self.detail_title, _ = self._overlay_panel(
             "detail",
             "FICHA DEL DESAFÍO",
             "MALDITO PINO",
@@ -630,7 +633,7 @@ class ConsoleApp(ShowBase):
         _ = (detail_play, detail_close)
         self.detail_root.hide()
 
-        self.coming_root, self.coming_title = self._overlay_panel(
+        self.coming_root, self.coming_title, _ = self._overlay_panel(
             "coming",
             "PRÓXIMAMENTE",
             "KART DE BARRIO",
@@ -649,7 +652,7 @@ class ConsoleApp(ShowBase):
         )
         self.coming_root.hide()
 
-        self.phone_root, self.phone_title = self._overlay_panel(
+        self.phone_root, self.phone_title, self.phone_kicker = self._overlay_panel(
             "phone",
             "SUMAR CELULAR",
             "ESCANEÁ EL QR",
@@ -673,19 +676,28 @@ class ConsoleApp(ShowBase):
             self.font_mono,
             bin_number=160,
         )
+        self.phone_status = ui.text(
+            self.phone_root,
+            "ESPERANDO CELULAR…",
+            (-0.68, -0.60),
+            0.026,
+            theme.GOLD,
+            self.font_mono,
+            bin_number=160,
+        )
         self.qr_image = OnscreenImage(
             image=qr_texture(self, self.phone_url),
             parent=self.phone_root,
-            pos=(0.40, 0.0, -0.02),
-            scale=(0.42, 1.0, 0.42),
+            pos=(0.36, 0.0, -0.02),
+            scale=(0.40, 1.0, 0.40),
         )
         self.qr_image.setBin("fixed", 155)
-        ui.button(
+        self.phone_back, _ = ui.button(
             self.phone_root,
             "VOLVER",
             Rect(-0.22, 0.22, -0.62, -0.52),
-            theme.BONE,
             theme.NAVY,
+            theme.BONE,
             self.font_mono,
             self._close_overlay,
             text_scale=0.032,
@@ -693,7 +705,7 @@ class ConsoleApp(ShowBase):
         )
         self.phone_root.hide()
 
-        self.settings_root, self.settings_title = self._overlay_panel(
+        self.settings_root, self.settings_title, _ = self._overlay_panel(
             "settings",
             "AJUSTES",
             "CONSOLA",
@@ -723,7 +735,7 @@ class ConsoleApp(ShowBase):
         )
         self.settings_root.hide()
 
-        self.quit_root, self.quit_title = self._overlay_panel(
+        self.quit_root, self.quit_title, _ = self._overlay_panel(
             "quit",
             "¿CERRAR LA LIGA?",
             "SE TERMINA LA FECHA",
@@ -798,10 +810,10 @@ class ConsoleApp(ShowBase):
         kicker: str,
         title: str,
         body: str,
-    ) -> tuple[DirectFrame, Any]:
+    ) -> tuple[DirectFrame, Any, Any]:
         root = self.overlay_root.attach_new_node(f"overlay-{overlay}")
         ui.panel(root, Rect(-0.78, 0.78, -0.70, 0.70), theme.BONE, base_bin=110)
-        ui.text(
+        kicker_label = ui.text(
             root,
             kicker,
             (-0.68, 0.57),
@@ -828,7 +840,7 @@ class ConsoleApp(ShowBase):
             self.font_ui,
             bin_number=160,
         )
-        return root, title_label
+        return root, title_label, kicker_label
 
     # -- focus / navigation -------------------------------------------------
 
@@ -1042,9 +1054,13 @@ class ConsoleApp(ShowBase):
             )
         )
 
-    def _open_phone(self) -> None:
+    def _open_phone(self, *, waiting: bool | None = None) -> None:
         if self.state != "launcher":
             return
+        if waiting is None:
+            waiting = not self._has_controller
+        self._phone_waiting = waiting
+        self._pairing_dismissed = False
         self.overlay = "phone"
         self.overlay_root.show()
         self.overlay_dim.show()
@@ -1054,7 +1070,22 @@ class ConsoleApp(ShowBase):
         self.settings_root.hide()
         self.quit_root.hide()
         self.launch_root.hide()
-        self.phone_url_text.setText(ui.wrap(self.phone_url, 30))
+        if waiting:
+            self.phone_kicker.setText("VINCULAR MANDO")
+            self.phone_title.setText("ESCANEÁ PARA ENTRAR")
+            self.phone_body.setText(
+                "No hay ningún mando conectado.\n"
+                "Escaneá el QR con la cámara del celular.\n"
+                "Cuando se conecte, esta pantalla se cierra sola."
+            )
+        else:
+            self.phone_kicker.setText("SUMAR CELULAR")
+            self.phone_title.setText("ESCANEÁ EL QR")
+            self.phone_body.setText(
+                "Misma Wi-Fi que la consola.\n"
+                "Aceptá el certificado autofirmado una vez."
+            )
+        self.phone_url_text.setText(ui.wrap(self.phone_url, 36))
 
     def _open_settings(self) -> None:
         if self.state != "launcher":
@@ -1083,6 +1114,9 @@ class ConsoleApp(ShowBase):
         self.launch_root.hide()
 
     def _close_overlay(self) -> None:
+        if self.overlay == "phone" and not self._has_controller:
+            self._pairing_dismissed = True
+        self._phone_waiting = False
         self.overlay = None
         self.overlay_root.hide()
         self.overlay_dim.show()
@@ -1194,6 +1228,18 @@ class ConsoleApp(ShowBase):
                 status.setFg(theme.MUTED)
         self.players_badge.setText(f"PLANTEL {connected}/4")
         self.bench_count.setText(f"{connected}/4")
+        self._update_pairing(bool(state.connected_slots))
+
+    def _update_pairing(self, has_controller: bool) -> None:
+        self._has_controller = has_controller
+        if has_controller:
+            self._pairing_dismissed = False
+            if self.overlay == "phone" and self._phone_waiting:
+                self._last_a = True
+                self._close_overlay()
+            return
+        if self.overlay is None and not self._pairing_dismissed:
+            self._open_phone(waiting=True)
 
     def _notify_mode(self, mode: str) -> None:
         logger.info("launcher mode %s", mode)

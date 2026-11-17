@@ -63,6 +63,10 @@ Abre **LIGA · Noche**, la pantalla de inicio de la consola:
 - **Plantel**: los 4 slots; el celular aparece como P1 cuando se vincula con el
   QR (desde la cámara o desde la propia PWA).
 - **Ajustes** y **sumar celular** con el **QR en pantalla** y la URL de la sesión.
+- Si no hay ningún mando conectado, el launcher abre el QR de vinculación
+  automáticamente. No hace falta teclado ni mouse para el primer vínculo: la
+  pantalla se cierra sola cuando el celular se conecta. **VOLVER** (o **Esc**)
+  permite explorar la liga con teclado/mouse y **C** vuelve a abrir el QR.
 
 Controles:
 
@@ -92,7 +96,8 @@ La PWA se puede instalar y abrir sin pasar por el navegador. Si la abrís sin
 token (por ejemplo, desde el icono instalado) o el vínculo venció, muestra
 **VINCULAR MANDO**:
 
-1. En la consola, **SUMAR CELULAR** (o tecla **C**) muestra el QR.
+1. Arrancá la consola: si no hay ningún mando, el QR aparece solo. También podés
+   abrirlo con **SUMAR CELULAR** o la tecla **C**.
 2. En la PWA, **ESCANEAR QR** pide permiso de cámara y vincula la consola.
    También podés tocar **INGRESAR DATOS** y escribir `IP:puerto` + token.
 3. La PWA guarda host y token en `localStorage`; la próxima apertura reconecta
@@ -143,8 +148,9 @@ uv run toxinator launcher --offscreen --screenshot /tmp/liga.png
 3. Abrí la URL del QR en el celular y aceptá el aviso de certificado
    autofirmado. El token de la URL vincula la consola automáticamente.
 4. Si abrís la PWA sin token (o desde el icono instalado), tocá **ESCANEAR QR**
-   y apuntá al QR de la pantalla de la consola (tecla **C** en la consola); también
-   podés usar **INGRESAR DATOS**. Permití la cámara y los sensores.
+   y apuntá al QR que la consola muestra sola al arrancar (o abrilo con **C** /
+   **SUMAR CELULAR**); también podés usar **INGRESAR DATOS**. Permití la cámara
+   y los sensores.
 5. Incliná el teléfono o tocá la pantalla para mover la bola de P1. **A** es el
    botón de acción; **Calibrar** toma la pose actual como neutra.
 

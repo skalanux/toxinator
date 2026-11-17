@@ -122,7 +122,8 @@ va a una columna.
 - **Plantel** (`players`): asignación de mandos, sumar celular por QR, simular
   join y liberar slots.
 - **Ajustes** (`settings`): idioma, audio, gráficos y accesibilidad.
-- **Sumar celular** (`connecting`): QR + estado de conexión.
+- **Sumar celular** (`connecting`): QR + estado de conexión. Si el plantel está
+  vacío, se abre automáticamente y se cierra al conectar el primer mando.
 - **Partido suspendido** (`error`): el mando no cumple las capacidades
   requeridas; explica qué falta y cómo resolverlo.
 - **Liga vacía** (`empty`): no hay juegos instalados.
