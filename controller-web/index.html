@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0d12" />
+    <title>Toxinator 3 — Phone Controller</title>
+    <link rel="manifest" href="/static/manifest.webmanifest" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header>
+        <h1>Toxinator 3</h1>
+        <p id="status">Desconectado</p>
+      </header>
+
+      <section id="readout" aria-live="polite">
+        <div><span>Accel</span><strong id="accel">—</strong></div>
+        <div><span>Gyro</span><strong id="gyro">—</strong></div>
+        <div><span>Orientación</span><strong id="orientation">—</strong></div>
+      </section>
+
+      <section id="controls">
+        <button id="throw" type="button">
+          <span>THROW</span>
+          <small>mantener y soltar</small>
+        </button>
+        <button id="calibrate" type="button">Calibrar pose</button>
+      </section>
+
+      <p id="hint">Holding THROW y hacé el swing. Al soltar se calcula potencia y efecto.</p>
+    </main>
+
+    <div id="overlay">
+      <div class="card">
+        <h2>Toxinator 3</h2>
+        <p>Controlador para Android. Mantené el teléfono en la mano que usarías para tirar.</p>
+        <p id="overlay-status" class="muted"></p>
+        <button id="start" type="button">Empezar</button>
+        <p class="muted small">
+          Si abrís por LAN, necesitás HTTPS. Para la primera prueba usá
+          <code>adb reverse tcp:8443 tcp:8443</code> y abrí <code>http://localhost:8443</code>.
+        </p>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

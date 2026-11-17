@@ -1,0 +1,30 @@
+[project]
+name = "toxinator"
+version = "0.1.0"
+description = "Toxinator 3 - consola de juegos 3D"
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "panda3d==1.10.16",
+  "aiohttp>=3.10",
+  "segno>=1.6",
+  "platformdirs>=4.0",
+]
+
+[project.scripts]
+toxinator = "toxinator.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/toxinator"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true

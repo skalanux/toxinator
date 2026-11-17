@@ -1,0 +1,11 @@
+{
+  "name": "Toxinator 3 Controller",
+  "short_name": "Toxinator",
+  "description": "Controlador Android para Toxinator 3",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "icons": []
+}
