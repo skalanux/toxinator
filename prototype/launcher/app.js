@@ -6,18 +6,16 @@
 
 const VARIANTS = ["A", "B", "C"];
 const VARIANT_NAMES = { A: "Carousel", B: "Biblioteca", C: "Mosaico" };
-const THEMES = ["neon", "toxica", "comic", "bolera78"];
+const THEMES = ["feria", "comic", "neon"];
 const THEME_NAMES = {
-  neon: "Neón",
-  toxica: "Tóxica",
+  feria: "Feria",
   comic: "Cómic",
-  bolera78: "Bolera 78",
+  neon: "Neón",
 };
 const THEME_TAGLINES = {
-  neon: "NEÓN",
-  toxica: "LIGA TÓXICA",
+  feria: "LA FERIA MALDITA",
   comic: "CÓMIC DE BARRIO",
-  bolera78: "LIGA DE BARRIO · 1978",
+  neon: "NEÓN",
 };
 const QUALITY_LEVELS = {
   es: ["Baja", "Media", "Alta"],
@@ -374,7 +372,7 @@ const CAP_LABELS = {
 
 const query = new URLSearchParams(location.search);
 const requestedVariant = (query.get("variant") || "C").toUpperCase();
-const requestedTheme = (query.get("theme") || "toxica").toLowerCase();
+const requestedTheme = (query.get("theme") || "feria").toLowerCase();
 const KNOWN_SCREENS = [
   "home",
   "detail",
@@ -393,7 +391,7 @@ const screenFromQuery =
 
 const state = {
   variant: VARIANTS.includes(requestedVariant) ? requestedVariant : "C",
-  theme: THEMES.includes(requestedTheme) ? requestedTheme : "toxica",
+  theme: THEMES.includes(requestedTheme) ? requestedTheme : "feria",
   screen: KNOWN_SCREENS.includes(screenFromQuery) ? screenFromQuery : "home",
   language: "es",
   selectedGame: 0,
@@ -523,6 +521,10 @@ function icon(name, size = 24) {
   switch (name) {
     case "pin":
       return `<svg ${attrs}><path d="M32 6c-6.5 0-11 4.8-11 11 0 3.8 1.7 6.2 3.8 9.1 2.5 3.4 3.2 6.4 3.2 10.9v14.5c0 3 1.5 5.5 4 5.5s4-2.5 4-5.5V37c0-4.5.7-7.5 3.2-10.9 2.1-2.9 3.8-5.3 3.8-9.1 0-6.2-4.5-11-11-11Z"/><circle cx="28" cy="16" r="1.2" fill="currentColor"/><circle cx="36" cy="16" r="1.2" fill="currentColor"/><path d="M27 23c2 1.6 8 1.6 10 0"/></svg>`;
+    case "pin-barker":
+      return `<svg ${attrs}><path d="M24 6h16v6H24z"/><path d="M19 12h26"/><path d="M32 14c-5.4 0-9 4-9 8.8 0 3 1.4 5 3.2 7.3 1.8 2.4 2.3 4.2 2.3 7.7v11.5c0 2.4 1.3 4.2 3.5 4.2s3.5-1.8 3.5-4.2V37.8c0-3.5.5-5.3 2.3-7.7 1.8-2.3 3.2-4.3 3.2-7.3 0-4.8-3.6-8.8-9-8.8Z"/><circle cx="28.5" cy="23" r="1.2" fill="currentColor"/><circle cx="35.5" cy="23" r="1.2" fill="currentColor"/><path d="M29 30c1.8 1.3 4.2 1.3 6 0"/><path d="M26 45l-6 3 6 3 6-3Z"/><path d="M38 45l6 3-6 3-6-3Z"/><circle cx="32" cy="48" r="1.5" fill="currentColor"/></svg>`;
+    case "ticket-pin":
+      return `<svg ${attrs}><path d="M8 14h48v9a7 7 0 0 0 0 14v9H8v-9a7 7 0 0 0 0-14v-9Z"/><path d="M18 20v22" stroke-dasharray="2 3"/><path d="M32 22c-4 0-6.5 2.8-6.5 6.2 0 2.2 1 3.5 2.2 5 1.4 1.8 1.8 3.2 1.8 5.8v7c0 1.6.9 2.8 2.5 2.8s2.5-1.2 2.5-2.8v-7c0-2.6.4-4 1.8-5.8 1.2-1.5 2.2-2.8 2.2-5C38.5 24.8 36 22 32 22Z"/><circle cx="29.5" cy="28" r="1" fill="currentColor"/><circle cx="34.5" cy="28" r="1" fill="currentColor"/></svg>`;
     case "kart":
       return `<svg ${attrs}><circle cx="32" cy="32" r="19"/><circle cx="32" cy="32" r="6"/><path d="M32 26V13M27 34 15 41M37 34l12 7"/><path d="M20 18c8 2 16 2 24 0"/></svg>`;
     case "tennis":
@@ -568,8 +570,16 @@ function controllerIcon(controller, size = 22) {
   return icon("empty", size);
 }
 
+function gameIconName(game) {
+  return state.theme === "feria" && game.id === "maldito-pino" ? "pin-barker" : game.icon;
+}
+
+function brandMarkIcon(size) {
+  return icon(state.theme === "feria" ? "ticket-pin" : "pin", size);
+}
+
 function gameArt(game, extra = "") {
-  return `<div class="game-art ${extra}" style="--game-accent:${game.accent}">${icon(game.icon, 96)}</div>`;
+  return `<div class="game-art ${extra}" style="--game-accent:${game.accent}">${icon(gameIconName(game), 96)}</div>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -578,7 +588,7 @@ function gameArt(game, extra = "") {
 
 function renderTopbar() {
   return `<header class="topbar">
-    <div class="brand"><span class="mark">${icon("pin", 28)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
+    <div class="brand"><span class="mark">${brandMarkIcon(28)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
     <div class="topbar-center">${t("home")}</div>
     <div class="topbar-actions">
       <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
@@ -598,7 +608,7 @@ function renderTopC() {
     .join("");
 
   return `<header class="top-c">
-    <div class="brand"><span class="mark">${icon("pin", 26)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
+    <div class="brand"><span class="mark">${brandMarkIcon(26)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
     <div class="topbar-actions">
       <div class="status-dots">${dots}<span class="badge">${connectedCount()}/4</span></div>
       <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
@@ -822,7 +832,7 @@ function renderDetailOverlay() {
       </div>
       <div class="panel-body">
         <div class="detail-layout">
-          <div class="detail-art game-art" style="--game-accent:${game.accent}">${icon(game.icon, 120)}</div>
+          <div class="detail-art game-art" style="--game-accent:${game.accent}">${icon(gameIconName(game), 120)}</div>
           <div class="detail-info">
             <h3>${escapeHtml(game.title)}</h3>
             <p class="subtitle">${escapeHtml(game.subtitle)}</p>
@@ -1050,7 +1060,7 @@ function renderQuitOverlay() {
 function renderOffOverlay() {
   return `<div class="overlay">
     <div class="off-screen">
-      <div class="brand" style="justify-content:center"><span class="mark">${icon("power", 30)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
+      <div class="brand" style="justify-content:center"><span class="mark">${brandMarkIcon(30)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
       <h2>${t("offTitle")}</h2>
       <p>${t("offBody")}</p>
       <div><button class="secondary-button" data-action="back">${t("back")}</button></div>
@@ -1063,7 +1073,7 @@ function renderLaunchOverlay() {
   const mode = currentMode();
   return `<div class="overlay">
     <div class="launch-panel" style="--game-accent:${game.accent}">
-      <div class="launch-art game-art">${icon(game.icon, 86)}</div>
+      <div class="launch-art game-art">${icon(gameIconName(game), 86)}</div>
       <h2>${escapeHtml(game.title)}</h2>
       <p>${escapeHtml(localized(mode.name))} · ${game.players[0]}–${game.players[1]} ${t("playersShort")}</p>
       <div class="progress"><span style="width:${state.launchReady ? "100%" : "0%"};${state.launchReady ? "animation:none" : ""}"></span></div>

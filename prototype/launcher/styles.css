@@ -2638,3 +2638,555 @@ body.theme-bolera78 .progress span {
     font-size: 0.7rem;
   }
 }
+
+/* ================================================================
+   LA FERIA MALDITA
+   The launcher as a travelling fair of cursed games: deep teal
+   canvas, paper posters, a red ticket booth, and the pin as the
+   headline act. No neon, no glass, no SaaS cards.
+   ================================================================ */
+
+body.theme-feria {
+  color-scheme: dark;
+  --bg: #0d3532;
+  --bg-2: #12443f;
+  --panel: #f2e3c6;
+  --panel-2: #e7d3ad;
+  --line: #17110c;
+  --text: #f2e3c6;
+  --muted: #a9bdb0;
+  --paper-muted: #6a5846;
+  --accent: #8e1f1f;
+  --warm: #e0a526;
+  --green: #7fb7a8;
+  --red: #e85c3a;
+  --radius: 2px;
+  --shadow: 8px 8px 0 rgba(0, 0, 0, 0.4);
+  --font-ui: "Liberation Sans", "Noto Sans", sans-serif;
+  --font-display: "Nimbus Sans Narrow", "Liberation Sans", sans-serif;
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 46px, #0a2c29 46px 92px);
+  color: var(--text);
+}
+
+body.theme-feria .topbar,
+body.theme-feria .top-c {
+  position: relative;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--line);
+}
+
+body.theme-feria .topbar::after,
+body.theme-feria .top-c::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 8px;
+  background-image: radial-gradient(circle, var(--warm) 0 2.2px, transparent 2.5px);
+  background-size: 16px 8px;
+  pointer-events: none;
+}
+
+body.theme-feria .brand {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-shadow: 2px 2px 0 var(--line);
+}
+
+body.theme-feria .brand small {
+  color: var(--warm);
+  text-shadow: none;
+}
+
+body.theme-feria .brand .mark {
+  width: 38px;
+  height: 38px;
+  padding: 2px;
+  color: var(--accent);
+  background: var(--panel);
+  border: 3px solid var(--line);
+  box-shadow: 3px 3px 0 var(--line);
+  transform: rotate(-4deg);
+}
+
+body.theme-feria .brand-tag {
+  color: var(--warm);
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-shadow: none;
+}
+
+body.theme-feria .topbar-center {
+  color: var(--line);
+  background: var(--warm);
+  border: 2px solid var(--line);
+  box-shadow: 2px 2px 0 var(--line);
+  padding: 4px 10px;
+  transform: rotate(-1deg);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+body.theme-feria .pill-button,
+body.theme-feria .secondary-button,
+body.theme-feria .value-step {
+  color: var(--line);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+body.theme-feria .pill-button .dot {
+  background: var(--green);
+  box-shadow: none;
+}
+
+body.theme-feria .pill-button .badge {
+  color: var(--paper-muted);
+  border-color: var(--line);
+}
+
+body.theme-feria .pill-button .badge.accent {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+body.theme-feria .pill-button:hover,
+body.theme-feria .pill-button:focus-visible,
+body.theme-feria .secondary-button:hover,
+body.theme-feria .secondary-button:focus-visible {
+  background: var(--warm);
+  border-color: var(--line);
+}
+
+body.theme-feria .game-art {
+  background: var(--panel-2);
+  border: 0;
+  border-bottom: 3px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--accent);
+}
+
+body.theme-feria [data-game="0"] .game-art {
+  background: var(--warm);
+  color: var(--line);
+}
+
+body.theme-feria [data-game="1"] .game-art {
+  background: var(--accent);
+  color: var(--panel);
+}
+
+body.theme-feria [data-game="2"] .game-art {
+  background: #1f5c5b;
+  color: var(--panel);
+}
+
+body.theme-feria .game-art::after {
+  inset: 0;
+  height: auto;
+  opacity: 0.45;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 46%,
+    transparent 0 10deg,
+    color-mix(in srgb, var(--panel) 24%, transparent) 10deg 20deg
+  );
+}
+
+body.theme-feria .game-art svg {
+  filter: none;
+}
+
+body.theme-feria .game-card,
+body.theme-feria .tile {
+  background: var(--panel);
+  color: var(--line);
+  --muted: var(--paper-muted);
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+  opacity: 0.84;
+}
+
+body.theme-feria .tile::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 3;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 1px 1px 0 var(--line);
+  transform: translateX(-50%);
+}
+
+body.theme-feria .game-card.selected,
+body.theme-feria .tile.selected {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--warm), 8px 8px 0 var(--line);
+}
+
+body.theme-feria .tile.selected::after {
+  inset: 7px;
+  border: 3px dotted var(--panel);
+  border-radius: 0;
+  opacity: 0.9;
+}
+
+body.theme-feria .game-card.selected::before {
+  inset: 6px;
+  border: 3px dotted var(--panel);
+  border-radius: 0;
+}
+
+body.theme-feria .tile .tile-label {
+  background: var(--panel);
+  color: var(--line);
+  border-top: 3px solid var(--line);
+  border-radius: 0;
+}
+
+body.theme-feria .tile.selected .tile-label {
+  background: var(--accent);
+  color: var(--panel);
+}
+
+body.theme-feria .tile.selected .tile-label .sub {
+  color: var(--panel);
+}
+
+body.theme-feria .tile .tile-label .title,
+body.theme-feria .game-card .card-title {
+  text-transform: uppercase;
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+body.theme-feria .tile .tile-label .sub,
+body.theme-feria .game-card .card-sub {
+  font-family: var(--font-ui);
+  color: var(--paper-muted);
+}
+
+body.theme-feria .badge {
+  color: var(--paper-muted);
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 2px;
+}
+
+body.theme-feria .badge.accent {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--panel);
+}
+
+body.theme-feria .badge.warn {
+  color: var(--red);
+  border-color: var(--red);
+  background: var(--panel);
+}
+
+body.theme-feria .sheet-c {
+  position: relative;
+  padding-top: 24px;
+  background: var(--panel);
+  color: var(--line);
+  --muted: var(--paper-muted);
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 8px 8px 0 var(--line);
+}
+
+body.theme-feria .sheet-c::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  height: 11px;
+  border-bottom: 2px solid var(--line);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0 18px,
+    var(--warm) 18px 36px,
+    #1f5c5b 36px 54px
+  );
+}
+
+body.theme-feria .sheet-c::after {
+  content: "ENTRADA GENERAL";
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  color: var(--paper-muted);
+  font-family: "Liberation Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+}
+
+body.theme-feria .sheet-c h2 {
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+body.theme-feria .sheet-c p {
+  color: var(--paper-muted);
+}
+
+body.theme-feria .sheet-c .mode-pill {
+  border: 2px dashed var(--line);
+  border-radius: 2px;
+  background: var(--panel);
+  color: var(--line);
+}
+
+body.theme-feria .sheet-c .mode-pill.selected {
+  border-style: solid;
+  background: var(--accent);
+  color: var(--panel);
+}
+
+body.theme-feria .primary-button {
+  color: var(--panel);
+  background: var(--accent);
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 4px 4px 0 var(--line);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body.theme-feria .primary-button:hover,
+body.theme-feria .primary-button:focus-visible {
+  color: var(--line);
+  background: var(--warm);
+  filter: none;
+}
+
+body.theme-feria .details-a,
+body.theme-feria .hero-actions-b,
+body.theme-feria .controller-panel-b {
+  background: var(--panel);
+  color: var(--line);
+  --muted: var(--paper-muted);
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 5px 5px 0 var(--line);
+}
+
+body.theme-feria .hero-overlay-b {
+  background: var(--panel);
+  color: var(--line);
+  border-top: 3px solid var(--line);
+}
+
+body.theme-feria .hero-overlay-b h2 {
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+body.theme-feria .hero-overlay-b p {
+  color: var(--paper-muted);
+}
+
+body.theme-feria .side-item {
+  background: var(--panel);
+  color: var(--line);
+  --muted: var(--paper-muted);
+  border: 2px solid var(--line);
+  border-radius: 2px;
+}
+
+body.theme-feria .side-item.selected {
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+body.theme-feria .controller-chip {
+  background: var(--panel);
+  color: var(--line);
+  --muted: var(--paper-muted);
+  border: 2px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+body.theme-feria .controller-chip .icon,
+body.theme-feria .slot-icon {
+  color: var(--line);
+  background: var(--warm);
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+body.theme-feria .hints {
+  color: var(--muted);
+}
+
+body.theme-feria .hints kbd {
+  color: var(--line);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+body.theme-feria .panel {
+  position: relative;
+  color: var(--line);
+  background: var(--panel);
+  --muted: var(--paper-muted);
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 10px 10px 0 var(--line);
+}
+
+body.theme-feria .panel::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  height: 10px;
+  border-bottom: 2px solid var(--line);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0 16px,
+    var(--warm) 16px 32px,
+    #1f5c5b 32px 48px
+  );
+}
+
+body.theme-feria .panel-header h2 {
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+body.theme-feria .panel-header p {
+  color: var(--paper-muted);
+}
+
+body.theme-feria .panel-close {
+  color: var(--line);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+body.theme-feria .overlay {
+  background: rgba(5, 20, 18, 0.8);
+}
+
+body.theme-feria .detail-art {
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+}
+
+body.theme-feria .mode-row,
+body.theme-feria .setting-row,
+body.theme-feria .slot-card,
+body.theme-feria .players-summary,
+body.theme-feria .meta-item {
+  color: var(--line);
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  border-radius: 2px;
+}
+
+body.theme-feria .mode-row.selected,
+body.theme-feria .setting-row.selected,
+body.theme-feria .slot-card.selected {
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+body.theme-feria .mode-row .mode-desc,
+body.theme-feria .setting-row .setting-desc,
+body.theme-feria .meta-item .label,
+body.theme-feria .slot-status {
+  color: var(--paper-muted);
+}
+
+body.theme-feria .value-step {
+  color: var(--line);
+  background: var(--panel);
+}
+
+body.theme-feria .launch-panel {
+  color: var(--line);
+  background: var(--panel);
+  --muted: var(--paper-muted);
+  border: 3px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 10px 10px 0 var(--line);
+}
+
+body.theme-feria .launch-panel h2 {
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+body.theme-feria .progress {
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  border-radius: 0;
+}
+
+body.theme-feria .progress span {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0 12px,
+    var(--warm) 12px 24px
+  );
+  border-radius: 0;
+}
+
+body.theme-feria .error-panel {
+  border-color: var(--red);
+}
+
+body.theme-feria .error-panel::after {
+  content: "SUSPENDIDA";
+  position: absolute;
+  right: 28px;
+  bottom: 82px;
+  padding: 4px 8px;
+  color: var(--red);
+  border: 3px solid var(--red);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  transform: rotate(-7deg);
+  opacity: 0.85;
+}
+
+body.theme-feria .empty-home {
+  color: var(--text);
+  border: 3px dashed var(--muted);
+  border-radius: 2px;
+}
+
+body.theme-feria .empty-home h2 {
+  color: var(--warm);
+  text-transform: uppercase;
+}
+
+body.theme-feria .empty-home p {
+  color: var(--muted);
+}
