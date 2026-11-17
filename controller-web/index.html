@@ -4,65 +4,137 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0e1726">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mando">
   <title>Toxinator · Mando</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <link rel="manifest" href="/static/manifest.json">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 </head>
-<body class="mode-launcher">
-  <main class="pad">
-    <header class="top">
-      <div class="brand">
-        <span class="crest">L</span>
-        <div class="brand-copy">
-          <strong>Toxinator</strong>
-          <span>MANDO · DEV PHONE</span>
-        </div>
+<body class="mode-pairing">
+
+<main id="pairing" class="pairing">
+  <header class="pairing-top">
+    <div class="brand">
+      <span class="crest">L</span>
+      <div class="brand-copy">
+        <strong>Toxinator</strong>
+        <span>MANDO · VINCULAR</span>
       </div>
-      <div class="top-right">
-        <span id="mode" class="mode">LAUNCHER</span>
-        <div id="status" class="status" role="status">Conectando…</div>
+    </div>
+    <button id="install-button" class="install" type="button" hidden>INSTALAR</button>
+  </header>
+
+  <section class="pairing-card">
+    <span class="eyebrow">VINCULAR MANDO</span>
+    <h1>ESCANEÁ EL QR<br>DE LA CONSOLA</h1>
+    <p class="pairing-copy">
+      En la consola elegí <strong>SUMAR CELULAR</strong> y apuntá la cámara al QR.
+    </p>
+
+    <div id="scanner" class="scanner" hidden>
+      <video id="scanner-video" playsinline muted></video>
+      <canvas id="scanner-canvas" hidden></canvas>
+      <div class="scanner-frame" aria-hidden="true"></div>
+      <span class="scanner-label">APUNTÁ AL QR</span>
+    </div>
+
+    <div id="pairing-actions" class="pairing-actions">
+      <button id="scan-button" class="primary" type="button">ESCANEAR QR</button>
+      <button id="manual-toggle" class="secondary" type="button">INGRESAR DATOS</button>
+    </div>
+
+    <form id="manual-form" class="manual" hidden>
+      <label class="field">
+        <span>IP O URL DE LA CONSOLA</span>
+        <input id="manual-host" name="host" type="text" inputmode="url" autocomplete="off"
+               autocapitalize="off" spellcheck="false" placeholder="192.168.0.141:8443">
+      </label>
+      <label class="field">
+        <span>TOKEN</span>
+        <input id="manual-token" name="token" type="text" autocomplete="off"
+               autocapitalize="off" spellcheck="false" placeholder="token de la sesión">
+      </label>
+      <div class="manual-actions">
+        <button class="primary" type="submit">VINCULAR</button>
+        <button id="manual-cancel" class="secondary" type="button">CANCELAR</button>
       </div>
-    </header>
+    </form>
 
-    <section id="readout" class="readout" aria-label="Sensores">
-      <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
-      <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
-      <div class="cell"><span>ACC</span><strong id="accel">0.0</strong></div>
-      <div class="cell"><span>RTT</span><strong id="rtt">—</strong></div>
-    </section>
+    <p id="pairing-status" class="pairing-status" role="status">Sin consola vinculada.</p>
+    <div class="pairing-links">
+      <button id="retry-button" class="link" type="button" hidden>RECONECTAR</button>
+      <button id="unpair-button" class="link danger" type="button" hidden>OLVIDAR CONSOLA</button>
+    </div>
+  </section>
 
-    <section class="stage">
-      <div id="touchpad" class="touchpad">
-        <div class="touch-grid"></div>
-        <div class="dpad dpad-up">▲</div>
-        <div class="dpad dpad-down">▼</div>
-        <div class="dpad dpad-left">◀</div>
-        <div class="dpad dpad-right">▶</div>
-        <div id="stick" class="stick"></div>
-        <span id="touch-hint" class="touch-hint">Arrastrá para mover<br>y soltá en el centro</span>
+  <footer class="pairing-foot">
+    <span>MISMA WI-FI QUE LA CONSOLA</span>
+    <span>ACEPTÁ EL CERTIFICADO UNA VEZ</span>
+  </footer>
+</main>
+
+<main id="controller" class="pad" hidden>
+  <header class="top">
+    <div class="brand">
+      <span class="crest">L</span>
+      <div class="brand-copy">
+        <strong>Toxinator</strong>
+        <span>MANDO · DEV PHONE</span>
       </div>
-    </section>
+    </div>
+    <div class="top-right">
+      <span id="mode" class="mode">LAUNCHER</span>
+      <div id="status" class="status" role="status">Conectando…</div>
+    </div>
+  </header>
 
-    <section class="actions">
-      <button id="a-button" class="a-button" type="button">
-        <span>A</span>
-        <small id="a-label">ELEGIR</small>
-      </button>
-      <div class="secondary-stack">
-        <button id="calibrate" class="secondary" type="button">Calibrar</button>
-        <button id="enable-sensors" class="secondary" type="button">Activar sensores</button>
-      </div>
-    </section>
+  <section id="readout" class="readout" aria-label="Sensores">
+    <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
+    <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
+    <div class="cell"><span>ACC</span><strong id="accel">0.0</strong></div>
+    <div class="cell"><span>RTT</span><strong id="rtt">—</strong></div>
+  </section>
 
-    <footer class="foot">
-      <span id="slot" class="slot">SIN SLOT</span>
-      <span id="sensors" class="sensors">SENSORES OFF</span>
-      <span id="foot-hint" class="hint">JOYSTICK · A ELEGIR</span>
-    </footer>
-  </main>
+  <section class="stage">
+    <div id="touchpad" class="touchpad">
+      <div class="touch-grid"></div>
+      <div class="dpad dpad-up">▲</div>
+      <div class="dpad dpad-down">▼</div>
+      <div class="dpad dpad-left">◀</div>
+      <div class="dpad dpad-right">▶</div>
+      <div id="stick" class="stick"></div>
+      <span id="touch-hint" class="touch-hint">Arrastrá para mover<br>y soltá en el centro</span>
+    </div>
+  </section>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <section class="actions">
+    <button id="a-button" class="a-button" type="button">
+      <span>A</span>
+      <small id="a-label">ELEGIR</small>
+    </button>
+    <div class="secondary-stack">
+      <button id="calibrate" class="secondary" type="button">Calibrar</button>
+      <button id="enable-sensors" class="secondary" type="button">Activar sensores</button>
+    </div>
+  </section>
 
-  <script src="/static/app.js" defer></script>
+  <footer class="foot">
+    <span id="slot" class="slot">SIN SLOT</span>
+    <span id="sensors" class="sensors">SENSORES OFF</span>
+    <span id="foot-hint" class="hint">JOYSTICK · A ELEGIR</span>
+    <button id="pair-button" class="foot-button" type="button">CAMBIAR</button>
+    <button id="install-button-2" class="foot-button" type="button" hidden>INSTALAR</button>
+  </footer>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="/static/vendor/jsqr.js" defer></script>
+<script src="/static/app.js" defer></script>
 </body>
 </html>

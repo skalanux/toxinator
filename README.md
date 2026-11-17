@@ -6,7 +6,7 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
+Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). La PWA del mando se puede instalar, se vincula escaneando el QR y cambia sola entre **LAUNCHER** y **JUEGO**. El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
 
 ## Documentos
 
@@ -60,8 +60,8 @@ Abre **LIGA · Noche**, la pantalla de inicio de la consola:
 - **Contendiente destacado**: Maldito Pino, con rank, evento, récord, formatos y
   los botones **JUGAR** y **FICHA**.
 - **Próximos desafíos**: Kart y Tenis como contendientes futuros.
-- **Plantel**: los 4 slots; el celular aparece como P1 cuando escanea el QR del
-  terminal.
+- **Plantel**: los 4 slots; el celular aparece como P1 cuando se vincula con el
+  QR (desde la cámara o desde la propia PWA).
 - **Ajustes** y **sumar celular** con el **QR en pantalla** y la URL de la sesión.
 
 Controles:
@@ -86,6 +86,48 @@ La PWA tiene **dos pantallas** y cambia sola según el modo:
 - **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN** y
   calibración; los sensores y el readout vuelven a aparecer.
 
+### Instalar el mando y vincularlo
+
+La PWA se puede instalar y abrir sin pasar por el navegador. Si la abrís sin
+token (por ejemplo, desde el icono instalado) o el vínculo venció, muestra
+**VINCULAR MANDO**:
+
+1. En la consola, **SUMAR CELULAR** (o tecla **C**) muestra el QR.
+2. En la PWA, **ESCANEAR QR** pide permiso de cámara y vincula la consola.
+   También podés tocar **INGRESAR DATOS** y escribir `IP:puerto` + token.
+3. La PWA guarda host y token en `localStorage`; la próxima apertura reconecta
+   sola. **CAMBIAR** vuelve a la pantalla de vinculación (por ejemplo, si cambió
+   la IP o el token de la consola).
+
+Abrir directamente la URL del QR (`https://IP:8443/?token=...`) también vincula:
+la PWA guarda el token y limpia la URL.
+
+La instalación completa (WebAPK en Android) necesita que Chrome confíe en el
+certificado. Con el certificado autofirmado puede quedar solo como **acceso
+directo** y el service worker no se registra. Para una instalación real, usá un
+certificado local confiable con `mkcert`:
+
+```bash
+mkcert -install
+mkcert -cert-file ~/.config/toxinator/lan.pem \
+       -key-file ~/.config/toxinator/lan-key.pem 192.168.0.141
+
+uv run toxinator launcher \
+  --cert ~/.config/toxinator/lan.pem \
+  --key ~/.config/toxinator/lan-key.pem
+```
+
+En Android, instalá `rootCA.pem` (el que imprime `mkcert -CAROOT`) como
+**certificado de CA de usuario** desde Ajustes → Seguridad. Después abrí
+`https://192.168.0.141:8443/` una vez y verificá el candado. La IP o el nombre
+del certificado tienen que coincidir con el host del QR (`--host` si usás un
+nombre). `--cert` y `--key` también funcionan en `toxinator play` y
+`toxinator dev phone`.
+
+Por defecto, el token cambia cada vez que arranca la consola. Si la PWA queda en
+**Token inválido**, volvé a escanear el QR desde la propia app (no hace falta
+reinstalarla).
+
 ```bash
 uv run toxinator launcher --demo        # P1 sintético
 uv run toxinator launcher --offscreen --screenshot /tmp/liga.png
@@ -95,8 +137,11 @@ uv run toxinator launcher --offscreen --screenshot /tmp/liga.png
 
 1. Conectá el celular Android a la misma Wi-Fi que la consola.
 2. Corré `uv run toxinator dev phone`.
-3. Escaneá el QR del terminal.
-4. Aceptá el aviso de certificado autofirmado y permití los sensores.
+3. Abrí la URL del QR en el celular y aceptá el aviso de certificado
+   autofirmado. El token de la URL vincula la consola automáticamente.
+4. Si abrís la PWA sin token (o desde el icono instalado), tocá **ESCANEAR QR**
+   y apuntá al QR de la pantalla de la consola (tecla **C** en la consola); también
+   podés usar **INGRESAR DATOS**. Permití la cámara y los sensores.
 5. Incliná el teléfono o tocá la pantalla para mover la bola de P1. **A** es el
    botón de acción; **Calibrar** toma la pose actual como neutra.
 

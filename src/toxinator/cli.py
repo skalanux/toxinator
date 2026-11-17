@@ -9,6 +9,21 @@ from pathlib import Path
 from toxinator import __version__
 
 
+def _add_cert_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--cert",
+        type=Path,
+        default=None,
+        help="certificado TLS PEM (por ejemplo, el de mkcert)",
+    )
+    parser.add_argument(
+        "--key",
+        type=Path,
+        default=None,
+        help="clave privada TLS PEM que acompaña a --cert",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="toxinator",
@@ -29,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     phone.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
     phone.add_argument("--token", default=None, help="fixed session token (dev)")
+    _add_cert_arguments(phone)
     phone.add_argument(
         "--demo",
         action="store_true",
@@ -63,11 +79,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="seconds before the screenshot",
     )
 
-
     launcher = subparsers.add_parser("launcher", help="open the LIGA launcher")
     launcher.add_argument("--host", default=None, help="LAN IP or hostname for the QR")
     launcher.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
     launcher.add_argument("--token", default=None, help="fixed session token (dev)")
+    _add_cert_arguments(launcher)
     launcher.add_argument(
         "--demo",
         action="store_true",
@@ -90,6 +106,7 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--host", default=None, help="LAN IP or hostname for the QR")
     play.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
     play.add_argument("--token", default=None, help="fixed session token (dev)")
+    _add_cert_arguments(play)
     play.add_argument(
         "--demo",
         action="store_true",
@@ -126,6 +143,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
+                cert=args.cert,
+                key=args.key,
             )
         except KeyboardInterrupt:
             return 130
@@ -145,6 +164,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
+                cert=args.cert,
+                key=args.key,
             )
         except KeyboardInterrupt:
             return 130
@@ -164,6 +185,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
+                cert=args.cert,
+                key=args.key,
             )
         except KeyboardInterrupt:
             return 130

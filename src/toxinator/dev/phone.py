@@ -48,10 +48,14 @@ def run_phone_dev(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 2.0,
+    cert: Path | None = None,
+    key: Path | None = None,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    session = start_phone_session(host=host, port=port, token=token, demo=demo)
+    session = start_phone_session(
+        host=host, port=port, token=token, demo=demo, cert=cert, key=key
+    )
     session.set_mode("game")
     if session.host.startswith("127."):
         print(

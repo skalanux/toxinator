@@ -46,16 +46,25 @@ def start_phone_session(
     token: str | None = None,
     demo: bool = False,
     demo_buttons: bool = True,
+    cert: Path | None = None,
+    key: Path | None = None,
 ) -> PhoneSession:
     lan_host = host or get_lan_ip()
     if lan_host in {"0.0.0.0", ""}:
         lan_host = get_lan_ip()
 
     session_token = token or secrets.token_urlsafe(18)
-    config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    cert_dir = config_home / "toxinator" / "dev-cert"
-    cert, key = ensure_cert(cert_dir, lan_host)
-    context = ssl_context(cert, key)
+    if (cert is None) != (key is None):
+        raise RuntimeError("--cert y --key tienen que ir juntos")
+    if cert is not None and key is not None:
+        if not cert.is_file() or not key.is_file():
+            raise RuntimeError(f"no encuentro el certificado o la clave: {cert} / {key}")
+        context = ssl_context(cert, key)
+    else:
+        config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        cert_dir = config_home / "toxinator" / "dev-cert"
+        cert, key = ensure_cert(cert_dir, lan_host)
+        context = ssl_context(cert, key)
 
     registry = PhoneRegistry(max_slots=4)
     sources: list[ControllerSource] = [PhoneSource(registry)]

@@ -25,12 +25,20 @@ def run_launcher(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 3.0,
+    cert: Path | None = None,
+    key: Path | None = None,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     catalog = load_catalog()
     session = start_phone_session(
-        host=host, port=port, token=token, demo=demo, demo_buttons=False
+        host=host,
+        port=port,
+        token=token,
+        demo=demo,
+        demo_buttons=False,
+        cert=cert,
+        key=key,
     )
     if session.host.startswith("127."):
         print(

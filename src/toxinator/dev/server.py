@@ -105,6 +105,8 @@ class DevServer:
     async def _serve(self) -> None:
         app = web.Application()
         app.router.add_get("/", self._index)
+        app.router.add_get("/manifest.webmanifest", self._manifest)
+        app.router.add_get("/sw.js", self._service_worker)
         app.router.add_get("/ws", self._websocket)
         app.router.add_static("/static/", self._controller_web)
 
@@ -127,7 +129,27 @@ class DevServer:
             await runner.cleanup()
 
     async def _index(self, request: web.Request) -> web.StreamResponse:
-        return web.FileResponse(self._controller_web / "index.html")
+        return self._html_response("index.html", cache="no-cache")
+
+    async def _manifest(self, request: web.Request) -> web.StreamResponse:
+        response = web.FileResponse(self._controller_web / "manifest.json")
+        response.headers["Content-Type"] = "application/manifest+json"
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    async def _service_worker(self, request: web.Request) -> web.StreamResponse:
+        response = web.FileResponse(self._controller_web / "sw.js")
+        response.headers["Content-Type"] = "application/javascript; charset=utf-8"
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Service-Worker-Allowed"] = "/"
+        return response
+
+    def _html_response(self, name: str, *, cache: str) -> web.StreamResponse:
+        response = web.FileResponse(self._controller_web / name)
+        response.headers["Content-Type"] = "text/html; charset=utf-8"
+        response.headers["Cache-Control"] = cache
+        response.headers["Permissions-Policy"] = "camera=(self)"
+        return response
 
     async def _websocket(self, request: web.Request) -> web.StreamResponse:
         ws = web.WebSocketResponse(heartbeat=20.0, max_msg_size=1_048_576)

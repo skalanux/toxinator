@@ -39,11 +39,15 @@ def run_play(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 3.0,
+    cert: Path | None = None,
+    key: Path | None = None,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     manifest, game = load_game(game_id)
-    session = start_phone_session(host=host, port=port, token=token, demo=demo)
+    session = start_phone_session(
+        host=host, port=port, token=token, demo=demo, cert=cert, key=key
+    )
     session.set_mode("game")
     if session.host.startswith("127."):
         print(
