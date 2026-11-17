@@ -1,0 +1,240 @@
+{
+  "baseline": {
+    "config": {
+      "name": "baseline",
+      "ball_mass": 7.0,
+      "ball_radius": 0.108,
+      "ball_friction": 0.05,
+      "ball_restitution": 0.1,
+      "ball_linear_damping": 0.01,
+      "ball_angular_damping": 0.01,
+      "ball_ccd": true,
+      "pin_mass": 1.5,
+      "pin_friction": 0.2,
+      "pin_restitution": 0.1,
+      "pin_linear_damping": 0.05,
+      "pin_angular_damping": 0.05,
+      "pin_ccd": true,
+      "lane_friction": 0.2,
+      "lane_restitution": 0.0
+    },
+    "summary": {
+      "throws": 16,
+      "strikes": 2,
+      "strike_rate": 0.125,
+      "avg_fallen": 7.3125,
+      "median_fallen": 7.0,
+      "min_fallen": 4,
+      "max_fallen": 10,
+      "histogram": {
+        "4": 1,
+        "5": 1,
+        "6": 3,
+        "7": 5,
+        "8": 1,
+        "9": 3,
+        "10": 2
+      },
+      "normal": {
+        "throws": 16,
+        "strikes": 2,
+        "strike_rate": 0.125,
+        "avg_fallen": 7.3125,
+        "median_fallen": 7.0,
+        "min_fallen": 4,
+        "max_fallen": 10
+      },
+      "tunnel": {},
+      "tunnel_flags": []
+    }
+  },
+  "pin_friction_0.10": {
+    "config": {
+      "name": "pin_friction_0.10",
+      "ball_mass": 7.0,
+      "ball_radius": 0.108,
+      "ball_friction": 0.05,
+      "ball_restitution": 0.1,
+      "ball_linear_damping": 0.01,
+      "ball_angular_damping": 0.01,
+      "ball_ccd": true,
+      "pin_mass": 1.5,
+      "pin_friction": 0.1,
+      "pin_restitution": 0.1,
+      "pin_linear_damping": 0.05,
+      "pin_angular_damping": 0.05,
+      "pin_ccd": true,
+      "lane_friction": 0.2,
+      "lane_restitution": 0.0
+    },
+    "summary": {
+      "throws": 16,
+      "strikes": 1,
+      "strike_rate": 0.0625,
+      "avg_fallen": 7.1875,
+      "median_fallen": 7.0,
+      "min_fallen": 4,
+      "max_fallen": 10,
+      "histogram": {
+        "4": 1,
+        "6": 3,
+        "7": 7,
+        "8": 2,
+        "9": 2,
+        "10": 1
+      },
+      "normal": {
+        "throws": 16,
+        "strikes": 1,
+        "strike_rate": 0.0625,
+        "avg_fallen": 7.1875,
+        "median_fallen": 7.0,
+        "min_fallen": 4,
+        "max_fallen": 10
+      },
+      "tunnel": {},
+      "tunnel_flags": []
+    }
+  },
+  "pin_restitution_0.25": {
+    "config": {
+      "name": "pin_restitution_0.25",
+      "ball_mass": 7.0,
+      "ball_radius": 0.108,
+      "ball_friction": 0.05,
+      "ball_restitution": 0.1,
+      "ball_linear_damping": 0.01,
+      "ball_angular_damping": 0.01,
+      "ball_ccd": true,
+      "pin_mass": 1.5,
+      "pin_friction": 0.2,
+      "pin_restitution": 0.25,
+      "pin_linear_damping": 0.05,
+      "pin_angular_damping": 0.05,
+      "pin_ccd": true,
+      "lane_friction": 0.2,
+      "lane_restitution": 0.0
+    },
+    "summary": {
+      "throws": 16,
+      "strikes": 2,
+      "strike_rate": 0.125,
+      "avg_fallen": 7.25,
+      "median_fallen": 7.0,
+      "min_fallen": 4,
+      "max_fallen": 10,
+      "histogram": {
+        "4": 1,
+        "5": 1,
+        "6": 3,
+        "7": 6,
+        "9": 3,
+        "10": 2
+      },
+      "normal": {
+        "throws": 16,
+        "strikes": 2,
+        "strike_rate": 0.125,
+        "avg_fallen": 7.25,
+        "median_fallen": 7.0,
+        "min_fallen": 4,
+        "max_fallen": 10
+      },
+      "tunnel": {},
+      "tunnel_flags": []
+    }
+  },
+  "ball_friction_0.10": {
+    "config": {
+      "name": "ball_friction_0.10",
+      "ball_mass": 7.0,
+      "ball_radius": 0.108,
+      "ball_friction": 0.1,
+      "ball_restitution": 0.1,
+      "ball_linear_damping": 0.01,
+      "ball_angular_damping": 0.01,
+      "ball_ccd": true,
+      "pin_mass": 1.5,
+      "pin_friction": 0.2,
+      "pin_restitution": 0.1,
+      "pin_linear_damping": 0.05,
+      "pin_angular_damping": 0.05,
+      "pin_ccd": true,
+      "lane_friction": 0.2,
+      "lane_restitution": 0.0
+    },
+    "summary": {
+      "throws": 16,
+      "strikes": 0,
+      "strike_rate": 0.0,
+      "avg_fallen": 6.3125,
+      "median_fallen": 6.5,
+      "min_fallen": 4,
+      "max_fallen": 8,
+      "histogram": {
+        "4": 1,
+        "5": 5,
+        "6": 2,
+        "7": 4,
+        "8": 4
+      },
+      "normal": {
+        "throws": 16,
+        "strikes": 0,
+        "strike_rate": 0.0,
+        "avg_fallen": 6.3125,
+        "median_fallen": 6.5,
+        "min_fallen": 4,
+        "max_fallen": 8
+      },
+      "tunnel": {},
+      "tunnel_flags": []
+    }
+  },
+  "pin_mass_1.3": {
+    "config": {
+      "name": "pin_mass_1.3",
+      "ball_mass": 7.0,
+      "ball_radius": 0.108,
+      "ball_friction": 0.05,
+      "ball_restitution": 0.1,
+      "ball_linear_damping": 0.01,
+      "ball_angular_damping": 0.01,
+      "ball_ccd": true,
+      "pin_mass": 1.3,
+      "pin_friction": 0.2,
+      "pin_restitution": 0.1,
+      "pin_linear_damping": 0.05,
+      "pin_angular_damping": 0.05,
+      "pin_ccd": true,
+      "lane_friction": 0.2,
+      "lane_restitution": 0.0
+    },
+    "summary": {
+      "throws": 16,
+      "strikes": 0,
+      "strike_rate": 0.0,
+      "avg_fallen": 7,
+      "median_fallen": 7.0,
+      "min_fallen": 4,
+      "max_fallen": 9,
+      "histogram": {
+        "4": 1,
+        "6": 5,
+        "7": 6,
+        "9": 4
+      },
+      "normal": {
+        "throws": 16,
+        "strikes": 0,
+        "strike_rate": 0.0,
+        "avg_fallen": 7,
+        "median_fallen": 7.0,
+        "min_fallen": 4,
+        "max_fallen": 9
+      },
+      "tunnel": {},
+      "tunnel_flags": []
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-11-17T14:52:52-0300",
+  "baseline": {
+    "throws": 31,
+    "strikes": 2,
+    "strike_rate": 0.06451612903225806,
+    "avg_fallen": 7.161290322580645,
+    "median_fallen": 7,
+    "min_fallen": 4,
+    "max_fallen": 10,
+    "histogram": {
+      "4": 2,
+      "5": 4,
+      "6": 4,
+      "7": 7,
+      "8": 7,
+      "9": 5,
+      "10": 2
+    },
+    "normal": {
+      "throws": 28,
+      "strikes": 2,
+      "strike_rate": 0.07142857142857142,
+      "avg_fallen": 7.178571428571429,
+      "median_fallen": 7.0,
+      "min_fallen": 4,
+      "max_fallen": 10
+    },
+    "tunnel": {
+      "throws": 3,
+      "strikes": 0,
+      "strike_rate": 0.0,
+      "avg_fallen": 7,
+      "median_fallen": 7,
+      "min_fallen": 6,
+      "max_fallen": 8
+    },
+    "tunnel_flags": []
+  },
+  "jitter": {
+    "seconds": 5.0,
+    "settle_seconds": 0.5,
+    "max_displacement": 0.0027218065224587917,
+    "drift_after_settle": 0.0025099902413785458,
+    "max_tilt_degrees": 0.4988932316964981,
+    "max_angular_speed": 0.3081393837928772,
+    "fallen_after_rest": 0
+  },
+  "fps": {
+    "frames": 300,
+    "width": 1280,
+    "height": 720,
+    "avg_ms": 0.5926043467479758,
+    "fps": 1687.466528869864,
+    "p50_ms": 0.5189770017750561,
+    "p95_ms": 1.1177000124007463,
+    "max_ms": 5.011450994061306
+  },
+  "video": {
+    "output": "prototype/bowling-physics/media/bowling-physics.mp4",
+    "frames": 204,
+    "fps": 60,
+    "start_time": 1.15,
+    "duration": 3.4
+  }
+}

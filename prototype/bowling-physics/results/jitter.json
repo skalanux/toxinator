@@ -1,0 +1,9 @@
+{
+  "seconds": 5.0,
+  "settle_seconds": 0.5,
+  "max_displacement": 0.0027218065224587917,
+  "drift_after_settle": 0.0025099902413785458,
+  "max_tilt_degrees": 0.4988932316964981,
+  "max_angular_speed": 0.3081393837928772,
+  "fallen_after_rest": 0
+}
