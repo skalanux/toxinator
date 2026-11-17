@@ -138,7 +138,7 @@ reinstalarla).
 
 ```bash
 uv run toxinator launcher --demo        # P1 sintético
-uv run toxinator launcher --offscreen --screenshot /tmp/liga.png
+uv run toxinator launcher --demo --offscreen --screenshot /tmp/liga.png
 ```
 
 ## Primer corte: `toxinator dev phone`
