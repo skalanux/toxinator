@@ -436,6 +436,7 @@ const CAP_LABELS = {
 const query = new URLSearchParams(location.search);
 const requestedVariant = (query.get("variant") || "D").toUpperCase();
 const requestedTheme = (query.get("theme") || "liga").toLowerCase();
+const requestedPalette = (query.get("palette") || "noche").toLowerCase();
 const KNOWN_SCREENS = [
   "home",
   "detail",
@@ -455,6 +456,7 @@ const screenFromQuery =
 const state = {
   variant: VARIANTS.includes(requestedVariant) ? requestedVariant : "D",
   theme: THEMES.includes(requestedTheme) ? requestedTheme : "liga",
+  palette: ["noche", "dia"].includes(requestedPalette) ? requestedPalette : "noche",
   screen: KNOWN_SCREENS.includes(screenFromQuery) ? screenFromQuery : "home",
   language: "es",
   selectedGame: 0,
@@ -1349,7 +1351,8 @@ function renderOverlay() {
 
 function render() {
   const app = document.getElementById("app");
-  document.body.className = `theme-${state.theme}`;
+  const paletteClass = state.theme === "liga" ? ` palette-${state.palette}` : "";
+  document.body.className = `theme-${state.theme}${paletteClass}`;
   app.className = `variant-${state.variant.toLowerCase()}`;
   app.innerHTML = `${renderHome()}${renderOverlay()}`;
   renderProtoBar();
@@ -1365,6 +1368,7 @@ function renderProtoBar() {
     <span class="divider"></span>
     <span class="proto-label">Tema</span>
     ${THEMES.map((theme) => `<button class="variant-button ${state.theme === theme ? "active" : ""}" data-action="theme" data-theme="${theme}">${compact ? THEME_NAMES[theme].replace(" 78", "") : THEME_NAMES[theme]}</button>`).join("")}
+    ${state.theme === "liga" ? `<span class="divider"></span><span class="proto-label">Paleta</span><button class="variant-button ${state.palette === "noche" ? "active" : ""}" data-action="toggle-palette">${state.palette === "noche" ? "Noche" : "Día"}</button>` : ""}
     <span class="divider"></span>
     <button class="arrow" data-action="help" aria-label="${t("help")}">?</button>
     <button class="arrow" data-action="cycle-variant" data-delta="1" aria-label="Variante siguiente">›</button>`;
@@ -1379,6 +1383,11 @@ function updateUrl() {
     const url = new URL(location.href);
     url.searchParams.set("variant", state.variant);
     url.searchParams.set("theme", state.theme);
+    if (state.theme === "liga") {
+      url.searchParams.set("palette", state.palette);
+    } else {
+      url.searchParams.delete("palette");
+    }
     history.replaceState(null, "", url);
   } catch {
     // file:// and some embedded contexts may reject history updates.
@@ -1403,6 +1412,13 @@ function cycleTheme(delta) {
   const index = THEMES.indexOf(state.theme);
   const next = (index + delta + THEMES.length) % THEMES.length;
   setTheme(THEMES[next]);
+}
+
+function togglePalette() {
+  if (state.theme !== "liga") return;
+  state.palette = state.palette === "noche" ? "dia" : "noche";
+  updateUrl();
+  render();
 }
 
 function cycleVariant(delta) {
@@ -1733,6 +1749,9 @@ document.addEventListener("click", (event) => {
       break;
     case "theme":
       setTheme(target.dataset.theme);
+      break;
+    case "toggle-palette":
+      togglePalette();
       break;
     case "cycle-variant":
       cycleVariant(Number(target.dataset.delta) || 1);

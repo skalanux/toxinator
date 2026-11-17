@@ -15,7 +15,7 @@ python3 -m http.server 8080
 Abrí:
 
 ```text
-http://localhost:8080/prototype/launcher/?variant=D&theme=liga
+http://localhost:8080/prototype/launcher/?variant=D&theme=liga&palette=noche
 ```
 
 También podés abrir `index.html` directo, pero el Gamepad API funciona mejor por
@@ -29,8 +29,12 @@ El primer desafío, **Maldito Pino**, es el rival de la fecha: un pin con vincha
 estrella y mala leche. No hay IP de Marvel ni de anime; la liga, el escudo y los
 personajes son propios.
 
-- **Paleta**: hielo `#F3F5FF`, tinta `#11121A`, cobalto `#1F4BFF`, coral
-  `#FF4F5E`, solar `#FFD52E`, menta `#2EE6C8`.
+- **Paleta**: la identidad se reduce a **crimson + oro + jade + hueso/navy**.
+  - **Noche**: fondo navy `#0E1726`, paneles hueso `#F2E9DA`, crimson `#B02F42`,
+    oro `#E3B341`, jade `#3E8E7E`.
+  - **Día**: fondo `#F2F1EC`, paneles blancos, tinta `#151A20`, crimson
+    `#B02F42`, oro `#D6A23A`, jade `#2E7D6E`.
+  La barra de prototipo cambia **Noche/Día**, o usá `?palette=noche` / `?palette=dia`.
 - **Tipografía**: Archivo Black para carteles y titulares; IBM Plex Sans para la
   interfaz; IBM Plex Mono solo para ranks, récords y datos. Los stacks del
   prototipo usan Nimbus Sans Narrow / Liberation Sans como placeholders.
@@ -95,14 +99,22 @@ Agregá `&screen=` a la URL:
 
 ## Capturas
 
-- [Home](screenshots/liga-home.png)
-- [Plantel](screenshots/liga-players.png)
-- [Ajustes](screenshots/liga-settings.png)
-- [Ficha del desafío](screenshots/liga-detail.png)
-- [Sumar celular](screenshots/liga-connecting.png)
-- [Partido suspendido](screenshots/liga-error.png)
-- [Liga vacía](screenshots/liga-empty.png)
-- [Entrando a la cancha](screenshots/liga-launching.png)
+**Liga · Noche**
+
+- [Home](screenshots/liga-noche-home.png)
+- [Plantel](screenshots/liga-noche-players.png)
+- [Ajustes](screenshots/liga-noche-settings.png)
+- [Ficha del desafío](screenshots/liga-noche-detail.png)
+- [Sumar celular](screenshots/liga-noche-connecting.png)
+- [Partido suspendido](screenshots/liga-noche-error.png)
+- [Liga vacía](screenshots/liga-noche-empty.png)
+- [Entrando a la cancha](screenshots/liga-noche-launching.png)
+
+**Liga · Día**
+
+- [Home](screenshots/liga-dia-home.png)
+- [Plantel](screenshots/liga-dia-players.png)
+- [Ficha del desafío](screenshots/liga-dia-detail.png)
 
 **Comparación**
 
@@ -113,8 +125,8 @@ Agregá `&screen=` a la URL:
 
 - ¿LIGA se siente una consola propia y no un dashboard gamer?
 - ¿La ficha del contendiente, la escalera y el plantel se entienden?
-- ¿La paleta hielo/cobalto/solar/coral/menta funciona para Marvel/anime sin ser
-  una copia?
+- ¿Noche o Día? ¿La paleta crimson/oro/jade/hueso funciona para Marvel/anime sin
+  ser una copia?
 - ¿El pin héroe y el escudo son una marca creíble?
 - ¿La tipografía condensada/italic va en esa dirección?
 - ¿Qué partes de Cómic o Neón todavía querés conservar?
