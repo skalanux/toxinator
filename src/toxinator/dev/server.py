@@ -144,6 +144,11 @@ class DevServer:
                 "controller_id": connection.controller_id,
             }
         )
+        logger.info(
+            "phone slot %s conectado (%s)",
+            connection.slot,
+            request.remote or "?",
+        )
 
         try:
             async for message in ws:
@@ -159,6 +164,7 @@ class DevServer:
                         self._registry.update_state(connection.slot, payload)
                     elif kind == "calibrate":
                         self._registry.calibrate(connection.slot)
+                        logger.info("phone slot %s calibrado", connection.slot)
                         await ws.send_json({"type": "calibrated"})
                     elif kind == "ping":
                         await ws.send_json({"type": "pong", "t": payload.get("t")})
@@ -166,5 +172,6 @@ class DevServer:
                     break
         finally:
             self._registry.leave(connection.slot)
+            logger.info("phone slot %s desconectado", connection.slot)
 
         return ws
