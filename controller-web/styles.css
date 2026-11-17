@@ -327,6 +327,15 @@ button {
   color: var(--gold);
 }
 
+.sensors {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sensors.on {
+  color: var(--jade);
+}
+
 .hint {
   overflow: hidden;
   text-overflow: ellipsis;

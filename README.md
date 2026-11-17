@@ -85,7 +85,7 @@ El juego abre con el QR en el terminal. Desde el celular:
 - **Arrastrá** en el touchpad para apuntar.
 - **Incliná** el teléfono para dar efecto.
 - **Mantené A** para cargar potencia y **soltá** para tirar.
-- **Calibrar** toma la pose actual como neutra.
+- **Calibrar** toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si el pie dice **SENSORES OFF**, tocá **Activar sensores** primero.
 
 Es un corte de **un jugador**: 10 turnos, plenos/spares, 10º turno con bonus y
 marcador. Hot-seat de 1–4, práctica y desempate quedan para el siguiente corte.

@@ -10,6 +10,7 @@ const elements = {
   accel: document.getElementById("accel"),
   rtt: document.getElementById("rtt"),
   slot: document.getElementById("slot"),
+  sensors: document.getElementById("sensors"),
   touchpad: document.getElementById("touchpad"),
   touchHint: document.getElementById("touch-hint"),
   stick: document.getElementById("stick"),
@@ -25,6 +26,7 @@ const state = {
   slot: null,
   controllerId: "",
   orientation: [0, 0, 0],
+  neutral: [0, 0, 0],
   accel: [0, 0, 0],
   gyro: [0, 0, 0],
   touch: [],
@@ -33,6 +35,7 @@ const state = {
   lastSent: 0,
   rtt: null,
   reconnectTimer: null,
+  calibrationTimer: null,
 };
 
 function round(value, digits) {
@@ -55,13 +58,15 @@ function secure() {
 }
 
 function updateReadout() {
-  const beta = state.orientation[1] || 0;
-  const gamma = state.orientation[2] || 0;
+  const beta = (state.orientation[1] || 0) - (state.neutral[1] || 0);
+  const gamma = (state.orientation[2] || 0) - (state.neutral[2] || 0);
   const magnitude = Math.hypot(state.accel[0], state.accel[1], state.accel[2]);
   elements.beta.textContent = `${beta.toFixed(0)}°`;
   elements.gamma.textContent = `${gamma.toFixed(0)}°`;
   elements.accel.textContent = magnitude.toFixed(1);
   elements.rtt.textContent = state.rtt === null ? "—" : `${Math.round(state.rtt)} ms`;
+  elements.sensors.textContent = state.sensorsOn ? "SENSORES ON" : "SENSORES OFF";
+  elements.sensors.classList.toggle("on", state.sensorsOn);
 }
 
 function send(message) {
@@ -86,6 +91,10 @@ function connect() {
   state.ws = ws;
   setStatus("Conectando…", "warn");
 
+  const welcomeTimer = window.setTimeout(() => {
+    if (!state.connected) ws.close();
+  }, 5000);
+
   ws.addEventListener("open", () => {
     ws.send(
       JSON.stringify({
@@ -104,6 +113,7 @@ function connect() {
       return;
     }
     if (message.type === "welcome") {
+      window.clearTimeout(welcomeTimer);
       state.connected = true;
       state.fatal = false;
       state.slot = message.slot;
@@ -123,14 +133,19 @@ function connect() {
         updateReadout();
       }
     } else if (message.type === "calibrated") {
-      setStatus("Calibrado", "online");
+      if (state.calibrationTimer !== null) {
+        window.clearTimeout(state.calibrationTimer);
+        state.calibrationTimer = null;
+      }
+      setStatus("Pose guardada", "online");
       window.setTimeout(() => {
         if (state.connected) setStatus(`P${state.slot + 1} conectado`, "online");
-      }, 900);
+      }, 1200);
     }
   });
 
   ws.addEventListener("close", () => {
+    window.clearTimeout(welcomeTimer);
     const wasConnected = state.connected;
     state.connected = false;
     if (state.fatal) {
@@ -155,6 +170,7 @@ function startSensors() {
   if (state.sensorsOn) return;
   state.sensorsOn = true;
   elements.enableSensors.classList.add("hidden");
+  updateReadout();
 
   window.addEventListener(
     "deviceorientation",
@@ -264,9 +280,26 @@ elements.aButton.addEventListener("pointerleave", releaseA);
 elements.aButton.addEventListener("contextmenu", (event) => event.preventDefault());
 
 elements.calibrate.addEventListener("click", () => {
-  if (!state.connected) return;
+  if (!state.connected) {
+    setStatus("Conectá primero", "warn");
+    return;
+  }
+  if (!state.sensorsOn) {
+    setStatus("Activá los sensores", "warn");
+    enableSensors();
+    return;
+  }
+
+  state.neutral = [...state.orientation];
+  updateReadout();
   send({ type: "calibrate" });
   setStatus("Calibrando…", "warn");
+
+  if (state.calibrationTimer !== null) window.clearTimeout(state.calibrationTimer);
+  state.calibrationTimer = window.setTimeout(() => {
+    state.calibrationTimer = null;
+    if (state.connected) setStatus("Sin respuesta", "warn");
+  }, 2000);
 });
 
 elements.enableSensors.addEventListener("click", () => {
@@ -309,3 +342,4 @@ if (!token) {
 
 updateReadout();
 window.requestAnimationFrame(sendLoop);
+

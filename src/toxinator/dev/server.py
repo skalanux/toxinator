@@ -43,6 +43,7 @@ class DevServer:
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._stop_event: asyncio.Event | None = None
+        self._error: Exception | None = None
 
     def start(self) -> None:
         if self._thread is not None:
@@ -57,6 +58,10 @@ class DevServer:
         self._thread.start()
         if not self._ready.wait(timeout=10.0):
             raise RuntimeError("el servidor de desarrollo no arrancó")
+        if self._error is not None:
+            raise RuntimeError(
+                f"no pude abrir HTTPS en {self._host}:{self._port}: {self._error}"
+            ) from self._error
         logger.info("phone controller en https://%s:%s", self._host, self._port)
 
     def stop(self) -> None:
@@ -71,8 +76,9 @@ class DevServer:
     def _run(self) -> None:
         try:
             asyncio.run(self._serve())
-        except Exception:
-            logger.exception("dev server failed")
+        except Exception as error:
+            self._error = error
+            logger.error("dev server failed: %s", error)
             self._ready.set()
 
     async def _serve(self) -> None:
