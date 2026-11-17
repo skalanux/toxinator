@@ -4,6 +4,8 @@ Prototipo throwaway para **#11**. No es el launcher final; sirve para elegir
 estructura, jerarquía, identidad y navegación antes de implementar la versión
 Panda3D.
 
+> **Dirección elegida: LIGA · Noche.** El Día queda como alternativa de tema.
+
 ## Cómo abrirlo
 
 Desde la raíz del repo:
