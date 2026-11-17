@@ -62,7 +62,7 @@ Abre **LIGA · Noche**, la pantalla de inicio de la consola:
 - **Próximos desafíos**: Kart y Tenis como contendientes futuros.
 - **Plantel**: los 4 slots; el celular aparece como P1 cuando escanea el QR del
   terminal.
-- **Ajustes** y **sumar celular** con la URL de la sesión.
+- **Ajustes** y **sumar celular** con el **QR en pantalla** y la URL de la sesión.
 
 Controles:
 
@@ -70,7 +70,9 @@ Controles:
 - **Enter**: elegir / jugar.
 - **D**: ficha del desafío.
 - **S**: ajustes.
+- **C**: sumar celular y ver el QR.
 - **Esc**: volver o cerrar la liga.
+- **Touchpad del celular**: joystick para mover el foco.
 - **A del celular**: confirma el foco actual.
 - **Mouse**: los botones también responden.
 

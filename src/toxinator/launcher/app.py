@@ -11,6 +11,7 @@ from typing import Any
 
 from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectFrame import DirectFrame
+from direct.gui.OnscreenImage import OnscreenImage
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import Filename, LineSegs, TextNode, Vec4
@@ -21,11 +22,15 @@ from toxinator.core.game_host import GameHost
 from toxinator.core.games import GameEntry
 from toxinator.input.hub import InputHub
 from toxinator.launcher import theme, ui
+from toxinator.launcher.qr import qr_texture
 from toxinator.launcher.ui import Rect
 
 logger = logging.getLogger(__name__)
 
-HINTS = "FLECHAS NAVEGAR  |  ENTER ELEGIR  |  D FICHA  |  S AJUSTES  |  ESC SALIR"
+HINTS = (
+    "FLECHAS / TOUCH MOVER  |  ENTER / A ELEGIR  |  D FICHA  |  S AJUSTES  |  "
+    "C CELULAR  |  ESC SALIR"
+)
 
 
 @dataclass
@@ -66,6 +71,9 @@ class ConsoleApp(ShowBase):
 
         self.focus_items: list[FocusItem] = []
         self.focus_index = 0
+        self._joy_dir: tuple[int, int] | None = None
+        self._joy_hold = 0.0
+        self._joy_repeat = 0.0
         self.overlay: str | None = None
         self.state = "launcher"
         self.host: GameHost | None = None
@@ -88,12 +96,15 @@ class ConsoleApp(ShowBase):
         self._build_overlays()
         self._refresh_focus()
 
-        self.accept("arrow_up", self._move_focus, [-1])
-        self.accept("arrow_down", self._move_focus, [1])
+        self.accept("arrow_up", self._move_focus, [0, 1])
+        self.accept("arrow_down", self._move_focus, [0, -1])
+        self.accept("arrow_left", self._move_focus, [-1, 0])
+        self.accept("arrow_right", self._move_focus, [1, 0])
         self.accept("enter", self._activate)
         self.accept("escape", self._on_escape)
         self.accept("d", self._open_detail)
         self.accept("s", self._open_settings)
+        self.accept("c", self._open_phone)
         self.taskMgr.add(self._update, "launcher-update")
 
     # -- scene --------------------------------------------------------------
@@ -198,10 +209,11 @@ class ConsoleApp(ShowBase):
             self.font_mono,
             align=TextNode.ACenter,
         )
-        settings_button, _ = ui.button(
+        settings_rect = Rect(1.04, 1.26, 0.885, 0.945)
+        settings_button, settings_focus = ui.button(
             self.ui_root,
             "AJUSTES",
-            Rect(1.04, 1.26, 0.885, 0.945),
+            settings_rect,
             theme.NAVY,
             theme.BONE,
             self.font_mono,
@@ -210,6 +222,9 @@ class ConsoleApp(ShowBase):
             base_bin=20,
         )
         settings_button.setBin("fixed", 30)
+        self.focus_items.append(
+            FocusItem(settings_rect, settings_focus, self._open_settings)
+        )
 
     def _build_featured(self) -> None:
         entry = self.featured
@@ -583,7 +598,6 @@ class ConsoleApp(ShowBase):
             self.font_ui,
             bin_number=160,
         )
-        self.detail_body.setWordwrap(1.36)
         detail_play, _ = ui.button(
             self.detail_root,
             "JUGAR",
@@ -631,19 +645,34 @@ class ConsoleApp(ShowBase):
         self.phone_root, self.phone_title = self._overlay_panel(
             "phone",
             "SUMAR CELULAR",
-            "ESCANEÁ EL QR DEL TERMINAL",
-            "Misma Wi-Fi que la consola. Aceptá el certificado autofirmado una vez.",
+            "ESCANEÁ EL QR",
+            "",
+        )
+        self.phone_body = ui.text(
+            self.phone_root,
+            "Misma Wi-Fi que la consola.\nAceptá el certificado autofirmado una vez.",
+            (-0.68, 0.28),
+            0.030,
+            theme.MUTED,
+            self.font_ui,
+            bin_number=160,
         )
         self.phone_url_text = ui.text(
             self.phone_root,
             "",
-            (-0.68, -0.10),
-            0.030,
+            (-0.68, -0.12),
+            0.026,
             theme.CRIMSON,
             self.font_mono,
             bin_number=160,
         )
-        self.phone_url_text.setWordwrap(1.35)
+        self.qr_image = OnscreenImage(
+            image=qr_texture(self, self.phone_url),
+            parent=self.phone_root,
+            pos=(0.40, 0.0, -0.02),
+            scale=(0.42, 1.0, 0.42),
+        )
+        self.qr_image.setBin("fixed", 155)
         ui.button(
             self.phone_root,
             "VOLVER",
@@ -796,11 +825,36 @@ class ConsoleApp(ShowBase):
 
     # -- focus / navigation -------------------------------------------------
 
-    def _move_focus(self, direction: int) -> None:
+    def _move_focus(self, dx: int, dy: int) -> None:
         if self.overlay is not None or self.state != "launcher" or not self.focus_items:
             return
-        self.focus_index = (self.focus_index + direction) % len(self.focus_items)
-        self._refresh_focus()
+        current = self.focus_items[self.focus_index]
+        current_x = (current.rect.x1 + current.rect.x2) / 2.0
+        current_z = (current.rect.z1 + current.rect.z2) / 2.0
+        best_index = -1
+        best_score = 1e9
+        for index, item in enumerate(self.focus_items):
+            if index == self.focus_index:
+                continue
+            item_x = (item.rect.x1 + item.rect.x2) / 2.0
+            item_z = (item.rect.z1 + item.rect.z2) / 2.0
+            vx = item_x - current_x
+            vz = item_z - current_z
+            if dx:
+                if vx * dx <= 0.01:
+                    continue
+                primary, secondary = abs(vx), abs(vz)
+            else:
+                if vz * dy <= 0.01:
+                    continue
+                primary, secondary = abs(vz), abs(vx)
+            score = primary + secondary * 2.5
+            if score < best_score:
+                best_score = score
+                best_index = index
+        if best_index >= 0:
+            self.focus_index = best_index
+            self._refresh_focus()
 
     def _refresh_focus(self) -> None:
         for index, item in enumerate(self.focus_items):
@@ -983,7 +1037,7 @@ class ConsoleApp(ShowBase):
         self.settings_root.hide()
         self.quit_root.hide()
         self.launch_root.hide()
-        self.phone_url_text.setText(self.phone_url)
+        self.phone_url_text.setText(ui.wrap(self.phone_url, 30))
 
     def _open_settings(self) -> None:
         if self.state != "launcher":
@@ -1041,7 +1095,11 @@ class ConsoleApp(ShowBase):
         else:
             state = self.hub.poll()
             self._update_bench(state)
-            a_pressed = any(frame.button("A") for frame in state.frames.values())
+            frame = state.frame(0)
+            if frame is None and state.frames:
+                frame = next(iter(state.frames.values()))
+            self._update_joystick(frame, dt)
+            a_pressed = any(item.button("A") for item in state.frames.values())
             if a_pressed and not self._last_a:
                 self._activate()
             self._last_a = a_pressed
@@ -1059,6 +1117,44 @@ class ConsoleApp(ShowBase):
         elif self.exit_at is not None and now >= self.exit_at:
             self._exit()
         return task.cont
+
+    def _update_joystick(self, frame: Any, dt: float) -> None:
+        if self.overlay is not None or self.state != "launcher" or frame is None:
+            self._joy_dir = None
+            self._joy_hold = 0.0
+            self._joy_repeat = 0.0
+            return
+        if not frame.touch:
+            self._joy_dir = None
+            self._joy_hold = 0.0
+            self._joy_repeat = 0.0
+            return
+        touch = frame.touch[0]
+        dx = touch.x - 0.5
+        dy = 0.5 - touch.y
+        if max(abs(dx), abs(dy)) < 0.28:
+            self._joy_dir = None
+            self._joy_hold = 0.0
+            self._joy_repeat = 0.0
+            return
+        horizontal = abs(dx) >= abs(dy)
+        direction = (
+            (1 if dx > 0 else -1, 0)
+            if horizontal
+            else (0, 1 if dy > 0 else -1)
+        )
+        if direction != self._joy_dir:
+            self._joy_dir = direction
+            self._joy_hold = 0.0
+            self._joy_repeat = 0.0
+            self._move_focus(*direction)
+            return
+        self._joy_hold += dt
+        if self._joy_hold >= 0.35:
+            self._joy_repeat += dt
+            if self._joy_repeat >= 0.16:
+                self._joy_repeat = 0.0
+                self._move_focus(*direction)
 
     def _update_bench(self, state: InputState) -> None:
         connected = 0

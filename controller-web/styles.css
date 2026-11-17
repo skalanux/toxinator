@@ -1,3 +1,43 @@
+@font-face {
+  font-family: "Archivo Black";
+  src: url("/static/fonts/ArchivoBlack-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/static/fonts/IBMPlexSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/static/fonts/IBMPlexSans-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/static/fonts/IBMPlexSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/static/fonts/IBMPlexMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --navy: #0e1726;
   --navy-2: #131f31;
@@ -9,8 +49,9 @@
   --line: #0a111c;
   --line-soft: #2a3648;
   --shadow: 0 0 0 2px var(--line), 5px 5px 0 var(--line);
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
+  --font-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
   color-scheme: dark;
 }
 
@@ -95,8 +136,9 @@ button {
 
 .brand-copy strong {
   color: var(--bone);
+  font-family: var(--font-display);
   font-size: 0.95rem;
-  font-weight: 900;
+  font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -264,8 +306,9 @@ button {
 }
 
 .a-button span {
+  font-family: var(--font-display);
   font-size: 2.4rem;
-  font-weight: 900;
+  font-weight: 400;
 }
 
 .a-button small {

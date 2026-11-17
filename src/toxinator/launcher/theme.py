@@ -21,15 +21,20 @@ MUTED = Vec4(0.357, 0.392, 0.459, 1.0)
 LINE = Vec4(0.039, 0.067, 0.110, 1.0)
 WHITE = Vec4(1.0, 1.0, 1.0, 1.0)
 
+_FONT_DIR = Path(__file__).resolve().parents[1] / "assets" / "fonts"
+
 FONT_DISPLAY_CANDIDATES = (
+    str(_FONT_DIR / "ArchivoBlack-Regular.ttf"),
     "/usr/share/fonts/liberation/LiberationSans-Bold.ttf",
     "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Bold.ttf",
 )
 FONT_UI_CANDIDATES = (
+    str(_FONT_DIR / "IBMPlexSans-Regular.ttf"),
     "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
     "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf",
 )
 FONT_MONO_CANDIDATES = (
+    str(_FONT_DIR / "IBMPlexMono-Regular.ttf"),
     "/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf",
     "/usr/share/fonts/liberation/LiberationMono-Regular.ttf",
 )
