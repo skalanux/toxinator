@@ -78,6 +78,44 @@ _Avoid_: system pause
 La UI de la consola que se dibuja sobre un juego para pausa, errores o desconexión de mandos.
 _Avoid_: HUD (el HUD es del juego)
 
+## i18n
+
+**Servicio de i18n (I18nService)**:
+El servicio de la consola que carga catálogos por dominio y locale, resuelve textos, formatea números/fechas y emite el cambio de idioma.
+_Avoid_: translator, localization manager
+
+**Catálogo de textos (Text catalog)**:
+El archivo `.po`/`.mo` de un dominio y locale; contiene las traducciones de sus claves.
+_Avoid_: diccionario, translations file
+
+**Dominio de traducción (Translation domain)**:
+El ámbito de claves de un paquete: `toxinator` para la consola y el id del juego para cada juego.
+_Avoid_: namespace, scope
+
+**Clave de texto (Text key)**:
+El identificador semántico y estable de un texto (`launcher.featured.play`), independiente del idioma.
+_Avoid_: msgid (en docs), label
+
+**Locale**:
+El idioma normalizado de la consola (`es`, `en`); las variantes regionales se mapean a la base.
+_Avoid_: idioma (para el código), language tag
+
+**Idioma efectivo (Effective locale)**:
+El locale que un dominio usa después del fallback; si el juego no soporta el activo, es su `default_locale`.
+_Avoid_: idioma final, resolved locale
+
+**Pseudo-locale (qps)**:
+Un locale de prueba generado desde `en` con texto expandido y acentuado para detectar strings hardcodeados y truncamiento; no se shipea.
+_Avoid_: fake locale, test language
+
+**Placeholder**:
+Un hueco con nombre en un texto (`{name}`, `{count}`) que el servicio reemplaza al formatear.
+_Avoid_: variable, token
+
+**Asset localizado (Localized asset)**:
+Un asset con texto o voz que tiene una versión por locale bajo `assets/<locale>/`, con fallback a `assets/common/`.
+_Avoid_: recurso traducido, asset i18n
+
 ## Distribución
 
 **Paquete de juego (Game package)**:
@@ -139,6 +177,10 @@ _Avoid_: input manager, device manager
 **Mando (Controller)**:
 Un dispositivo físico o virtual que produce `ControllerFrame`s: Wiimote, celular Android, gamepad o teclado/mouse.
 _Avoid_: controlador, control, dispositivo
+
+**Controlador web (Controller web)**:
+La PWA Android que la consola sirve por LAN para que el celular actúe como mando; recibe input, estado y el idioma activo.
+_Avoid_: phone app, web controller, app del celular
 
 **Descriptor de mando (ControllerInfo)**:
 La identidad y las capacidades de un mando conectado, separadas del estado instantáneo: id, source, capabilities, slot, conexión y batería.

@@ -14,6 +14,7 @@ El repo todavía **no tiene código ejecutable**: contiene el mapa, el glosario,
 - [AGENTS.md](AGENTS.md): cómo trabajan los agentes en este repo.
 - [docs/adr/](docs/adr/): decisiones de arquitectura.
 - [docs/design/launcher-liga.md](docs/design/launcher-liga.md): identidad y estructura del launcher (**LIGA · Noche**).
+- [docs/design/i18n.md](docs/design/i18n.md): internacionalización, catálogos y cambio de idioma en runtime.
 - [docs/agents/](docs/agents/): configuración de issue tracker y dominio.
 
 ## Research
