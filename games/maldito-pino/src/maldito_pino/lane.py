@@ -180,6 +180,7 @@ class Lane:
         self.ball_body: BulletRigidBodyNode | None = None
         self.ball_visual: NodePath | None = None
         self.aim_node: NodePath | None = None
+        self.power_node: NodePath | None = None
         self.standing: set[int] = set()
 
         self._build_static()
@@ -290,6 +291,7 @@ class Lane:
 
     def reset(self, standing: Iterable[int]) -> None:
         self.hide_aim()
+        self.hide_power()
         if self.ball_body is not None:
             self.world.remove_rigid_body(self.ball_body)
             self.ball_body = None
@@ -368,12 +370,44 @@ class Lane:
         segments.set_thickness(2.0)
         segments.moveTo(BALL_START_X, BALL_START_Y, 0.02)
         segments.drawTo(target_x, HEAD_PIN_Y, 0.02)
+
+        radius = 0.07
+        segments.moveTo(target_x + radius, HEAD_PIN_Y, 0.02)
+        for step in range(1, 17):
+            angle = 2.0 * math.pi * step / 16.0
+            segments.drawTo(
+                target_x + radius * math.cos(angle),
+                HEAD_PIN_Y + radius * math.sin(angle),
+                0.02,
+            )
         self.aim_node = self.root.attach_new_node(segments.create())
 
     def hide_aim(self) -> None:
         if self.aim_node is not None:
             self.aim_node.remove_node()
             self.aim_node = None
+
+    def show_power(self, charge: float) -> None:
+        self.hide_power()
+        charge = max(0.0, min(1.0, charge))
+        radius = 0.18 + 0.14 * charge
+        segments = LineSegs("power")
+        segments.set_color(Vec4(0.89, 0.70, 0.25, 1.0))
+        segments.set_thickness(3.0)
+        segments.moveTo(BALL_START_X + radius, BALL_START_Y, 0.03)
+        for step in range(1, 25):
+            angle = 2.0 * math.pi * step / 24.0
+            segments.drawTo(
+                BALL_START_X + radius * math.cos(angle),
+                BALL_START_Y + radius * math.sin(angle),
+                0.03,
+            )
+        self.power_node = self.root.attach_new_node(segments.create())
+
+    def hide_power(self) -> None:
+        if self.power_node is not None:
+            self.power_node.remove_node()
+            self.power_node = None
 
     def throw(self, speed: float, target_x: float, spin_y: float) -> None:
         if self.ball_body is None:
@@ -426,4 +460,5 @@ class Lane:
             self.world.remove_rigid_body(body)
         if self.ball_body is not None:
             self.world.remove_rigid_body(self.ball_body)
+        self.hide_power()
         self.root.remove_node()
