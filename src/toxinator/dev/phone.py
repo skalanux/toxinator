@@ -73,7 +73,7 @@ class PhonePrototype(ShowBase):
 
         self.paddle = self.loader.loadModel("models/box")
         self.paddle.reparentTo(self.render)
-        self.paddle.setScale(0.9, 0.12, 0.22)
+        self.paddle.setScale(0.35, 0.12, 0.9)
         self.paddle.setPos(0, 0, 0)
         self.paddle.setColor(0.2, 0.8, 0.9, 1)
 
