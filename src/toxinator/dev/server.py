@@ -44,6 +44,9 @@ class DevServer:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._stop_event: asyncio.Event | None = None
         self._error: Exception | None = None
+        self._lock = threading.Lock()
+        self._clients: set[web.WebSocketResponse] = set()
+        self._mode = "launcher"
 
     def start(self) -> None:
         if self._thread is not None:
@@ -63,6 +66,24 @@ class DevServer:
                 f"no pude abrir HTTPS en {self._host}:{self._port}: {self._error}"
             ) from self._error
         logger.info("phone controller en https://%s:%s", self._host, self._port)
+
+    def set_mode(self, mode: str) -> None:
+        with self._lock:
+            self._mode = mode
+            clients = list(self._clients)
+        loop = self._loop
+        if loop is None:
+            return
+
+        async def send_mode() -> None:
+            payload = json.dumps({"type": "mode", "mode": mode})
+            for client in clients:
+                try:
+                    await client.send_str(payload)
+                except Exception:
+                    continue
+
+        asyncio.run_coroutine_threadsafe(send_mode(), loop)
 
     def stop(self) -> None:
         loop = self._loop
@@ -149,6 +170,10 @@ class DevServer:
             connection.slot,
             request.remote or "?",
         )
+        with self._lock:
+            self._clients.add(ws)
+            mode = self._mode
+        await ws.send_json({"type": "mode", "mode": mode})
 
         try:
             async for message in ws:
@@ -171,6 +196,8 @@ class DevServer:
                 elif message.type == WSMsgType.ERROR:
                     break
         finally:
+            with self._lock:
+                self._clients.discard(ws)
             self._registry.leave(connection.slot)
             logger.info("phone slot %s desconectado", connection.slot)
 

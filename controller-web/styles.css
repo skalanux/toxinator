@@ -101,9 +101,51 @@ button {
 
 .top {
   display: flex;
+  grid-row: 1;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.readout {
+  grid-row: 2;
+}
+
+.stage {
+  grid-row: 3;
+}
+
+.actions {
+  grid-row: 4;
+}
+
+.foot {
+  grid-row: 5;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode {
+  flex: none;
+  padding: 6px 9px;
+  color: var(--navy);
+  background: var(--gold);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body.mode-game .mode {
+  color: var(--bone);
+  background: var(--jade);
 }
 
 .brand {
@@ -282,6 +324,50 @@ button {
   opacity: 0;
 }
 
+.dpad {
+  position: absolute;
+  display: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dpad-up {
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dpad-down {
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dpad-left {
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.dpad-right {
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+body.mode-launcher .dpad {
+  display: block;
+}
+
+body.mode-launcher .readout,
+body.mode-launcher .secondary-stack,
+body.mode-launcher .sensors {
+  display: none;
+}
+
 .actions {
   display: flex;
   flex-direction: column;
@@ -454,7 +540,7 @@ button {
 @media (orientation: landscape) and (max-height: 520px) {
   .pad {
     grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
 
   .top,
@@ -463,15 +549,28 @@ button {
     grid-column: 1 / -1;
   }
 
-  .stage {
+  .top {
+    grid-row: 1;
+  }
+
+  .readout {
     grid-row: 2;
   }
 
+  .stage {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
   .actions {
-    grid-row: 2;
+    grid-row: 3;
     grid-column: 2;
     flex-direction: column;
     justify-content: center;
+  }
+
+  .foot {
+    grid-row: 4;
   }
 
   .secondary-stack {

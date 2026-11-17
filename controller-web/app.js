@@ -18,6 +18,9 @@ const elements = {
   calibrate: document.getElementById("calibrate"),
   enableSensors: document.getElementById("enable-sensors"),
   toast: document.getElementById("toast"),
+  mode: document.getElementById("mode"),
+  aLabel: document.getElementById("a-label"),
+  footHint: document.getElementById("foot-hint"),
 };
 
 const state = {
@@ -33,6 +36,7 @@ const state = {
   touch: [],
   buttons: new Set(),
   sensorsOn: false,
+  mode: "launcher",
   lastSent: 0,
   rtt: null,
   reconnectTimer: null,
@@ -53,6 +57,22 @@ function setStatus(text, kind) {
 
 function setSlot(text) {
   elements.slot.textContent = text;
+}
+
+function applyMode(mode) {
+  state.mode = mode === "game" ? "game" : "launcher";
+  const launcher = state.mode === "launcher";
+  document.body.classList.toggle("mode-launcher", launcher);
+  document.body.classList.toggle("mode-game", !launcher);
+  elements.mode.textContent = launcher ? "LAUNCHER" : "JUEGO";
+  elements.aLabel.textContent = launcher ? "ELEGIR" : "ACCIÓN";
+  elements.touchHint.innerHTML = launcher
+    ? "Arrastrá para mover<br>y soltá en el centro"
+    : "Incliná el teléfono<br>o arrastrá acá";
+  elements.footHint.textContent = launcher
+    ? "JOYSTICK · A ELEGIR"
+    : "Misma Wi-Fi · certificado aceptado";
+  if (!launcher) startSensorsIfPossible();
 }
 
 function showToast(message, kind = "") {
@@ -134,7 +154,8 @@ function connect() {
       state.controllerId = message.controller_id || "";
       setStatus(`P${message.slot + 1} conectado`, "online");
       setSlot(`P${message.slot + 1} · ${state.controllerId}`);
-      startSensorsIfPossible();
+    } else if (message.type === "mode") {
+      applyMode(message.mode);
     } else if (message.type === "error") {
       state.fatal = true;
       if (message.code === "full") setStatus("Consola llena", "offline");
@@ -363,6 +384,7 @@ if (!token) {
   connect();
 }
 
+applyMode("launcher");
 updateReadout();
 window.requestAnimationFrame(sendLoop);
 

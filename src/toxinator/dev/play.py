@@ -44,6 +44,7 @@ def run_play(
 
     manifest, game = load_game(game_id)
     session = start_phone_session(host=host, port=port, token=token, demo=demo)
+    session.set_mode("game")
     if session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "

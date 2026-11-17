@@ -68,6 +68,7 @@ def run_launcher(
             screenshot=screenshot,
             screenshot_after=screenshot_after,
             seconds=seconds,
+            set_mode=session.set_mode,
         )
         app.run()
     finally:

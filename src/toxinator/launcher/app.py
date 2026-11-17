@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -53,11 +54,13 @@ class ConsoleApp(ShowBase):
         screenshot: Path | None = None,
         screenshot_after: float = 3.0,
         seconds: float | None = None,
+        set_mode: Callable[[str], None] | None = None,
     ) -> None:
         super().__init__(windowType=window_type)
         self.hub = hub
         self.catalog = catalog
         self.phone_url = phone_url
+        self._set_mode_callback = set_mode or (lambda mode: None)
         self.screenshot = screenshot
         self.screenshot_after = screenshot_after
         self.started_at = time.monotonic()
@@ -71,6 +74,7 @@ class ConsoleApp(ShowBase):
 
         self.focus_items: list[FocusItem] = []
         self.focus_index = 0
+        self._settings_focus: FocusItem | None = None
         self._joy_dir: tuple[int, int] | None = None
         self._joy_hold = 0.0
         self._joy_repeat = 0.0
@@ -93,8 +97,11 @@ class ConsoleApp(ShowBase):
         self._build_featured()
         self._build_ladder()
         self._build_bench()
+        if self._settings_focus is not None:
+            self.focus_items.append(self._settings_focus)
         self._build_overlays()
         self._refresh_focus()
+        self._notify_mode("launcher")
 
         self.accept("arrow_up", self._move_focus, [0, 1])
         self.accept("arrow_down", self._move_focus, [0, -1])
@@ -222,8 +229,8 @@ class ConsoleApp(ShowBase):
             base_bin=20,
         )
         settings_button.setBin("fixed", 30)
-        self.focus_items.append(
-            FocusItem(settings_rect, settings_focus, self._open_settings)
+        self._settings_focus = FocusItem(
+            settings_rect, settings_focus, self._open_settings
         )
 
     def _build_featured(self) -> None:
@@ -873,6 +880,12 @@ class ConsoleApp(ShowBase):
     # -- actions ------------------------------------------------------------
 
     def _activate(self) -> None:
+        logger.info(
+            "activate state=%s overlay=%s focus=%s",
+            self.state,
+            self.overlay,
+            self.focus_index,
+        )
         if self.state == "game":
             return
         if self.overlay == "launching":
@@ -910,6 +923,7 @@ class ConsoleApp(ShowBase):
         self._start_launch(self.featured)
 
     def _start_launch(self, entry: GameEntry) -> None:
+        logger.info("start launch %s", entry.id)
         if not entry.installed:
             self._open_coming(entry)
             return
@@ -934,6 +948,7 @@ class ConsoleApp(ShowBase):
         self.overlay_dim.show()
 
     def _start_game(self, entry: GameEntry) -> None:
+        logger.info("start game %s", entry.id)
         try:
             game: Game = entry.instantiate()
         except Exception as error:
@@ -955,6 +970,7 @@ class ConsoleApp(ShowBase):
         self.state = "game"
         self.overlay = None
         self.pending = None
+        self._notify_mode("game")
         self.ui_root.hide()
         self.overlay_root.hide()
         self.launch_root.hide()
@@ -966,6 +982,7 @@ class ConsoleApp(ShowBase):
             self.host = None
         self.state = "launcher"
         self.overlay = None
+        self._notify_mode("launcher")
         self.ui_root.show()
         self.overlay_root.hide()
         self.launch_root.hide()
@@ -1177,6 +1194,10 @@ class ConsoleApp(ShowBase):
                 status.setFg(theme.MUTED)
         self.players_badge.setText(f"PLANTEL {connected}/4")
         self.bench_count.setText(f"{connected}/4")
+
+    def _notify_mode(self, mode: str) -> None:
+        logger.info("launcher mode %s", mode)
+        self._set_mode_callback(mode)
 
     def _exit(self) -> None:
         if self.host is not None:

@@ -52,6 +52,7 @@ def run_phone_dev(
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     session = start_phone_session(host=host, port=port, token=token, demo=demo)
+    session.set_mode("game")
     if session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "

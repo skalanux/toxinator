@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="manifest" href="/static/manifest.json">
 </head>
-<body>
+<body class="mode-launcher">
   <main class="pad">
     <header class="top">
       <div class="brand">
@@ -18,10 +18,13 @@
           <span>MANDO · DEV PHONE</span>
         </div>
       </div>
-      <div id="status" class="status" role="status">Conectando…</div>
+      <div class="top-right">
+        <span id="mode" class="mode">LAUNCHER</span>
+        <div id="status" class="status" role="status">Conectando…</div>
+      </div>
     </header>
 
-    <section class="readout" aria-label="Sensores">
+    <section id="readout" class="readout" aria-label="Sensores">
       <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
       <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
       <div class="cell"><span>ACC</span><strong id="accel">0.0</strong></div>
@@ -31,15 +34,19 @@
     <section class="stage">
       <div id="touchpad" class="touchpad">
         <div class="touch-grid"></div>
+        <div class="dpad dpad-up">▲</div>
+        <div class="dpad dpad-down">▼</div>
+        <div class="dpad dpad-left">◀</div>
+        <div class="dpad dpad-right">▶</div>
         <div id="stick" class="stick"></div>
-        <span id="touch-hint" class="touch-hint">Incliná el teléfono<br>o arrastrá acá</span>
+        <span id="touch-hint" class="touch-hint">Arrastrá para mover<br>y soltá en el centro</span>
       </div>
     </section>
 
     <section class="actions">
       <button id="a-button" class="a-button" type="button">
         <span>A</span>
-        <small>ACCIÓN</small>
+        <small id="a-label">ELEGIR</small>
       </button>
       <div class="secondary-stack">
         <button id="calibrate" class="secondary" type="button">Calibrar</button>
@@ -50,7 +57,7 @@
     <footer class="foot">
       <span id="slot" class="slot">SIN SLOT</span>
       <span id="sensors" class="sensors">SENSORES OFF</span>
-      <span class="hint">Misma Wi-Fi · certificado aceptado</span>
+      <span id="foot-hint" class="hint">JOYSTICK · A ELEGIR</span>
     </footer>
   </main>
 

@@ -79,6 +79,13 @@ Controles:
 Al elegir **JUGAR**, el launcher cede la pantalla al juego; **Esc** en el juego
 vuelve a la liga. El servidor del celular sigue vivo entre launcher y juego.
 
+La PWA tiene **dos pantallas** y cambia sola según el modo:
+
+- **LAUNCHER**: joystick grande + **A / ELEGIR**; sin sensores. Arrastrás para
+  mover el foco y soltás en el centro.
+- **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN** y
+  calibración; los sensores y el readout vuelven a aparecer.
+
 ```bash
 uv run toxinator launcher --demo        # P1 sintético
 uv run toxinator launcher --offscreen --screenshot /tmp/liga.png

@@ -26,6 +26,9 @@ class PhoneSession:
     registry: PhoneRegistry
     server: DevServer
 
+    def set_mode(self, mode: str) -> None:
+        self.server.set_mode(mode)
+
     def stop(self) -> None:
         self.server.stop()
         self.hub.stop()
