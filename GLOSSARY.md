@@ -235,12 +235,20 @@ Un valor analógico normalizado de un stick o gatillo; los sticks van de -1 a 1 
 _Avoid_: stick, trigger (cuando se habla del valor)
 
 **Traza de input (Input trace)**:
-Una secuencia grabada de `ControllerFrame`s y eventos usada para tests, replay o depuración.
+Una secuencia grabada de `ControllerFrame`s normalizados y eventos en JSONL, usada para tests, replay o depuración.
 _Avoid_: log, grabación
 
+**ReplaySource**:
+La fuente del `InputHub` que reproduce una traza de input a tiempo de juego fijo, sin wall clock.
+_Avoid_: replayer, playback
+
 **Simulador de mandos (Controller simulator)**:
-Un mando falso controlado por teclado, mouse o gamepad que produce `ControllerFrame`s para desarrollar y testear sin hardware.
+Un mando falso controlado por teclado, mouse o gamepad que produce `ControllerFrame`s (`source="sim"`) para desarrollar y testear sin hardware.
 _Avoid_: emulador, fake controller
+
+**Preset de simulador (Simulator preset)**:
+El mapeo TOML de teclas, ejes, motion y macros que usa el simulador para un juego o modo.
+_Avoid_: profile, config de simulador
 
 ## Física
 
@@ -279,6 +287,24 @@ _Avoid_: smoothing, lerp
 **Pino caído (Knocked pin)**:
 Un pino cuya orientación o posición supera el umbral de caída; se usa para el scoring.
 _Avoid_: fallen pin, down pin
+
+## Testing
+
+**Reloj (Clock)**:
+La fuente de tiempo inyectable del game loop; `RealClock` usa monotonic y `FakeClock` avanza a mano en tests.
+_Avoid_: timer, ticker
+
+**Seed**:
+La semilla que hace deterministas el RNG del juego, el simulador y las trazas.
+_Avoid_: random seed, semilla aleatoria
+
+**Smoke headless (Headless smoke)**:
+Un test de integración mínimo que arranca `ShowBase` sin ventana y renderiza uno o pocos frames.
+_Avoid_: smoke test (ambiguo), sanity check
+
+**Checklist manual (Manual checklist)**:
+La lista de validaciones con hardware, GPU y performance que se corre antes de release, fuera de CI.
+_Avoid_: QA manual, test plan
 
 ## Render y UI
 

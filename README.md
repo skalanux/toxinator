@@ -15,6 +15,8 @@ El repo todavía **no tiene código ejecutable**: contiene el mapa, el glosario,
 - [docs/adr/](docs/adr/): decisiones de arquitectura.
 - [docs/design/launcher-liga.md](docs/design/launcher-liga.md): identidad y estructura del launcher (**LIGA · Noche**).
 - [docs/design/i18n.md](docs/design/i18n.md): internacionalización, catálogos y cambio de idioma en runtime.
+- [docs/design/testing.md](docs/design/testing.md): simulador de mandos, trazas y CI headless.
+- [docs/testing/manual-checklist.md](docs/testing/manual-checklist.md): validación con Wiimote, Android, GPU y performance.
 - [docs/agents/](docs/agents/): configuración de issue tracker y dominio.
 
 ## Research
