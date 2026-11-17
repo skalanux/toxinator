@@ -1,9 +1,12 @@
-"""Public API for games.
+"""Public API for games."""
 
-Games may import from ``toxinator.api`` only. Everything else in the console
-is private runtime code.
-"""
-
+from toxinator.api.game import (
+    API_VERSION,
+    Game,
+    GameContext,
+    GameManifest,
+    load_manifest,
+)
 from toxinator.api.input import (
     ControllerFrame,
     ControllerInfo,
@@ -13,9 +16,14 @@ from toxinator.api.input import (
 )
 
 __all__ = [
+    "API_VERSION",
     "ControllerFrame",
     "ControllerInfo",
+    "Game",
+    "GameContext",
+    "GameManifest",
     "InputEvent",
     "InputState",
     "TouchPoint",
+    "load_manifest",
 ]

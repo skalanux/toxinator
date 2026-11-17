@@ -62,6 +62,26 @@ def build_parser() -> argparse.ArgumentParser:
         default=2.0,
         help="seconds before the screenshot",
     )
+
+    play = subparsers.add_parser("play", help="play a game with the phone controller")
+    play.add_argument("game", nargs="?", default="maldito-pino")
+    play.add_argument("--host", default=None, help="LAN IP or hostname for the QR")
+    play.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
+    play.add_argument("--token", default=None, help="fixed session token (dev)")
+    play.add_argument(
+        "--demo",
+        action="store_true",
+        help="add a synthetic phone on P1 (no real phone needed)",
+    )
+    play.add_argument("--seconds", type=float, default=None, help="stop after N seconds")
+    play.add_argument("--offscreen", action="store_true", help="render offscreen")
+    play.add_argument("--screenshot", type=Path, default=None, help="save a screenshot and exit")
+    play.add_argument(
+        "--screenshot-after",
+        type=float,
+        default=3.0,
+        help="seconds before the screenshot",
+    )
     return parser
 
 
@@ -79,6 +99,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                 token=args.token,
                 demo=args.demo,
                 headless=args.headless,
+                seconds=args.seconds,
+                offscreen=args.offscreen,
+                screenshot=args.screenshot,
+                screenshot_after=args.screenshot_after,
+            )
+        except KeyboardInterrupt:
+            return 130
+        except (OSError, RuntimeError) as error:
+            parser.exit(1, f"toxinator: {error}\n")
+    elif args.command == "play":
+        from toxinator.dev.play import run_play
+
+        try:
+            run_play(
+                game_id=args.game,
+                host=args.host,
+                port=args.port,
+                token=args.token,
+                demo=args.demo,
                 seconds=args.seconds,
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,

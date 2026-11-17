@@ -3,30 +3,17 @@
 from __future__ import annotations
 
 import logging
-import os
-import secrets
 import time
 from pathlib import Path
 
-import qrcode
 from panda3d.core import loadPrcFileData
 
 from toxinator.api.input import InputState
-from toxinator.dev.cert import ensure_cert, get_lan_ip, ssl_context
-from toxinator.dev.demo import DemoSource
+from toxinator.dev.announce import announce_phone
 from toxinator.dev.phone_app import PhoneApp
-from toxinator.dev.server import DevServer
-from toxinator.input.hub import InputHub
-from toxinator.input.phone.registry import PhoneRegistry
-from toxinator.input.phone.source import PhoneSource
-from toxinator.input.source import ControllerSource
+from toxinator.dev.session import start_phone_session
 
 logger = logging.getLogger(__name__)
-
-
-def _repo_root() -> Path:
-    # src/toxinator/dev/phone.py -> repo root
-    return Path(__file__).resolve().parents[3]
 
 
 def _state_line(state: InputState) -> str:
@@ -40,7 +27,7 @@ def _state_line(state: InputState) -> str:
             touch = f"{frame.touch[0].x:.2f},{frame.touch[0].y:.2f}" if frame.touch else "-"
             parts.append(
                 f"P{slot + 1} {latency:3.0f}ms "
-                f"β{frame.orientation[1]:+5.1f} γ{frame.orientation[2]:+5.1f} "
+                f"B{frame.orientation[1]:+5.1f} G{frame.orientation[2]:+5.1f} "
                 f"touch {touch} {action}"
             )
         elif info is not None:
@@ -48,13 +35,6 @@ def _state_line(state: InputState) -> str:
         else:
             parts.append(f"P{slot + 1} libre")
     return " | ".join(parts)
-
-
-def _print_qr(url: str) -> None:
-    qr = qrcode.QRCode(border=2)
-    qr.add_data(url)
-    qr.make(fit=True)
-    qr.print_ascii(invert=True)
 
 
 def run_phone_dev(
@@ -71,59 +51,23 @@ def run_phone_dev(
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    lan_host = host or get_lan_ip()
-    if lan_host in {"0.0.0.0", ""}:
-        lan_host = get_lan_ip()
-    if lan_host.startswith("127."):
+    session = start_phone_session(host=host, port=port, token=token, demo=demo)
+    if session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "
             "Pasá --host con la IP de la LAN.",
             flush=True,
         )
 
-    session_token = token or secrets.token_urlsafe(18)
-    config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    cert_dir = config_home / "toxinator" / "dev-cert"
-    cert, key = ensure_cert(cert_dir, lan_host)
-    context = ssl_context(cert, key)
-
-    controller_web = _repo_root() / "controller-web"
-    registry = PhoneRegistry(max_slots=4)
-    sources: list[ControllerSource] = [PhoneSource(registry)]
-    if demo:
-        sources.append(DemoSource())
-
-    hub = InputHub(sources)
-    hub.start()
-
-    server = DevServer(
-        host="0.0.0.0",
-        port=port,
-        controller_web=controller_web,
-        ssl_context=context,
-        token=session_token,
-        registry=registry,
-    )
-    server.start()
-
-    url = f"https://{lan_host}:{port}/?token={session_token}"
-    print("\nTOXINATOR · dev phone\n", flush=True)
-    print(f"  URL:   {url}", flush=True)
-    print("  Wi-Fi: misma red que la consola", flush=True)
-    print("  Cert:  aceptá el aviso de certificado autofirmado una vez", flush=True)
-    if demo:
-        print("  Demo:  fuente sintética activa (P1)", flush=True)
-    print("\nEscaneá el QR desde el celular:\n", flush=True)
-    _print_qr(url)
-    print("\nCtrl+C para salir.\n", flush=True)
-
     try:
+        announce_phone(session, demo=demo)
+
         if headless:
             deadline = time.monotonic() + seconds if seconds is not None else None
             last_print = 0.0
             try:
                 while True:
-                    state = hub.poll()
+                    state = session.hub.poll()
                     now = time.monotonic()
                     if now - last_print >= 0.5:
                         print(_state_line(state), flush=True)
@@ -148,7 +92,7 @@ def run_phone_dev(
         if screenshot is not None:
             screenshot.parent.mkdir(parents=True, exist_ok=True)
         app = PhoneApp(
-            hub,
+            session.hub,
             screenshot=screenshot,
             screenshot_after=screenshot_after,
             seconds=seconds,
@@ -156,5 +100,4 @@ def run_phone_dev(
         )
         app.run()
     finally:
-        server.stop()
-        hub.stop()
+        session.stop()

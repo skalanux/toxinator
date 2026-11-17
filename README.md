@@ -6,7 +6,7 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-El primer corte de implementación ya corre: `toxinator dev phone` levanta un servidor HTTPS/WSS, muestra el QR, sirve la PWA del celular y abre una escena mínima en Panda3D. El juego **Maldito Pino** y el Wiimote todavía no están integrados.
+Ya corren dos cortes: `toxinator dev phone` (servidor HTTPS/WSS, QR, PWA del celular y escena mínima) y `toxinator play maldito-pino` (un jugador, 10 turnos, tiro con el celular y scoring). El Wiimote, el launcher y el hot-seat de 1–4 jugadores todavía no están integrados.
 
 ## Documentos
 
@@ -39,8 +39,9 @@ git show origin/research/wiimote-linux:research/wiimote-linux.md
 ## Desarrollo
 
 ```bash
-uv sync
+uv sync --all-packages
 uv run toxinator dev phone
+uv run toxinator play maldito-pino
 uv run pytest
 uv run ruff check
 uv run mypy
@@ -69,8 +70,34 @@ uv run toxinator dev phone --offscreen --screenshot /tmp/toxinator.png
 uv run toxinator dev phone --host 192.168.0.141 --port 8443
 ```
 
-En esta etapa el único mando es el celular; Wiimote, gamepad y el juego entran
-en los siguientes cortes.
+En esta etapa el único mando es el celular; Wiimote y gamepad entran en los
+siguientes cortes.
+
+## Maldito Pino jugable
+
+```bash
+uv sync --all-packages
+uv run toxinator play maldito-pino
+```
+
+El juego abre con el QR en el terminal. Desde el celular:
+
+- **Arrastrá** en el touchpad para apuntar.
+- **Incliná** el teléfono para dar efecto.
+- **Mantené A** para cargar potencia y **soltá** para tirar.
+- **Calibrar** toma la pose actual como neutra.
+
+Es un corte de **un jugador**: 10 turnos, plenos/spares, 10º turno con bonus y
+marcador. Hot-seat de 1–4, práctica y desempate quedan para el siguiente corte.
+La física usa los parámetros validados en #16 (bola 7 kg, pinos 1.5 kg, CCD,
+1/120).
+
+Sin celular, para ver la escena y el auto-juego:
+
+```bash
+uv run toxinator play maldito-pino --demo
+uv run toxinator play maldito-pino --demo --offscreen --screenshot /tmp/pino.png
+```
 
 ## Continuar desde otra máquina
 

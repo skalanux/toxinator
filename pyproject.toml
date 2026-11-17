@@ -31,7 +31,7 @@ packages = ["src/toxinator"]
 members = ["games/maldito-pino"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "games/maldito-pino/tests"]
 pythonpath = ["src"]
 addopts = "-q"
 

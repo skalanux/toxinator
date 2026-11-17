@@ -4,4 +4,4 @@ version = "0.1.0"
 requires_api = "0.1"
 locales = ["es", "en"]
 default_locale = "es"
-players = [1, 4]
+players = [1, 1]
