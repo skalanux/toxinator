@@ -6,6 +6,19 @@
 
 const VARIANTS = ["A", "B", "C"];
 const VARIANT_NAMES = { A: "Carousel", B: "Biblioteca", C: "Mosaico" };
+const THEMES = ["neon", "toxica", "comic", "bolera78"];
+const THEME_NAMES = {
+  neon: "Neón",
+  toxica: "Tóxica",
+  comic: "Cómic",
+  bolera78: "Bolera 78",
+};
+const THEME_TAGLINES = {
+  neon: "NEÓN",
+  toxica: "LIGA TÓXICA",
+  comic: "CÓMIC DE BARRIO",
+  bolera78: "LIGA DE BARRIO · 1978",
+};
 const QUALITY_LEVELS = {
   es: ["Baja", "Media", "Alta"],
   en: ["Low", "Medium", "High"],
@@ -157,6 +170,7 @@ const I18N = {
     select: "Seleccionar",
     navigate: "Navegar",
     variant: "Variante",
+    theme: "Tema",
     help: "Ayuda",
     installed: "Instalado",
     notInstalled: "No instalado",
@@ -248,6 +262,7 @@ const I18N = {
     select: "Select",
     navigate: "Navigate",
     variant: "Variant",
+    theme: "Theme",
     help: "Help",
     installed: "Installed",
     notInstalled: "Not installed",
@@ -358,7 +373,8 @@ const CAP_LABELS = {
 /* ------------------------------------------------------------------ */
 
 const query = new URLSearchParams(location.search);
-const requestedVariant = (query.get("variant") || "A").toUpperCase();
+const requestedVariant = (query.get("variant") || "C").toUpperCase();
+const requestedTheme = (query.get("theme") || "toxica").toLowerCase();
 const KNOWN_SCREENS = [
   "home",
   "detail",
@@ -376,7 +392,8 @@ const screenFromQuery =
   requestedScreen === "empty" ? "home" : requestedScreen;
 
 const state = {
-  variant: VARIANTS.includes(requestedVariant) ? requestedVariant : "A",
+  variant: VARIANTS.includes(requestedVariant) ? requestedVariant : "C",
+  theme: THEMES.includes(requestedTheme) ? requestedTheme : "toxica",
   screen: KNOWN_SCREENS.includes(screenFromQuery) ? screenFromQuery : "home",
   language: "es",
   selectedGame: 0,
@@ -552,7 +569,7 @@ function controllerIcon(controller, size = 22) {
 }
 
 function gameArt(game, extra = "") {
-  return `<div class="game-art ${extra}" style="--accent:${game.accent}">${icon(game.icon, 96)}</div>`;
+  return `<div class="game-art ${extra}" style="--game-accent:${game.accent}">${icon(game.icon, 96)}</div>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -561,7 +578,7 @@ function gameArt(game, extra = "") {
 
 function renderTopbar() {
   return `<header class="topbar">
-    <div class="brand"><span class="mark">${icon("pin", 28)}</span>Toxinator <small>3</small></div>
+    <div class="brand"><span class="mark">${icon("pin", 28)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
     <div class="topbar-center">${t("home")}</div>
     <div class="topbar-actions">
       <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
@@ -581,7 +598,7 @@ function renderTopC() {
     .join("");
 
   return `<header class="top-c">
-    <div class="brand"><span class="mark">${icon("pin", 26)}</span>Toxinator <small>3</small></div>
+    <div class="brand"><span class="mark">${icon("pin", 26)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
     <div class="topbar-actions">
       <div class="status-dots">${dots}<span class="badge">${connectedCount()}/4</span></div>
       <button class="pill-button" data-action="language"><span class="dot"></span>${state.language.toUpperCase()}</button>
@@ -627,6 +644,7 @@ function renderHints() {
     ["S", t("settings")],
     ["H", t("help")],
     ["V", t("variant")],
+    ["T", t("theme")],
   ];
   return `<div class="hints">${hints
     .map(([key, label]) => `<span><kbd>${key}</kbd>${label}</span>`)
@@ -635,7 +653,7 @@ function renderHints() {
 
 function renderGameCard(game, index) {
   const selected = index === state.selectedGame;
-  return `<button class="game-card ${selected ? "selected" : ""}" data-action="open-detail" data-game="${index}" style="--accent:${game.accent}">
+  return `<button class="game-card ${selected ? "selected" : ""}" data-action="open-detail" data-game="${index}" style="--game-accent:${game.accent}">
     ${gameArt(game)}
     <div class="card-title">${escapeHtml(game.title)}</div>
     <div class="card-sub">${escapeHtml(game.subtitle)}</div>
@@ -658,7 +676,7 @@ function renderModePills(game) {
 function renderDetailsA() {
   const game = currentGame();
   const mode = currentMode();
-  return `<div class="details-a" style="--accent:${game.accent}">
+  return `<div class="details-a" style="--game-accent:${game.accent}">
     <div>
       <h2>${escapeHtml(game.title)} <span class="muted" style="font-size:0.55em;font-weight:500">${escapeHtml(game.subtitle)}</span></h2>
       <p>${escapeHtml(localized(game.description))}</p>
@@ -685,7 +703,7 @@ function renderHomeA() {
 }
 
 function renderSideItem(game, index) {
-  return `<button class="side-item ${index === state.selectedGame ? "selected" : ""} ${game.installed ? "installed" : ""}" data-action="open-detail" data-game="${index}" style="--accent:${game.accent}">
+  return `<button class="side-item ${index === state.selectedGame ? "selected" : ""} ${game.installed ? "installed" : ""}" data-action="open-detail" data-game="${index}" style="--game-accent:${game.accent}">
     ${gameArt(game)}
     <span><span class="title">${escapeHtml(game.title)}</span><span class="sub">${escapeHtml(game.subtitle)}</span></span>
     <span class="state"></span>
@@ -701,7 +719,7 @@ function renderHomeB() {
       <div class="sidebar-title">${t("library")}</div>
       ${GAMES.map(renderSideItem).join("")}
     </aside>
-    <section class="hero-b" style="--accent:${game.accent}">
+    <section class="hero-b" style="--game-accent:${game.accent}">
       <div class="hero-art-b">
         ${gameArt(game)}
         <div class="hero-overlay-b">
@@ -731,7 +749,7 @@ function renderHomeB() {
 }
 
 function renderTile(game, index) {
-  return `<button class="tile ${index === state.selectedGame ? "selected" : ""}" data-action="open-detail" data-game="${index}" style="--accent:${game.accent}">
+  return `<button class="tile ${index === state.selectedGame ? "selected" : ""}" data-action="open-detail" data-game="${index}" style="--game-accent:${game.accent}">
     ${gameArt(game)}
     <div class="tile-label">
       <div class="title">${escapeHtml(game.title)}</div>
@@ -747,12 +765,12 @@ function renderHomeC() {
     ${renderTopC()}
     <div class="grid-c">
       ${GAMES.map(renderTile).join("")}
-      <button class="tile empty-tile" data-action="empty" style="--accent:#8b9bb6">
+      <button class="tile empty-tile" data-action="empty" style="--game-accent:#8b9bb6">
         ${gameArt({ accent: "#8b9bb6", icon: "plus" })}
         <div class="tile-label"><div class="title">${t("library")}</div><div class="sub">${t("comingSoon")}</div></div>
       </button>
     </div>
-    <div class="sheet-c" style="--accent:${game.accent}">
+    <div class="sheet-c" style="--game-accent:${game.accent}">
       <div>
         <h2>${escapeHtml(game.title)} <span class="muted" style="font-size:0.55em;font-weight:500">${escapeHtml(game.subtitle)}</span></h2>
         <p>${escapeHtml(localized(mode.desc))}</p>
@@ -794,7 +812,7 @@ function renderDetailOverlay() {
   const game = currentGame();
   const mode = currentMode();
   return `<div class="overlay">
-    <section class="panel" style="--accent:${game.accent}">
+    <section class="panel" style="--game-accent:${game.accent}">
       <div class="panel-header">
         <div>
           <h2>${t("gameDetails")}</h2>
@@ -804,7 +822,7 @@ function renderDetailOverlay() {
       </div>
       <div class="panel-body">
         <div class="detail-layout">
-          <div class="detail-art game-art" style="--accent:${game.accent}">${icon(game.icon, 120)}</div>
+          <div class="detail-art game-art" style="--game-accent:${game.accent}">${icon(game.icon, 120)}</div>
           <div class="detail-info">
             <h3>${escapeHtml(game.title)}</h3>
             <p class="subtitle">${escapeHtml(game.subtitle)}</p>
@@ -1032,7 +1050,7 @@ function renderQuitOverlay() {
 function renderOffOverlay() {
   return `<div class="overlay">
     <div class="off-screen">
-      <div class="brand" style="justify-content:center"><span class="mark">${icon("power", 30)}</span>Toxinator <small>3</small></div>
+      <div class="brand" style="justify-content:center"><span class="mark">${icon("power", 30)}</span>Toxinator <small>3</small><span class="brand-tag">${THEME_TAGLINES[state.theme]}</span></div>
       <h2>${t("offTitle")}</h2>
       <p>${t("offBody")}</p>
       <div><button class="secondary-button" data-action="back">${t("back")}</button></div>
@@ -1044,7 +1062,7 @@ function renderLaunchOverlay() {
   const game = currentGame();
   const mode = currentMode();
   return `<div class="overlay">
-    <div class="launch-panel" style="--accent:${game.accent}">
+    <div class="launch-panel" style="--game-accent:${game.accent}">
       <div class="launch-art game-art">${icon(game.icon, 86)}</div>
       <h2>${escapeHtml(game.title)}</h2>
       <p>${escapeHtml(localized(mode.name))} · ${game.players[0]}–${game.players[1]} ${t("playersShort")}</p>
@@ -1069,6 +1087,7 @@ function renderHelpOverlay() {
     ["L", t("language")],
     ["H", t("help")],
     ["V", t("variant")],
+    ["T", t("theme")],
     ["J", t("simulateJoin")],
   ];
   return `<div class="overlay">
@@ -1120,6 +1139,7 @@ function renderOverlay() {
 
 function render() {
   const app = document.getElementById("app");
+  document.body.className = `theme-${state.theme}`;
   app.className = `variant-${state.variant.toLowerCase()}`;
   app.innerHTML = `${renderHome()}${renderOverlay()}`;
   renderProtoBar();
@@ -1128,9 +1148,13 @@ function render() {
 function renderProtoBar() {
   const bar = document.getElementById("proto-bar");
   if (!bar) return;
+  const compact = window.matchMedia("(max-width: 700px)").matches;
   bar.innerHTML = `<span class="proto-label">Prototipo</span>
     <button class="arrow" data-action="cycle-variant" data-delta="-1" aria-label="Variante anterior">‹</button>
-    ${VARIANTS.map((variant) => `<button class="variant-button ${state.variant === variant ? "active" : ""}" data-action="variant" data-variant="${variant}">${variant} · ${VARIANT_NAMES[variant]}</button>`).join("")}
+    ${VARIANTS.map((variant) => `<button class="variant-button ${state.variant === variant ? "active" : ""}" data-action="variant" data-variant="${variant}">${compact ? variant : `${variant} · ${VARIANT_NAMES[variant]}`}</button>`).join("")}
+    <span class="divider"></span>
+    <span class="proto-label">Tema</span>
+    ${THEMES.map((theme) => `<button class="variant-button ${state.theme === theme ? "active" : ""}" data-action="theme" data-theme="${theme}">${compact ? THEME_NAMES[theme].replace(" 78", "") : THEME_NAMES[theme]}</button>`).join("")}
     <span class="divider"></span>
     <button class="arrow" data-action="help" aria-label="${t("help")}">?</button>
     <button class="arrow" data-action="cycle-variant" data-delta="1" aria-label="Variante siguiente">›</button>`;
@@ -1140,17 +1164,35 @@ function renderProtoBar() {
 /* Actions                                                             */
 /* ------------------------------------------------------------------ */
 
-function setVariant(variant) {
-  if (!VARIANTS.includes(variant)) return;
-  state.variant = variant;
+function updateUrl() {
   try {
     const url = new URL(location.href);
-    url.searchParams.set("variant", variant);
+    url.searchParams.set("variant", state.variant);
+    url.searchParams.set("theme", state.theme);
     history.replaceState(null, "", url);
   } catch {
     // file:// and some embedded contexts may reject history updates.
   }
+}
+
+function setVariant(variant) {
+  if (!VARIANTS.includes(variant)) return;
+  state.variant = variant;
+  updateUrl();
   render();
+}
+
+function setTheme(theme) {
+  if (!THEMES.includes(theme)) return;
+  state.theme = theme;
+  updateUrl();
+  render();
+}
+
+function cycleTheme(delta) {
+  const index = THEMES.indexOf(state.theme);
+  const next = (index + delta + THEMES.length) % THEMES.length;
+  setTheme(THEMES[next]);
 }
 
 function cycleVariant(delta) {
@@ -1479,6 +1521,9 @@ document.addEventListener("click", (event) => {
     case "variant":
       setVariant(target.dataset.variant);
       break;
+    case "theme":
+      setTheme(target.dataset.theme);
+      break;
     case "cycle-variant":
       cycleVariant(Number(target.dataset.delta) || 1);
       break;
@@ -1560,6 +1605,11 @@ document.addEventListener("keydown", (event) => {
   if (key === "v" || key === "V") {
     event.preventDefault();
     cycleVariant(1);
+    return;
+  }
+  if (key === "t" || key === "T") {
+    event.preventDefault();
+    cycleTheme(1);
     return;
   }
   if (key === "h" || key === "H") {

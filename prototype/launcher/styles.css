@@ -13,6 +13,8 @@
   --red: #ff5c6c;
   --radius: 18px;
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-ui);
 }
 
 * {
@@ -25,8 +27,23 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-ui);
   overscroll-behavior: none;
+}
+
+.brand,
+.details-a h2,
+.hero-overlay-b h2,
+.tile .tile-label .title,
+.sheet-c h2,
+.panel-header h2,
+.detail-info h3,
+.launch-panel h2,
+.off-screen h2,
+.empty-home h2,
+.game-card .card-title,
+.side-item .title {
+  font-family: var(--font-display);
 }
 
 body {
@@ -94,6 +111,16 @@ svg {
   letter-spacing: 0.16em;
 }
 
+.brand-tag {
+  margin-left: 10px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .topbar-center {
   color: var(--muted);
   font-size: 0.78rem;
@@ -156,9 +183,9 @@ svg {
   overflow: hidden;
   border-radius: calc(var(--radius) - 2px);
   background:
-    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--accent) 36%, transparent), transparent 60%),
-    linear-gradient(150deg, color-mix(in srgb, var(--accent) 16%, var(--panel)), var(--panel-2));
-  color: var(--accent);
+    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--game-accent, var(--accent)) 36%, transparent), transparent 60%),
+    linear-gradient(150deg, color-mix(in srgb, var(--game-accent, var(--accent)) 16%, var(--panel)), var(--panel-2));
+  color: var(--game-accent, var(--accent));
 }
 
 .game-art::after {
@@ -166,7 +193,7 @@ svg {
   position: absolute;
   inset: auto -30% -55% -30%;
   height: 70%;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--game-accent, var(--accent)) 26%, transparent), transparent 70%);
   pointer-events: none;
 }
 
@@ -1474,6 +1501,7 @@ button:disabled {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 #proto-bar .variant-button:hover,
@@ -1530,6 +1558,22 @@ button:disabled {
 @media (max-width: 900px) {
   .launcher {
     padding: 16px 16px 88px;
+  }
+
+  .topbar,
+  .top-c {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .brand-tag {
+    display: none;
+  }
+
+  body.theme-bolera78 .topbar,
+  body.theme-bolera78 .top-c {
+    margin: -16px -16px 0;
+    padding: 10px 12px;
   }
 
   .topbar-center {
@@ -1626,5 +1670,971 @@ button:disabled {
 
   .meta-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ================================================================
+   DESIGN DIRECTIONS
+   The three identities below are deliberately not "dark neon UI".
+   They are grounded in the console's living-room / bowling / comic
+   subject matter and use flat color, edge, and type as structure.
+   ================================================================ */
+
+/* ---------- 1. LIGA TÓXICA ---------- */
+
+body.theme-toxica {
+  color-scheme: light;
+  --bg: #e9e2d0;
+  --bg-2: #f3ecdb;
+  --panel: #f3ecdb;
+  --panel-2: #e4dcc8;
+  --line: #151412;
+  --text: #151412;
+  --muted: #625d52;
+  --accent: #f05a28;
+  --warm: #d8f23a;
+  --green: #2f6b4f;
+  --red: #c7352b;
+  --radius: 0px;
+  --shadow: 8px 8px 0 #151412;
+  --font-ui: "Nimbus Sans Narrow", "Liberation Sans", sans-serif;
+  --font-display: "Nimbus Sans Narrow", "Liberation Sans", sans-serif;
+  background-color: var(--bg);
+  background-image: none;
+}
+
+body.theme-toxica::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1001;
+  height: 9px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--line) 0 11px,
+    var(--warm) 11px 22px
+  );
+  pointer-events: none;
+}
+
+body.theme-toxica .topbar,
+body.theme-toxica .top-c {
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 12px;
+}
+
+body.theme-toxica .brand {
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+body.theme-toxica .brand .mark {
+  width: 32px;
+  height: 32px;
+  padding: 3px;
+  color: var(--line);
+  background: var(--warm);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--line);
+}
+
+body.theme-toxica .brand-tag {
+  color: var(--accent);
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+
+body.theme-toxica .topbar-center {
+  font-family: var(--font-display);
+  color: var(--line);
+  letter-spacing: 0.18em;
+}
+
+body.theme-toxica .pill-button,
+body.theme-toxica .secondary-button,
+body.theme-toxica .value-step {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 3px 3px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-toxica .pill-button .dot {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+body.theme-toxica .pill-button:hover,
+body.theme-toxica .pill-button:focus-visible,
+body.theme-toxica .secondary-button:hover,
+body.theme-toxica .secondary-button:focus-visible {
+  background: var(--warm);
+  border-color: var(--line);
+}
+
+body.theme-toxica .game-art {
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  border-radius: 0;
+  box-shadow: 5px 5px 0 var(--line);
+  color: var(--accent);
+}
+
+body.theme-toxica .game-art::after {
+  inset: auto 0 0;
+  height: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--line) 0 8px,
+    var(--warm) 8px 16px
+  );
+  opacity: 1;
+}
+
+body.theme-toxica .game-art svg {
+  filter: none;
+}
+
+body.theme-toxica .game-card,
+body.theme-toxica .tile {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 6px 6px 0 var(--line);
+  opacity: 0.78;
+}
+
+body.theme-toxica .game-card.selected,
+body.theme-toxica .tile.selected {
+  border-color: var(--accent);
+  box-shadow: 8px 8px 0 var(--line);
+  opacity: 1;
+}
+
+body.theme-toxica .game-card.selected::before,
+body.theme-toxica .tile.selected::after {
+  border-color: var(--accent);
+  border-radius: 0;
+}
+
+body.theme-toxica .tile .tile-label {
+  background: var(--panel);
+  border-top: 2px solid var(--line);
+}
+
+body.theme-toxica .tile .tile-label .title,
+body.theme-toxica .game-card .card-title {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+body.theme-toxica .tile .tile-label .sub,
+body.theme-toxica .game-card .card-sub {
+  font-family: var(--font-ui);
+  color: var(--muted);
+}
+
+body.theme-toxica .badge {
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--muted);
+  font-family: var(--font-ui);
+}
+
+body.theme-toxica .badge.accent {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--line);
+}
+
+body.theme-toxica .badge.warn {
+  border-color: var(--line);
+  background: var(--warm);
+  color: var(--line);
+}
+
+body.theme-toxica .primary-button {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--warm);
+  color: var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+body.theme-toxica .primary-button:hover,
+body.theme-toxica .primary-button:focus-visible {
+  background: var(--accent);
+  color: var(--line);
+  filter: none;
+}
+
+body.theme-toxica .mode-pill {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--line);
+}
+
+body.theme-toxica .mode-pill.selected {
+  background: var(--accent);
+  color: var(--line);
+  border-color: var(--line);
+}
+
+body.theme-toxica .details-a,
+body.theme-toxica .hero-actions-b,
+body.theme-toxica .controller-panel-b {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 5px 5px 0 var(--line);
+}
+
+body.theme-toxica .sheet-c {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 6px 6px 0 var(--line);
+}
+
+body.theme-toxica .sheet-c .primary-button {
+  background: var(--accent);
+}
+
+body.theme-toxica .controller-chip {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+}
+
+body.theme-toxica .controller-chip .icon,
+body.theme-toxica .slot-icon {
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: var(--warm);
+  color: var(--line);
+}
+
+body.theme-toxica .hints {
+  color: var(--muted);
+}
+
+body.theme-toxica .hints kbd {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-toxica .panel {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 10px 10px 0 var(--line);
+}
+
+body.theme-toxica .overlay {
+  background: rgba(21, 20, 18, 0.62);
+}
+
+body.theme-toxica .detail-art {
+  background: var(--panel-2);
+}
+
+body.theme-toxica .mode-row,
+body.theme-toxica .setting-row,
+body.theme-toxica .slot-card,
+body.theme-toxica .players-summary,
+body.theme-toxica .meta-item {
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+}
+
+body.theme-toxica .mode-row.selected,
+body.theme-toxica .setting-row.selected,
+body.theme-toxica .slot-card.selected {
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+
+body.theme-toxica .value-step {
+  border-radius: 0;
+}
+
+body.theme-toxica .launch-panel {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 10px 10px 0 var(--line);
+}
+
+body.theme-toxica .progress {
+  border-radius: 0;
+  background: var(--panel-2);
+  border: 1.5px solid var(--line);
+}
+
+body.theme-toxica .progress span {
+  border-radius: 0;
+  background: var(--accent);
+}
+
+/* ---------- 2. CÓMIC DE BARRIO ---------- */
+
+body.theme-comic {
+  color-scheme: light;
+  --bg: #efe7d5;
+  --bg-2: #e5dac3;
+  --panel: #fff8e7;
+  --panel-2: #f1e4c8;
+  --line: #17130f;
+  --text: #17130f;
+  --muted: #665b4d;
+  --accent: #f23b7a;
+  --warm: #ffd400;
+  --green: #00a6c8;
+  --red: #e23a2e;
+  --radius: 0px;
+  --shadow: 6px 6px 0 #17130f;
+  --font-ui: "Liberation Sans", "Noto Sans", sans-serif;
+  --font-display: "Liberation Sans", "Noto Sans", sans-serif;
+  background-color: var(--bg);
+  background-image: radial-gradient(#17130f14 1px, transparent 1px);
+  background-size: 5px 5px;
+}
+
+body.theme-comic .brand {
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.45rem;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  text-shadow: 2px 2px 0 var(--warm);
+}
+
+body.theme-comic .brand .mark {
+  width: 34px;
+  height: 34px;
+  padding: 4px;
+  color: var(--line);
+  background: var(--warm);
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 var(--line);
+}
+
+body.theme-comic .brand-tag {
+  color: var(--line);
+  background: var(--warm);
+  border: 2px solid var(--line);
+  padding: 2px 6px;
+  font-family: var(--font-display);
+  font-style: italic;
+  letter-spacing: 0.04em;
+  transform: rotate(-2deg);
+}
+
+body.theme-comic .topbar-center {
+  color: var(--line);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+body.theme-comic .pill-button,
+body.theme-comic .secondary-button,
+body.theme-comic .value-step {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 3px 3px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-comic .pill-button .dot {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+body.theme-comic .pill-button:hover,
+body.theme-comic .pill-button:focus-visible,
+body.theme-comic .secondary-button:hover,
+body.theme-comic .secondary-button:focus-visible {
+  background: var(--warm);
+  border-color: var(--line);
+}
+
+body.theme-comic .game-art {
+  background: var(--panel-2);
+  border: 3px solid var(--line);
+  border-radius: 0;
+  box-shadow: 6px 6px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-comic [data-game="0"] .game-art {
+  background: var(--accent);
+}
+
+body.theme-comic [data-game="1"] .game-art {
+  background: var(--warm);
+}
+
+body.theme-comic [data-game="2"] .game-art {
+  background: var(--green);
+}
+
+body.theme-comic .game-art::after {
+  inset: 0;
+  height: auto;
+  background-image: radial-gradient(#17130f24 1.2px, transparent 1.2px);
+  background-size: 6px 6px;
+  opacity: 0.55;
+}
+
+body.theme-comic .game-art svg {
+  filter: drop-shadow(2px 2px 0 var(--line));
+}
+
+body.theme-comic .game-card,
+body.theme-comic .tile {
+  border: 3px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 6px 6px 0 var(--line);
+  opacity: 0.8;
+}
+
+body.theme-comic .game-card.selected,
+body.theme-comic .tile.selected {
+  border-color: var(--line);
+  box-shadow: 8px 8px 0 var(--accent);
+  opacity: 1;
+  transform: rotate(-0.5deg) scale(1.01);
+}
+
+body.theme-comic .game-card.selected::before,
+body.theme-comic .tile.selected::after {
+  border-color: var(--line);
+  border-radius: 0;
+}
+
+body.theme-comic .tile .tile-label {
+  background: var(--panel);
+  border-top: 3px solid var(--line);
+}
+
+body.theme-comic .tile .tile-label .title,
+body.theme-comic .game-card .card-title {
+  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: -0.02em;
+}
+
+body.theme-comic .tile .tile-label .sub,
+body.theme-comic .game-card .card-sub {
+  font-family: var(--font-ui);
+  color: var(--muted);
+}
+
+body.theme-comic .badge {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--line);
+  font-weight: 700;
+}
+
+body.theme-comic .badge.accent {
+  background: var(--warm);
+  border-color: var(--line);
+  color: var(--line);
+}
+
+body.theme-comic .badge.warn {
+  background: var(--accent);
+  border-color: var(--line);
+  color: var(--line);
+}
+
+body.theme-comic .primary-button {
+  border: 3px solid var(--line);
+  border-radius: 0;
+  background: var(--accent);
+  color: var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+  font-family: var(--font-display);
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+body.theme-comic .primary-button:hover,
+body.theme-comic .primary-button:focus-visible {
+  background: var(--warm);
+  color: var(--line);
+  filter: none;
+}
+
+body.theme-comic .mode-pill {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--line);
+}
+
+body.theme-comic .mode-pill.selected {
+  background: var(--warm);
+  color: var(--line);
+  border-color: var(--line);
+}
+
+body.theme-comic .details-a,
+body.theme-comic .hero-actions-b,
+body.theme-comic .controller-panel-b {
+  border: 3px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 5px 5px 0 var(--line);
+}
+
+body.theme-comic .sheet-c {
+  border: 3px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 6px 6px 0 var(--line);
+}
+
+body.theme-comic .sheet-c .primary-button {
+  background: var(--warm);
+}
+
+body.theme-comic .controller-chip {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+}
+
+body.theme-comic .controller-chip .icon,
+body.theme-comic .slot-icon {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--warm);
+  color: var(--line);
+}
+
+body.theme-comic .hints {
+  color: var(--muted);
+}
+
+body.theme-comic .hints kbd {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-comic .panel {
+  border: 3px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 8px 8px 0 var(--line);
+}
+
+body.theme-comic .overlay {
+  background: rgba(23, 19, 15, 0.55);
+}
+
+body.theme-comic .detail-art {
+  background: var(--panel-2);
+}
+
+body.theme-comic .mode-row,
+body.theme-comic .setting-row,
+body.theme-comic .slot-card,
+body.theme-comic .players-summary,
+body.theme-comic .meta-item {
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+}
+
+body.theme-comic .mode-row.selected,
+body.theme-comic .setting-row.selected,
+body.theme-comic .slot-card.selected {
+  border-color: var(--line);
+  background: var(--panel-2);
+  box-shadow: 3px 3px 0 var(--accent);
+}
+
+body.theme-comic .launch-panel {
+  border: 3px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  box-shadow: 10px 10px 0 var(--line);
+}
+
+body.theme-comic .progress {
+  border-radius: 0;
+  border: 2px solid var(--line);
+  background: var(--panel-2);
+}
+
+body.theme-comic .progress span {
+  border-radius: 0;
+  background: var(--accent);
+}
+
+/* ---------- 3. BOLERA 78 ---------- */
+
+body.theme-bolera78 {
+  color-scheme: light;
+  --bg: #efe0c3;
+  --bg-2: #e5d2ad;
+  --panel: #fbf0d8;
+  --panel-2: #f2e0bd;
+  --line: #4a2e1f;
+  --text: #2b1a11;
+  --muted: #7a5a40;
+  --accent: #c65a2e;
+  --warm: #d9a441;
+  --green: #6e7b3a;
+  --red: #a83a2c;
+  --radius: 22px;
+  --shadow: 0 18px 50px rgba(74, 46, 31, 0.18);
+  --font-ui: "Liberation Sans", "Noto Sans", sans-serif;
+  --font-display: "Nimbus Sans Narrow", "Liberation Sans", sans-serif;
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(120deg, transparent 0 28px, #6e7b3a10 28px 30px),
+    repeating-linear-gradient(60deg, transparent 0 42px, #c65a2e0d 42px 44px),
+    radial-gradient(#4a2e1f0d 1px, transparent 1px);
+  background-size: auto, auto, 6px 6px;
+}
+
+body.theme-bolera78 .topbar,
+body.theme-bolera78 .top-c {
+  margin: -20px -28px 0;
+  padding: 12px 16px 10px;
+  border-bottom: 4px solid var(--line);
+  border-radius: 0 0 20px 20px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #4a2e1f 0 3px,
+      #5b3826 3px 7px,
+      #4a2e1f 7px 10px
+    );
+  color: var(--panel);
+}
+
+body.theme-bolera78 .brand {
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--panel);
+}
+
+body.theme-bolera78 .brand small {
+  color: var(--warm);
+}
+
+body.theme-bolera78 .brand .mark {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  color: var(--line);
+  background: var(--warm);
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 var(--line);
+}
+
+body.theme-bolera78 .brand-tag {
+  color: var(--warm);
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+}
+
+body.theme-bolera78 .topbar-center {
+  color: var(--panel);
+  font-family: var(--font-display);
+  letter-spacing: 0.16em;
+}
+
+body.theme-bolera78 .topbar-actions .pill-button {
+  border: 2px solid var(--line);
+  background: var(--panel);
+  color: var(--line);
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+body.theme-bolera78 .pill-button .dot {
+  background: var(--green);
+  box-shadow: none;
+}
+
+body.theme-bolera78 .game-art {
+  background: var(--panel-2);
+  border: 3px solid var(--line);
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 4px var(--panel), 4px 4px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-bolera78 [data-game="0"] .game-art {
+  background: var(--warm);
+}
+
+body.theme-bolera78 [data-game="1"] .game-art {
+  background: var(--accent);
+}
+
+body.theme-bolera78 [data-game="2"] .game-art {
+  background: var(--green);
+}
+
+body.theme-bolera78 .game-art::after {
+  inset: auto 0 0;
+  height: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0 14px,
+    var(--warm) 14px 28px,
+    var(--green) 28px 42px
+  );
+  opacity: 1;
+}
+
+body.theme-bolera78 .game-art svg {
+  filter: none;
+}
+
+body.theme-bolera78 .game-card,
+body.theme-bolera78 .tile {
+  border: 3px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: 5px 5px 0 var(--line);
+  opacity: 0.8;
+}
+
+body.theme-bolera78 .game-card.selected,
+body.theme-bolera78 .tile.selected {
+  border-color: var(--line);
+  box-shadow: 7px 7px 0 var(--warm);
+  opacity: 1;
+}
+
+body.theme-bolera78 .game-card.selected::before,
+body.theme-bolera78 .tile.selected::after {
+  border-color: var(--warm);
+  border-radius: 22px;
+}
+
+body.theme-bolera78 .tile .tile-label {
+  background: var(--panel);
+  border-top: 3px solid var(--line);
+  border-radius: 0 0 18px 18px;
+}
+
+body.theme-bolera78 .tile .tile-label .title,
+body.theme-bolera78 .game-card .card-title {
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+body.theme-bolera78 .tile .tile-label .sub,
+body.theme-bolera78 .game-card .card-sub {
+  font-family: var(--font-ui);
+  color: var(--muted);
+}
+
+body.theme-bolera78 .badge {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+body.theme-bolera78 .badge.accent {
+  background: var(--warm);
+  border-color: var(--line);
+  color: var(--line);
+}
+
+body.theme-bolera78 .badge.warn {
+  background: var(--accent);
+  border-color: var(--line);
+  color: var(--panel);
+}
+
+body.theme-bolera78 .primary-button {
+  border: 3px solid var(--line);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--panel);
+  box-shadow: 3px 3px 0 var(--line);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+body.theme-bolera78 .primary-button:hover,
+body.theme-bolera78 .primary-button:focus-visible {
+  background: var(--warm);
+  color: var(--line);
+  filter: none;
+}
+
+body.theme-bolera78 .mode-pill {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--line);
+}
+
+body.theme-bolera78 .mode-pill.selected {
+  background: var(--warm);
+  color: var(--line);
+  border-color: var(--line);
+}
+
+body.theme-bolera78 .details-a,
+body.theme-bolera78 .hero-actions-b,
+body.theme-bolera78 .controller-panel-b {
+  border: 3px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: 4px 4px 0 var(--line);
+}
+
+body.theme-bolera78 .sheet-c {
+  border: 3px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: 5px 5px 0 var(--line);
+}
+
+body.theme-bolera78 .sheet-c .primary-button {
+  background: var(--warm);
+  color: var(--line);
+}
+
+body.theme-bolera78 .controller-chip {
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+}
+
+body.theme-bolera78 .controller-chip .icon,
+body.theme-bolera78 .slot-icon {
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--warm);
+  color: var(--line);
+}
+
+body.theme-bolera78 .hints {
+  color: var(--line);
+}
+
+body.theme-bolera78 .hints kbd {
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 2px 2px 0 var(--line);
+  color: var(--line);
+}
+
+body.theme-bolera78 .panel {
+  border: 3px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 6px 6px 0 var(--line);
+}
+
+body.theme-bolera78 .overlay {
+  background: rgba(74, 46, 31, 0.5);
+}
+
+body.theme-bolera78 .detail-art {
+  background: var(--panel-2);
+}
+
+body.theme-bolera78 .mode-row,
+body.theme-bolera78 .setting-row,
+body.theme-bolera78 .slot-card,
+body.theme-bolera78 .players-summary,
+body.theme-bolera78 .meta-item {
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+body.theme-bolera78 .mode-row.selected,
+body.theme-bolera78 .setting-row.selected,
+body.theme-bolera78 .slot-card.selected {
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+
+body.theme-bolera78 .launch-panel {
+  border: 3px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: 8px 8px 0 var(--line);
+}
+
+body.theme-bolera78 .progress {
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  background: var(--panel-2);
+}
+
+body.theme-bolera78 .progress span {
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+@media (max-width: 700px) {
+  .launcher {
+    padding-bottom: 118px;
+  }
+
+  #proto-bar {
+    bottom: 8px;
+    gap: 3px;
+    padding: 5px;
+  }
+
+  #proto-bar .proto-label,
+  #proto-bar .divider {
+    display: none;
+  }
+
+  #proto-bar .variant-button {
+    padding: 0 8px;
+    font-size: 0.66rem;
+  }
+
+  #proto-bar .arrow {
+    width: 26px;
+    height: 26px;
+  }
+
+  .hints {
+    gap: 8px;
+    font-size: 0.7rem;
   }
 }
