@@ -29,20 +29,66 @@ uv run toxinator dev phone
 `localhost` es un contexto seguro, así que los sensores funcionan por `adb reverse`
 sin certificados.
 
-## Probar por LAN (HTTPS)
+## Probar por LAN (HTTPS, sin adb)
 
 Los sensores necesitan un contexto seguro. Servir por `http://192.168.x.x` no alcanza.
+El camino recomendado es un CA local con `mkcert`, instalado una vez en Android.
+
+1. Averiguá la IP LAN de la PC:
+
+```bash
+ip -4 -o addr show scope global
+```
+
+2. Generá el certificado para esa IP (reemplazá `192.168.0.141`):
+
+```bash
+mkdir -p ~/.config/toxinator/certs
+mkcert \
+  -cert-file ~/.config/toxinator/certs/cert.pem \
+  -key-file ~/.config/toxinator/certs/key.pem \
+  192.168.0.141 localhost 127.0.0.1
+cp "$(mkcert -CAROOT)/rootCA.pem" ~/.config/toxinator/certs/toxinator-ca.crt
+```
+
+3. Pasá **solo** el CA al teléfono e instalalo como certificado de CA. Una forma
+   simple es servirlo por HTTP temporalmente:
+
+```bash
+mkdir -p /tmp/toxinator-ca-share
+cp ~/.config/toxinator/certs/toxinator-ca.crt /tmp/toxinator-ca-share/
+cd /tmp/toxinator-ca-share
+python3 -m http.server 8000 --bind 0.0.0.0
+```
+
+En el teléfono abrí `http://192.168.0.141:8000/toxinator-ca.crt`, descargalo e
+instalalo desde **Ajustes → Seguridad → Instalar un certificado → Certificado de CA**.
+El CA es público; la clave privada nunca se sirve. Pará el servidor HTTP después.
+
+4. Abrí los puertos en el firewall (si UFW está activo):
+
+```bash
+sudo ufw allow from 192.168.0.0/24 to any port 8443 proto tcp
+sudo ufw allow from 192.168.0.0/24 to any port 8000 proto tcp
+```
+
+5. Arrancá el prototipo con TLS:
 
 ```bash
 uv run toxinator dev phone \
   --host 0.0.0.0 \
-  --url https://192.168.1.50:8443 \
-  --tls-cert cert.pem \
-  --tls-key key.pem
+  --port 8443 \
+  --url https://192.168.0.141:8443 \
+  --tls-cert ~/.config/toxinator/certs/cert.pem \
+  --tls-key ~/.config/toxinator/certs/key.pem
 ```
 
-El certificado tiene que ser confiado por Android (CA local tipo `mkcert` o un
-dominio público con Let's Encrypt DNS-01). Si no, Chrome bloquea los sensores.
+6. Escaneá el QR desde el teléfono. Chrome debería aceptar el certificado sin
+   advertencia; los sensores funcionan porque el origen es HTTPS.
+
+Si la IP cambia, regenerá el certificado con la IP nueva. Si Chrome sigue
+mostrando advertencia, el CA no quedó instalado como CA de usuario; no sigas
+haciendo click en “continuar”, porque el contexto seguro no es confiable.
 
 ## Qué mirar
 
