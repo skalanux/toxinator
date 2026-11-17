@@ -17,6 +17,7 @@ const elements = {
   aButton: document.getElementById("a-button"),
   calibrate: document.getElementById("calibrate"),
   enableSensors: document.getElementById("enable-sensors"),
+  toast: document.getElementById("toast"),
 };
 
 const state = {
@@ -36,6 +37,7 @@ const state = {
   rtt: null,
   reconnectTimer: null,
   calibrationTimer: null,
+  toastTimer: null,
 };
 
 function round(value, digits) {
@@ -51,6 +53,18 @@ function setStatus(text, kind) {
 
 function setSlot(text) {
   elements.slot.textContent = text;
+}
+
+function showToast(message, kind = "") {
+  elements.toast.textContent = message;
+  elements.toast.classList.remove("warn", "error");
+  if (kind) elements.toast.classList.add(kind);
+  elements.toast.classList.add("show");
+  if (state.toastTimer !== null) window.clearTimeout(state.toastTimer);
+  state.toastTimer = window.setTimeout(() => {
+    state.toastTimer = null;
+    elements.toast.classList.remove("show");
+  }, 1700);
 }
 
 function secure() {
@@ -138,6 +152,7 @@ function connect() {
         state.calibrationTimer = null;
       }
       setStatus("Pose guardada", "online");
+      showToast("Pose guardada");
       window.setTimeout(() => {
         if (state.connected) setStatus(`P${state.slot + 1} conectado`, "online");
       }, 1200);
@@ -216,12 +231,14 @@ async function enableSensors() {
       const result = await window.DeviceMotionEvent.requestPermission();
       if (result !== "granted") {
         setStatus("Sensores bloqueados", "warn");
+        showToast("Sensores bloqueados", "error");
         return;
       }
     }
     startSensors();
   } catch {
     setStatus("Sensores bloqueados", "warn");
+    showToast("No pude activar los sensores", "error");
   }
 }
 
@@ -282,10 +299,12 @@ elements.aButton.addEventListener("contextmenu", (event) => event.preventDefault
 elements.calibrate.addEventListener("click", () => {
   if (!state.connected) {
     setStatus("Conectá primero", "warn");
+    showToast("Conectá primero", "warn");
     return;
   }
   if (!state.sensorsOn) {
     setStatus("Activá los sensores", "warn");
+    showToast("Activá los sensores", "warn");
     enableSensors();
     return;
   }
@@ -294,11 +313,15 @@ elements.calibrate.addEventListener("click", () => {
   updateReadout();
   send({ type: "calibrate" });
   setStatus("Calibrando…", "warn");
+  showToast("Calibrando… mantené quieto");
 
   if (state.calibrationTimer !== null) window.clearTimeout(state.calibrationTimer);
   state.calibrationTimer = window.setTimeout(() => {
     state.calibrationTimer = null;
-    if (state.connected) setStatus("Sin respuesta", "warn");
+    if (state.connected) {
+      setStatus("Sin respuesta", "warn");
+      showToast("Sin respuesta de la consola", "error");
+    }
   }, 2000);
 });
 
