@@ -1,0 +1,91 @@
+"""``toxinator`` command line."""
+
+from __future__ import annotations
+
+import argparse
+from collections.abc import Sequence
+from pathlib import Path
+
+from toxinator import __version__
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="toxinator",
+        description="Toxinator 3 game console",
+    )
+    parser.add_argument("--version", action="version", version=__version__)
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    dev = subparsers.add_parser("dev", help="development commands")
+    dev_sub = dev.add_subparsers(dest="dev_command", required=True)
+
+    phone = dev_sub.add_parser("phone", help="phone controller + minimal 3D scene")
+    phone.add_argument(
+        "--host",
+        default=None,
+        help="LAN IP or hostname to put in the QR (default: auto-detect)",
+    )
+    phone.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
+    phone.add_argument("--token", default=None, help="fixed session token (dev)")
+    phone.add_argument(
+        "--demo",
+        action="store_true",
+        help="add a synthetic phone on P1 (no real phone needed)",
+    )
+    phone.add_argument(
+        "--headless",
+        action="store_true",
+        help="run the server and print input without opening a window",
+    )
+    phone.add_argument(
+        "--seconds",
+        type=float,
+        default=None,
+        help="stop after N seconds",
+    )
+    phone.add_argument(
+        "--offscreen",
+        action="store_true",
+        help="render with an offscreen buffer (for screenshots/CI)",
+    )
+    phone.add_argument(
+        "--screenshot",
+        type=Path,
+        default=None,
+        help="save a screenshot and exit",
+    )
+    phone.add_argument(
+        "--screenshot-after",
+        type=float,
+        default=2.0,
+        help="seconds before the screenshot",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if args.command == "dev" and args.dev_command == "phone":
+        from toxinator.dev.phone import run_phone_dev
+
+        try:
+            run_phone_dev(
+                host=args.host,
+                port=args.port,
+                token=args.token,
+                demo=args.demo,
+                headless=args.headless,
+                seconds=args.seconds,
+                offscreen=args.offscreen,
+                screenshot=args.screenshot,
+                screenshot_after=args.screenshot_after,
+            )
+        except KeyboardInterrupt:
+            return 130
+        except (OSError, RuntimeError) as error:
+            parser.exit(1, f"toxinator: {error}\n")
+    return 0

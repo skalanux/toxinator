@@ -4,9 +4,9 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 ## Estado
 
-El proyecto está en fase de diseño. El **mapa de decisiones** y la frontera actual viven en el issue [#1](https://github.com/skalanux/toxinator/issues/1). Cada decisión cerrada está en su ticket y resumida en el mapa.
+El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-El repo todavía **no tiene código ejecutable**: contiene el mapa, el glosario, los ADRs, el diseño del launcher y la documentación de agentes. Los comandos de la sección **Desarrollo** son el objetivo del primer corte, no algo que ya funcione.
+El primer corte de implementación ya corre: `toxinator dev phone` levanta un servidor HTTPS/WSS, muestra el QR, sirve la PWA del celular y abre una escena mínima en Panda3D. El juego **Maldito Pino** y el Wiimote todavía no están integrados.
 
 ## Documentos
 
@@ -36,18 +36,41 @@ git fetch origin research/wiimote-linux research/python-3d-engine research/andro
 git show origin/research/wiimote-linux:research/wiimote-linux.md
 ```
 
-## Desarrollo (planificado)
+## Desarrollo
 
 ```bash
 uv sync
-uv run toxinator
 uv run toxinator dev phone
 uv run pytest
 uv run ruff check
 uv run mypy
 ```
 
-El primer corte es `toxinator dev phone`: QR + PWA + WSS + InputHub + escena 3D mínima, con el celular Android como mando.
+## Primer corte: `toxinator dev phone`
+
+1. Conectá el celular Android a la misma Wi-Fi que la consola.
+2. Corré `uv run toxinator dev phone`.
+3. Escaneá el QR del terminal.
+4. Aceptá el aviso de certificado autofirmado y permití los sensores.
+5. Incliná el teléfono o tocá la pantalla para mover la bola de P1. **A** es el
+   botón de acción; **Calibrar** toma la pose actual como neutra.
+
+El servidor usa un certificado autofirmado en `~/.config/toxinator/dev-cert`; si
+cambia la IP de la LAN, se regenera solo. La PWA vive en `controller-web/` y se
+sirve desde el mismo origen que el WebSocket, para que la excepción del
+certificado cubra ambos.
+
+Opciones útiles:
+
+```bash
+uv run toxinator dev phone --demo                 # P1 sintético, sin celular
+uv run toxinator dev phone --headless --demo      # servidor + estado por consola
+uv run toxinator dev phone --offscreen --screenshot /tmp/toxinator.png
+uv run toxinator dev phone --host 192.168.0.141 --port 8443
+```
+
+En esta etapa el único mando es el celular; Wiimote, gamepad y el juego entran
+en los siguientes cortes.
 
 ## Continuar desde otra máquina
 
@@ -56,12 +79,22 @@ git clone git@github.com:skalanux/toxinator.git
 cd toxinator
 ```
 
-Abrí el [mapa #1](https://github.com/skalanux/toxinator/issues/1), leé **Decisions so far** y tomá el primer ticket de la frontera. La sesión de chat no se transfiere; los artefactos y el estado del mapa sí.
+Abrí el [mapa #1](https://github.com/skalanux/toxinator/issues/1), leé **Decisions so far** y la sección **Frontier**. El mapa de decisiones está completo; sigue la implementación. La sesión de chat no se transfiere; los artefactos y el estado del mapa sí.
+
+## Prototipos
+
+Los prototipos viven en branches y no se mergean:
+
+- `prototype/launcher-ux`: launcher **LIGA · Noche**.
+- `prototype/bowling-physics`: física de pinos y tuning de bolos. Informe en
+  `prototype/bowling-physics.md` del branch; video y mediciones incluidos.
 
 ## Stack
 
 - Python 3.14
 - Panda3D 1.10.16 (XWayland)
-- Bullet para física
-- Wiimote por `hid-wiimote` + `python-evdev`
-- Celular Android por PWA HTTPS + WSS
+- `aiohttp` para HTTPS + WebSocket del controlador
+- `qrcode` para el QR del terminal
+- Bullet para física (prototipo validado; integración pendiente)
+- Wiimote por `hid-wiimote` + `python-evdev` (pendiente)
+- Celular Android por PWA HTTPS + WSS (primer corte)

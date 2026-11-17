@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1726">
+  <title>Toxinator · Mando</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="manifest" href="/static/manifest.json">
+</head>
+<body>
+  <main class="pad">
+    <header class="top">
+      <div class="brand">
+        <span class="crest">L</span>
+        <div class="brand-copy">
+          <strong>Toxinator</strong>
+          <span>MANDO · DEV PHONE</span>
+        </div>
+      </div>
+      <div id="status" class="status" role="status">Conectando…</div>
+    </header>
+
+    <section class="readout" aria-label="Sensores">
+      <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
+      <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
+      <div class="cell"><span>ACC</span><strong id="accel">0.0</strong></div>
+      <div class="cell"><span>RTT</span><strong id="rtt">—</strong></div>
+    </section>
+
+    <section class="stage">
+      <div id="touchpad" class="touchpad">
+        <div class="touch-grid"></div>
+        <div id="stick" class="stick"></div>
+        <span id="touch-hint" class="touch-hint">Incliná el teléfono<br>o arrastrá acá</span>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="a-button" class="a-button" type="button">
+        <span>A</span>
+        <small>ACCIÓN</small>
+      </button>
+      <div class="secondary-stack">
+        <button id="calibrate" class="secondary" type="button">Calibrar</button>
+        <button id="enable-sensors" class="secondary" type="button">Activar sensores</button>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span id="slot" class="slot">SIN SLOT</span>
+      <span class="hint">Misma Wi-Fi · certificado aceptado</span>
+    </footer>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

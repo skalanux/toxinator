@@ -1,0 +1,164 @@
+"""HTTPS + WebSocket development server for the phone controller."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import ssl
+import threading
+from pathlib import Path
+
+from aiohttp import WSMsgType, web
+
+from toxinator.input.phone.registry import PhoneRegistry
+
+logger = logging.getLogger(__name__)
+
+
+class DevServer:
+    """Serve the PWA and its WebSocket on one HTTPS origin.
+
+    One origin matters: the self-signed certificate exception the phone
+    accepts for the page also covers ``wss://``.
+    """
+
+    def __init__(
+        self,
+        *,
+        host: str,
+        port: int,
+        controller_web: Path,
+        ssl_context: ssl.SSLContext,
+        token: str,
+        registry: PhoneRegistry,
+    ) -> None:
+        self._host = host
+        self._port = port
+        self._controller_web = controller_web
+        self._ssl = ssl_context
+        self._token = token
+        self._registry = registry
+        self._ready = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._stop_event: asyncio.Event | None = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+        if not self._controller_web.is_dir():
+            raise RuntimeError(f"controller-web no existe: {self._controller_web}")
+        self._thread = threading.Thread(
+            target=self._run,
+            name="toxinator-dev-server",
+            daemon=True,
+        )
+        self._thread.start()
+        if not self._ready.wait(timeout=10.0):
+            raise RuntimeError("el servidor de desarrollo no arrancó")
+        logger.info("phone controller en https://%s:%s", self._host, self._port)
+
+    def stop(self) -> None:
+        loop = self._loop
+        event = self._stop_event
+        if loop is not None and event is not None:
+            loop.call_soon_threadsafe(event.set)
+        if self._thread is not None:
+            self._thread.join(timeout=10.0)
+            self._thread = None
+
+    def _run(self) -> None:
+        try:
+            asyncio.run(self._serve())
+        except Exception:
+            logger.exception("dev server failed")
+            self._ready.set()
+
+    async def _serve(self) -> None:
+        app = web.Application()
+        app.router.add_get("/", self._index)
+        app.router.add_get("/ws", self._websocket)
+        app.router.add_static("/static/", self._controller_web)
+
+        runner = web.AppRunner(app, access_log=None)
+        await runner.setup()
+        site = web.TCPSite(
+            runner,
+            self._host,
+            self._port,
+            ssl_context=self._ssl,
+        )
+        await site.start()
+
+        self._loop = asyncio.get_running_loop()
+        self._stop_event = asyncio.Event()
+        self._ready.set()
+        try:
+            await self._stop_event.wait()
+        finally:
+            await runner.cleanup()
+
+    async def _index(self, request: web.Request) -> web.StreamResponse:
+        return web.FileResponse(self._controller_web / "index.html")
+
+    async def _websocket(self, request: web.Request) -> web.StreamResponse:
+        ws = web.WebSocketResponse(heartbeat=20.0, max_msg_size=1_048_576)
+        await ws.prepare(request)
+
+        try:
+            hello = await asyncio.wait_for(ws.receive_json(), timeout=5.0)
+        except (TimeoutError, ValueError, TypeError, web.HTTPException):
+            await ws.close(code=1008, message=b"hello required")
+            return ws
+
+        if (
+            not isinstance(hello, dict)
+            or hello.get("type") != "hello"
+            or hello.get("token") != self._token
+        ):
+            await ws.send_json({"type": "error", "code": "bad-token"})
+            await ws.close(code=1008, message=b"bad token")
+            return ws
+
+        connection = self._registry.join(
+            remote=request.remote or "",
+            name=str(hello.get("name", ""))[:80],
+        )
+        if connection is None:
+            await ws.send_json({"type": "error", "code": "full"})
+            await ws.close(code=1013, message=b"full")
+            return ws
+
+        await ws.send_json(
+            {
+                "type": "welcome",
+                "protocol": 1,
+                "slot": connection.slot,
+                "controller_id": connection.controller_id,
+            }
+        )
+
+        try:
+            async for message in ws:
+                if message.type == WSMsgType.TEXT:
+                    try:
+                        payload = json.loads(message.data)
+                    except json.JSONDecodeError:
+                        continue
+                    if not isinstance(payload, dict):
+                        continue
+                    kind = payload.get("type")
+                    if kind == "state":
+                        self._registry.update_state(connection.slot, payload)
+                    elif kind == "calibrate":
+                        self._registry.calibrate(connection.slot)
+                        await ws.send_json({"type": "calibrated"})
+                    elif kind == "ping":
+                        await ws.send_json({"type": "pong", "t": payload.get("t")})
+                elif message.type == WSMsgType.ERROR:
+                    break
+        finally:
+            self._registry.leave(connection.slot)
+
+        return ws
