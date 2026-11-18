@@ -136,6 +136,27 @@ Por defecto, el token cambia cada vez que arranca la consola. Si la PWA queda en
 **Token inválido**, volvé a escanear el QR desde la propia app (no hace falta
 reinstalarla).
 
+### Si la PWA no encuentra la consola
+
+- Asegurate de que `uv run toxinator` siga corriendo y no hayas cerrado la
+  terminal: si la consola se apaga, el servidor también.
+- Confirmá que el celular está en la misma Wi-Fi, sin datos móviles ni VPN.
+- La IP de la consola puede cambiar. El QR de la consola es la fuente de verdad:
+  escaneá el QR actual. **RECONECTAR** usa la IP guardada; si cambió, no alcanza.
+- Abrí `https://IP:8443/` en el navegador del celular y aceptá el certificado.
+  En la PWA podés usar **ABRIR CONSOLA**. Esto suele hacer falta cuando la PWA
+  quedó instalada desde otra IP.
+- Si el navegador del celular tampoco abre la URL, revisá el firewall del equipo
+  y el aislamiento de clientes del router:
+
+  ```bash
+  sudo ufw status | grep 8443
+  sudo ufw allow 8443/tcp
+  ```
+
+- Para que no vuelva a pasar, reservá la IP de la consola en el router o usá un
+  hostname estable con `--host`.
+
 ```bash
 uv run toxinator launcher --demo        # P1 sintético
 uv run toxinator launcher --demo --offscreen --screenshot /tmp/liga.png

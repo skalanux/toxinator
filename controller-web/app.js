@@ -23,6 +23,7 @@ const elements = {
   manualCancel: document.getElementById("manual-cancel"),
   pairingActions: document.getElementById("pairing-actions"),
   retryButton: document.getElementById("retry-button"),
+  openConsole: document.getElementById("open-console"),
   unpairButton: document.getElementById("unpair-button"),
   pairButton: document.getElementById("pair-button"),
   status: document.getElementById("status"),
@@ -227,6 +228,7 @@ function showPairing(message, kind = "") {
   elements.controller.hidden = true;
   const hasPairing = Boolean(state.pairing);
   elements.retryButton.hidden = !hasPairing;
+  elements.openConsole.hidden = !hasPairing;
   elements.unpairButton.hidden = !hasPairing;
   fillManual();
   if (message) setPairingStatus(message, kind);
@@ -242,6 +244,58 @@ function showController() {
 
 function secureContext() {
   return window.isSecureContext === true;
+}
+
+function pairingUrl(pairing) {
+  const scheme = pairing.secure ? "https" : "http";
+  return `${scheme}://${pairing.host}/`;
+}
+
+async function probePairing(pairing) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 3500);
+  try {
+    await fetch(pairingUrl(pairing), {
+      method: "GET",
+      mode: "no-cors",
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+async function diagnosePairing(target) {
+  const pairing = state.pairing;
+  if (!pairing) return;
+  const reachable = await probePairing(pairing);
+  if (
+    state.ws !== null ||
+    state.fatal ||
+    state.manualDisconnect ||
+    state.screen !== "pairing" ||
+    state.pairing !== pairing
+  ) {
+    return;
+  }
+  if (reachable) {
+    setPairingStatus(
+      `La consola responde en ${target}, pero el mando no conectó. ` +
+        "Probá de nuevo; si cambió el token, escaneá el QR nuevo.",
+      "error"
+    );
+  } else {
+    setPairingStatus(
+      `No pude llegar a ${target}. Revisá la Wi-Fi y el firewall. ` +
+        `Si cambió la IP, escaneá el QR nuevo. Si es la primera vez, ` +
+        `abrí ${pairingUrl(pairing)} en el navegador y aceptá el certificado.`,
+      "error"
+    );
+  }
 }
 
 function updateReadout() {
@@ -389,7 +443,10 @@ function connect() {
         text = "Token inválido. Escaneá el QR de la consola otra vez.";
       }
       showPairing(text, "error");
-      if (message.code === "bad-token") elements.retryButton.hidden = true;
+      if (message.code === "bad-token") {
+        elements.retryButton.hidden = true;
+        elements.openConsole.hidden = true;
+      }
       ws.close();
     } else if (message.type === "pong") {
       if (typeof message.t === "number") {
@@ -429,10 +486,8 @@ function connect() {
     }
 
     state.everConnected = false;
-    showPairing(
-      `No encuentro la consola en ${target}. Revisá la Wi-Fi y aceptá el certificado en https://${target}/.`,
-      "error"
-    );
+    showPairing(`Buscando la consola en ${target}…`, "working");
+    void diagnosePairing(target);
   });
 
   ws.addEventListener("error", () => {
@@ -623,6 +678,7 @@ function handleScanned(text) {
   savePairing(pairing);
   fillManual();
   elements.retryButton.hidden = false;
+  elements.openConsole.hidden = false;
   elements.unpairButton.hidden = false;
   buzz(35);
   closeSocket();
@@ -787,6 +843,7 @@ elements.manualForm.addEventListener("submit", (event) => {
   savePairing(pairing);
   toggleManual(false);
   elements.retryButton.hidden = false;
+  elements.openConsole.hidden = false;
   elements.unpairButton.hidden = false;
   closeSocket();
   state.fatal = false;
@@ -795,6 +852,18 @@ elements.manualForm.addEventListener("submit", (event) => {
   state.attempts = 0;
   setPairingStatus(`Conectando a ${pairing.host}…`, "working");
   connect();
+});
+
+elements.openConsole.addEventListener("click", () => {
+  if (!state.pairing) return;
+  const link = document.createElement("a");
+  link.href = pairingUrl(state.pairing);
+  link.target = "_blank";
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  showToast("Aceptá el certificado y volvé a la app.");
 });
 
 elements.retryButton.addEventListener("click", () => {
@@ -816,6 +885,7 @@ elements.unpairButton.addEventListener("click", () => {
   clearPairing();
   fillManual();
   elements.retryButton.hidden = true;
+  elements.openConsole.hidden = true;
   elements.unpairButton.hidden = true;
   toggleManual(false);
   setPairingStatus("Consola olvidada. Escaneá el QR para vincular otra.");
@@ -903,6 +973,7 @@ function init() {
   if (stored) {
     state.pairing = stored;
     elements.retryButton.hidden = false;
+    elements.openConsole.hidden = false;
     elements.unpairButton.hidden = false;
     elements.retryButton.textContent = "RECONECTAR";
     setPairingStatus(`Vinculado a ${stored.host}. Conectando…`, "working");

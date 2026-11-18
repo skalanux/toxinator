@@ -895,6 +895,11 @@ body.mode-pairing {
   text-transform: uppercase;
 }
 
+.link.strong {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
 .link.danger {
   color: #d97a88;
 }
