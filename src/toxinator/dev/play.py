@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from importlib.resources import files
 from pathlib import Path
 
 from panda3d.core import loadPrcFileData
 
-from toxinator.api.game import Game, GameManifest, load_manifest
+from toxinator.api.game import Game, GameManifest
+from toxinator.core.external_games import find_external_game
+from toxinator.core.games import find_game
 from toxinator.dev.announce import announce_phone
 from toxinator.dev.game_app import GameApp
 from toxinator.dev.session import start_phone_session
@@ -17,14 +18,18 @@ logger = logging.getLogger(__name__)
 
 
 def load_game(game_id: str) -> tuple[GameManifest, Game]:
-    if game_id == "maldito-pino":
-        from maldito_pino.game import MalditoPinoGame
+    try:
+        entry = find_game(game_id)
+    except RuntimeError:
+        entry = None
+    if entry is not None:
+        if not entry.installed or entry.manifest is None:
+            raise RuntimeError(f"{entry.title} todavía no está instalado")
+        return entry.manifest, entry.instantiate()
 
-        manifest_text = (
-            files("maldito_pino").joinpath("manifest.toml").read_text(encoding="utf-8")
-        )
-        manifest = load_manifest(manifest_text)
-        return manifest, MalditoPinoGame(manifest)
+    external = find_external_game(game_id)
+    if external is not None:
+        return external.manifest, external.instantiate()
     raise RuntimeError(f"juego desconocido: {game_id}")
 
 

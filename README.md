@@ -6,7 +6,7 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El mando del celular funciona por **HTTP/WS sin certificado**; con HTTPS se puede instalar la PWA y usar la cámara. La PWA cambia sola entre **LAUNCHER** y **JUEGO**. El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
+Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El mando del celular funciona por **HTTP/WS sin certificado**; con HTTPS se puede instalar la PWA y usar la cámara. La PWA cambia sola entre **LAUNCHER** y **JUEGO**. Los juegos nuevos pueden vivir fuera del repo, en `~/Projects/toxinator-games`. El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
 
 ## Documentos
 
@@ -248,6 +248,50 @@ Sin celular, para ver la escena y el auto-juego:
 uv run toxinator play maldito-pino --demo
 uv run toxinator play maldito-pino --demo --offscreen --screenshot /tmp/pino.png
 ```
+
+## Juegos externos
+
+Los juegos nuevos no necesitan vivir en este repo. Por defecto la consola
+descubre paquetes en:
+
+```text
+~/Projects/toxinator-games/
+```
+
+También podés apuntar a otra ruta:
+
+```bash
+export TOXINATOR_GAMES_DIR=/ruta/a/mis-juegos
+```
+
+Cada juego es un paquete source-only:
+
+```text
+mi-juego/src/mi_juego/
+├── __init__.py      # create_game(manifest)
+├── manifest.toml
+└── game.py
+```
+
+El cargador agrega `src/` al `sys.path`, importa el paquete y llama
+`create_game(manifest)`. No se instala nada; el juego usa el venv de la consola.
+
+Para arrancar desde el template:
+
+```bash
+cd ~/Projects/toxinator-games
+cp -r _template mi-juego
+mv mi-juego/src/template_game mi-juego/src/mi_juego
+cd /home/ska/Projects/toxinator
+uv run toxinator play mi-juego
+```
+
+El launcher de la LIGA sigue mostrando la cartelera curada del repo; los juegos
+externos se lanzan por id con `toxinator play`. La guía completa está en
+`~/Projects/toxinator-games/README.md` y el skill de desarrollo en
+[`.opencode/skills/toxinator-game-dev/SKILL.md`](.opencode/skills/toxinator-game-dev/SKILL.md).
+
+Los juegos son código Python: cargá solo juegos de fuentes confiables.
 
 ## Continuar desde otra máquina
 
