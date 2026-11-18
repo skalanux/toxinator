@@ -60,6 +60,7 @@ class ConsoleApp(ShowBase):
         self.hub = hub
         self.catalog = catalog
         self.phone_url = phone_url
+        self.phone_secure = phone_url.startswith("https://")
         self._set_mode_callback = set_mode or (lambda mode: None)
         self.screenshot = screenshot
         self.screenshot_after = screenshot_after
@@ -679,8 +680,8 @@ class ConsoleApp(ShowBase):
         self.phone_status = ui.text(
             self.phone_root,
             "ESPERANDO CELULAR…",
-            (-0.68, -0.60),
-            0.026,
+            (-0.68, -0.64),
+            0.024,
             theme.GOLD,
             self.font_mono,
             bin_number=160,
@@ -1073,18 +1074,36 @@ class ConsoleApp(ShowBase):
         if waiting:
             self.phone_kicker.setText("VINCULAR MANDO")
             self.phone_title.setText("ESCANEÁ PARA ENTRAR")
-            self.phone_body.setText(
-                "No hay ningún mando conectado.\n"
-                "Escaneá el QR con la cámara del celular.\n"
-                "Cuando se conecte, esta pantalla se cierra sola."
-            )
+            if self.phone_secure:
+                self.phone_body.setText(
+                    "No hay ningún mando conectado.\n"
+                    "Escaneá el QR con la cámara del celular.\n"
+                    "Aceptá el certificado y esta pantalla se cierra sola."
+                )
+            else:
+                self.phone_body.setText(
+                    "No hay ningún mando conectado.\n"
+                    "Escaneá el QR con la cámara del celular.\n"
+                    "Abrí el enlace y esta pantalla se cierra sola."
+                )
         else:
             self.phone_kicker.setText("SUMAR CELULAR")
             self.phone_title.setText("ESCANEÁ EL QR")
-            self.phone_body.setText(
-                "Misma Wi-Fi que la consola.\n"
-                "Aceptá el certificado autofirmado una vez."
-            )
+            if self.phone_secure:
+                self.phone_body.setText(
+                    "Misma Wi-Fi que la consola.\n"
+                    "Aceptá el certificado autofirmado una vez."
+                )
+            else:
+                self.phone_body.setText(
+                    "Misma Wi-Fi que la consola.\n"
+                    "Abrí la URL en el navegador del celular."
+                )
+        self.phone_status.setText(
+            "ESPERANDO CELULAR…"
+            if self.phone_secure
+            else "MODO HTTP · ESPERANDO CELULAR…"
+        )
         self.phone_url_text.setText(ui.wrap(self.phone_url, 36))
 
     def _open_settings(self) -> None:

@@ -12,6 +12,9 @@ const elements = {
     document.getElementById("install-button-2"),
   ].filter(Boolean),
   pairingStatus: document.getElementById("pairing-status"),
+  pairingTitle: document.getElementById("pairing-title"),
+  pairingCopy: document.getElementById("pairing-copy"),
+  pairingFootCert: document.getElementById("pairing-foot-cert"),
   scanner: document.getElementById("scanner"),
   scannerVideo: document.getElementById("scanner-video"),
   scannerCanvas: document.getElementById("scanner-canvas"),
@@ -179,13 +182,15 @@ function clearPairing() {
   }
 }
 
-function parsePairing(text, tokenFallback = "") {
+function parsePairing(text, tokenFallback = "", defaultScheme = "") {
   const value = String(text || "").trim();
   if (!value) {
     return { error: "Ingresá la IP o la URL de la consola." };
   }
   const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
-  const candidate = hasScheme ? value : `https://${value}`;
+  const fallbackScheme =
+    defaultScheme || (window.location.protocol === "https:" ? "https" : "http");
+  const candidate = hasScheme ? value : `${fallbackScheme}://${value}`;
   let url;
   try {
     url = new URL(candidate);
@@ -246,6 +251,19 @@ function secureContext() {
   return window.isSecureContext === true;
 }
 
+function updatePairingMode() {
+  if (secureContext()) return;
+  elements.pairingTitle.innerHTML = "ABRÍ EL ENLACE<br>DEL QR";
+  elements.pairingCopy.innerHTML =
+    "En la consola el QR aparece solo. Escanealo con la cámara del teléfono " +
+    "y abrí el enlace. También podés ingresar IP y token.";
+  elements.pairingFootCert.textContent = "MODO HTTP · SIN CERTIFICADO";
+  elements.scanButton.hidden = true;
+  elements.manualToggle.classList.remove("secondary");
+  elements.manualToggle.classList.add("primary");
+  for (const button of elements.installButtons) button.hidden = true;
+}
+
 function pairingUrl(pairing) {
   const scheme = pairing.secure ? "https" : "http";
   return `${scheme}://${pairing.host}/`;
@@ -288,11 +306,17 @@ async function diagnosePairing(target) {
         "Probá de nuevo; si cambió el token, escaneá el QR nuevo.",
       "error"
     );
-  } else {
+  } else if (pairing.secure) {
     setPairingStatus(
       `No pude llegar a ${target}. Revisá la Wi-Fi y el firewall. ` +
         `Si cambió la IP, escaneá el QR nuevo. Si es la primera vez, ` +
         `abrí ${pairingUrl(pairing)} en el navegador y aceptá el certificado.`,
+      "error"
+    );
+  } else {
+    setPairingStatus(
+      `No pude llegar a ${target}. Revisá que la consola esté encendida, ` +
+        "en la misma Wi-Fi, y el firewall. Si cambió la IP, escaneá el QR nuevo.",
       "error"
     );
   }
@@ -368,7 +392,7 @@ function connect() {
 
   if (window.location.protocol === "https:" && !state.pairing.secure) {
     showPairing(
-      `La consola está en HTTP. Abrí https://${state.pairing.host}/ una vez y aceptá el certificado.`,
+      `La consola está en HTTP. Abrí ${pairingUrl(state.pairing)} en el navegador del celular.`,
       "error"
     );
     return;
@@ -582,9 +606,10 @@ async function startScanner() {
   if (state.scanner.active) return;
   if (!secureContext()) {
     setPairingStatus(
-      "La cámara necesita HTTPS. Abrí la URL de la consola y aceptá el certificado.",
-      "error"
+      "La cámara necesita HTTPS. En modo HTTP abrí el enlace del QR o ingresá IP y token.",
+      "warn"
     );
+    toggleManual(true);
     return;
   }
   if (typeof window.jsQR !== "function") {
@@ -700,6 +725,10 @@ function toggleManual(show) {
 }
 
 function updateInstallButtons() {
+  if (!secureContext()) {
+    for (const button of elements.installButtons) button.hidden = true;
+    return;
+  }
   const standalone =
     state.installed ||
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -954,6 +983,7 @@ window.addEventListener("load", registerServiceWorker);
 function init() {
   updateReadout();
   updateInstallButtons();
+  updatePairingMode();
   let stored = loadPairing();
   let initialError = "";
 
@@ -979,7 +1009,10 @@ function init() {
     setPairingStatus(`Vinculado a ${stored.host}. Conectando…`, "working");
     connect();
   } else {
-    showPairing(initialError || "Sin consola vinculada. Escaneá el QR de la consola.");
+    const emptyMessage = secureContext()
+      ? "Sin consola vinculada. Escaneá el QR de la consola."
+      : "Modo HTTP: escaneá el QR con la cámara del teléfono y abrí el enlace, o ingresá IP y token.";
+    showPairing(initialError || emptyMessage);
   }
 }
 

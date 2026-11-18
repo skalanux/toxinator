@@ -6,7 +6,7 @@ Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote ori
 
 El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). La PWA del mando se puede instalar, se vincula escaneando el QR y cambia sola entre **LAUNCHER** y **JUEGO**. El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
+Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El mando del celular funciona por **HTTP/WS sin certificado**; con HTTPS se puede instalar la PWA y usar la cámara. La PWA cambia sola entre **LAUNCHER** y **JUEGO**. El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
 
 ## Documentos
 
@@ -61,7 +61,7 @@ Abre **LIGA · Noche**, la pantalla de inicio de la consola:
   los botones **JUGAR** y **FICHA**.
 - **Próximos desafíos**: Kart y Tenis como contendientes futuros.
 - **Plantel**: los 4 slots; el celular aparece como P1 cuando se vincula con el
-  QR (desde la cámara o desde la propia PWA).
+  QR (con la cámara del teléfono o, en HTTPS, desde la propia PWA).
 - **Ajustes** y **sumar celular** con el **QR en pantalla** y la URL de la sesión.
 - Si no hay ningún mando conectado, el launcher abre el QR de vinculación
   automáticamente. No hace falta teclado ni mouse para el primer vínculo: la
@@ -90,27 +90,40 @@ La PWA tiene **dos pantallas** y cambia sola según el modo:
 - **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN** y
   calibración; los sensores y el readout vuelven a aparecer.
 
-### Instalar el mando y vincularlo
+### Conectar el celular (modo HTTP, sin certificado)
 
-La PWA se puede instalar y abrir sin pasar por el navegador. Si la abrís sin
-token (por ejemplo, desde el icono instalado) o el vínculo venció, muestra
-**VINCULAR MANDO**:
+Por defecto la consola sirve el mando por **HTTP/WS**, sin TLS. No hay aviso de
+certificado y no hace falta instalar nada:
 
-1. Arrancá la consola: si no hay ningún mando, el QR aparece solo. También podés
-   abrirlo con **SUMAR CELULAR** o la tecla **C**.
-2. En la PWA, **ESCANEAR QR** pide permiso de cámara y vincula la consola.
-   También podés tocar **INGRESAR DATOS** y escribir `IP:puerto` + token.
-3. La PWA guarda host y token en `localStorage`; la próxima apertura reconecta
-   sola. **CAMBIAR** vuelve a la pantalla de vinculación (por ejemplo, si cambió
-   la IP o el token de la consola).
+1. Arrancá `uv run toxinator`. Si no hay ningún mando, el QR aparece solo en la
+   pantalla (también podés abrirlo con **SUMAR CELULAR** o **C**).
+2. Escaneá el QR con la **cámara del teléfono** y abrí el enlace. La URL lleva el
+   token; la PWA se vincula sola.
+3. Cuando el celular se conecta, la pantalla de la consola se cierra y la PWA
+   pasa a **LAUNCHER**.
 
-Abrir directamente la URL del QR (`https://IP:8443/?token=...`) también vincula:
-la PWA guarda el token y limpia la URL.
+En HTTP funcionan el touchpad, **A**, el launcher y los juegos. No funcionan la
+cámara interna de la PWA, la instalación como app ni (según el navegador) los
+sensores. Es un modo para tu LAN: el tráfico no va cifrado.
+
+Abrir directamente `http://IP:8443/?token=...` también vincula y guarda el token.
+
+### PWA instalable y cámara (HTTPS)
+
+Para instalar la PWA o usar **ESCANEAR QR** dentro de la app, serví con HTTPS:
+
+```bash
+uv run toxinator launcher --https   # autofirmado: aceptá el aviso una vez
+```
+
+La PWA arranca en **VINCULAR MANDO** si no hay token. Ahí podés escanear el QR
+con la cámara del celular desde la propia app, o **INGRESAR DATOS**. La app
+guarda host y token en `localStorage`; **CAMBIAR** vuelve a la vinculación.
 
 La instalación completa (WebAPK en Android) necesita que Chrome confíe en el
-certificado. Con el certificado autofirmado puede quedar solo como **acceso
-directo** y el service worker no se registra. Para una instalación real, usá un
-certificado local confiable con `mkcert`:
+certificado. Con el autofirmado puede quedar solo como **acceso directo** y el
+service worker no se registra. Para una instalación real, usá un certificado
+local confiable con `mkcert` (implica HTTPS):
 
 ```bash
 mkcert -install
@@ -127,25 +140,29 @@ En Android, instalá el archivo `rootCA.pem` que está dentro de la carpeta que
 imprime `mkcert -CAROOT`, como **certificado de CA de usuario** desde Ajustes →
 Seguridad. Después abrí `https://192.168.0.141:8443/` una vez y verificá el
 candado. La IP o el nombre del certificado tienen que coincidir con el host del
-QR (`--host` si usás un nombre). `--cert` y `--key` también funcionan en
-`toxinator play` y `toxinator dev phone`. Si tu versión de Android no confía en
+QR (`--host` si usás un nombre). `--https`, `--cert` y `--key` también funcionan
+en `toxinator play` y `toxinator dev phone`. Si tu versión de Android no confía en
 la CA de usuario, la alternativa es publicar la consola por un túnel HTTPS con
 certificado público.
 
 Por defecto, el token cambia cada vez que arranca la consola. Si la PWA queda en
-**Token inválido**, volvé a escanear el QR desde la propia app (no hace falta
-reinstalarla).
+**Token inválido**, volvé a escanear el QR (no hace falta reinstalarla).
 
-### Si la PWA no encuentra la consola
+### Si el celular no encuentra la consola
 
 - Asegurate de que `uv run toxinator` siga corriendo y no hayas cerrado la
   terminal: si la consola se apaga, el servidor también.
 - Confirmá que el celular está en la misma Wi-Fi, sin datos móviles ni VPN.
 - La IP de la consola puede cambiar. El QR de la consola es la fuente de verdad:
   escaneá el QR actual. **RECONECTAR** usa la IP guardada; si cambió, no alcanza.
-- Abrí `https://IP:8443/` en el navegador del celular y aceptá el certificado.
-  En la PWA podés usar **ABRIR CONSOLA**. Esto suele hacer falta cuando la PWA
-  quedó instalada desde otra IP.
+- En **HTTP** abrí `http://IP:8443/` en el navegador del celular. No hay
+  certificado que aceptar. No uses el icono de una PWA HTTPS vieja: el navegador
+  bloquea `ws://` desde una página HTTPS. Si Chrome intenta cambiar solo a
+  `https://`, elegí **Continuar al sitio** o desactivá **Usar siempre conexiones
+  seguras** para esa red.
+- En **HTTPS** abrí `https://IP:8443/` y aceptá el certificado. En la PWA podés
+  usar **ABRIR CONSOLA**. Esto suele hacer falta cuando la PWA quedó instalada
+  desde otra IP.
 - Si el navegador del celular tampoco abre la URL, revisá el firewall del equipo
   y el aislamiento de clientes del router:
 
@@ -166,19 +183,19 @@ uv run toxinator launcher --demo --offscreen --screenshot /tmp/liga.png
 
 1. Conectá el celular Android a la misma Wi-Fi que la consola.
 2. Corré `uv run toxinator dev phone`.
-3. Abrí la URL del QR en el celular y aceptá el aviso de certificado
-   autofirmado. El token de la URL vincula la consola automáticamente.
-4. Si abrís la PWA sin token (o desde el icono instalado), tocá **ESCANEAR QR**
-   y apuntá al QR que la consola muestra sola al arrancar (o abrilo con **C** /
-   **SUMAR CELULAR**); también podés usar **INGRESAR DATOS**. Permití la cámara
-   y los sensores.
-5. Incliná el teléfono o tocá la pantalla para mover la bola de P1. **A** es el
-   botón de acción; **Calibrar** toma la pose actual como neutra.
+3. Abrí la URL del QR en el celular. En el modo HTTP por defecto no hay aviso de
+   certificado: el token de la URL vincula la consola automáticamente.
+4. Si abrís la PWA sin token, escaneá el QR con la cámara del teléfono y abrí el
+   enlace, o usá **INGRESAR DATOS**. La cámara interna y **ESCANEAR QR** de la
+   PWA necesitan `--https`; en HTTP no están disponibles.
+5. Tocá la pantalla para mover la bola de P1. **A** es el botón de acción;
+   **Calibrar** toma la pose actual como neutra. Con HTTPS, además, podés
+   inclinar el teléfono para dar efecto.
 
-El servidor usa un certificado autofirmado en `~/.config/toxinator/dev-cert`; si
-cambia la IP de la LAN, se regenera solo. La PWA vive en `controller-web/` y se
-sirve desde el mismo origen que el WebSocket, para que la excepción del
-certificado cubra ambos.
+Por defecto el servidor es **HTTP/WS** y no genera certificado. Con `--https` usa
+un certificado autofirmado en `~/.config/toxinator/dev-cert`; con `--cert/--key`
+usa uno de confianza. La PWA vive en `controller-web/` y se sirve desde el mismo
+origen que el WebSocket.
 
 Opciones útiles:
 
@@ -187,6 +204,7 @@ uv run toxinator dev phone --demo                 # P1 sintético, sin celular
 uv run toxinator dev phone --headless --demo      # servidor + estado por consola
 uv run toxinator dev phone --offscreen --screenshot /tmp/toxinator.png
 uv run toxinator dev phone --host 192.168.0.141 --port 8443
+uv run toxinator dev phone --https                # PWA/cámara (autofirmado)
 ```
 
 En esta etapa el único mando es el celular; Wiimote y gamepad entran en los
@@ -199,12 +217,19 @@ uv sync --all-packages
 uv run toxinator play maldito-pino
 ```
 
-El juego abre con el QR en el terminal. Desde el celular:
+El juego abre con el QR en el terminal. Por defecto usa **HTTP**, así que abrí el
+enlace en el navegador del celular sin aceptar certificado. Desde el celular:
 
 - **Arrastrá** en el touchpad para apuntar.
-- **Incliná** el teléfono para dar efecto.
 - **Mantené A** para cargar potencia y **soltá** para tirar.
 - **Calibrar** toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si el pie dice **SENSORES OFF**, tocá **Activar sensores** primero.
+- Con `--https`, además podés **inclinar** el teléfono para dar efecto.
+
+Para la PWA instalable y los sensores por HTTPS:
+
+```bash
+uv run toxinator play maldito-pino --https
+```
 
 Es un corte de **un jugador**: 10 turnos, plenos/spares, 10º turno con bonus y
 marcador. Hot-seat de 1–4, práctica y desempate quedan para el siguiente corte.
@@ -239,8 +264,8 @@ Los prototipos viven en branches y no se mergean:
 
 - Python 3.14
 - Panda3D 1.10.16 (XWayland)
-- `aiohttp` para HTTPS + WebSocket del controlador
+- `aiohttp` para HTTP/HTTPS + WebSocket del controlador
 - `qrcode` para el QR del terminal
 - Bullet para física (Maldito Pino y prototipo)
 - Wiimote por `hid-wiimote` + `python-evdev` (pendiente)
-- Celular Android por PWA HTTPS + WSS (primer corte)
+- Celular Android por HTTP/WS por defecto; PWA HTTPS/WSS opcional

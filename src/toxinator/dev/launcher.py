@@ -25,6 +25,7 @@ def run_launcher(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 3.0,
+    https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
 ) -> None:
@@ -37,6 +38,7 @@ def run_launcher(
         token=token,
         demo=demo,
         demo_buttons=False,
+        https=https,
         cert=cert,
         key=key,
     )

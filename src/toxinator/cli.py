@@ -11,16 +11,24 @@ from toxinator import __version__
 
 def _add_cert_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
+        "--https",
+        action="store_true",
+        help=(
+            "servir HTTPS/WSS (autofirmado si no pasás --cert/--key); "
+            "por defecto usa HTTP/WS sin certificado"
+        ),
+    )
+    parser.add_argument(
         "--cert",
         type=Path,
         default=None,
-        help="certificado TLS PEM (por ejemplo, el de mkcert)",
+        help="certificado TLS PEM (por ejemplo, el de mkcert); implica HTTPS",
     )
     parser.add_argument(
         "--key",
         type=Path,
         default=None,
-        help="clave privada TLS PEM que acompaña a --cert",
+        help="clave privada TLS PEM que acompaña a --cert; implica HTTPS",
     )
 
 
@@ -140,6 +148,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 token=args.token,
                 demo=args.demo,
                 seconds=args.seconds,
+                https=args.https,
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
@@ -161,6 +170,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 demo=args.demo,
                 headless=args.headless,
                 seconds=args.seconds,
+                https=args.https,
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
@@ -182,6 +192,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 token=args.token,
                 demo=args.demo,
                 seconds=args.seconds,
+                https=args.https,
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,

@@ -1,9 +1,10 @@
-"""Shared phone session: cert, HTTPS/WSS server, registry and input hub."""
+"""Shared phone session: HTTP/WS by default, HTTPS/WSS optional, registry and hub."""
 
 from __future__ import annotations
 
 import os
 import secrets
+import ssl
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -46,6 +47,7 @@ def start_phone_session(
     token: str | None = None,
     demo: bool = False,
     demo_buttons: bool = True,
+    https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
 ) -> PhoneSession:
@@ -56,15 +58,18 @@ def start_phone_session(
     session_token = token or secrets.token_urlsafe(18)
     if (cert is None) != (key is None):
         raise RuntimeError("--cert y --key tienen que ir juntos")
-    if cert is not None and key is not None:
-        if not cert.is_file() or not key.is_file():
-            raise RuntimeError(f"no encuentro el certificado o la clave: {cert} / {key}")
-        context = ssl_context(cert, key)
-    else:
-        config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-        cert_dir = config_home / "toxinator" / "dev-cert"
-        cert, key = ensure_cert(cert_dir, lan_host)
-        context = ssl_context(cert, key)
+    use_tls = https or cert is not None or key is not None
+    context: ssl.SSLContext | None = None
+    if use_tls:
+        if cert is not None and key is not None:
+            if not cert.is_file() or not key.is_file():
+                raise RuntimeError(f"no encuentro el certificado o la clave: {cert} / {key}")
+            context = ssl_context(cert, key)
+        else:
+            config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+            cert_dir = config_home / "toxinator" / "dev-cert"
+            cert, key = ensure_cert(cert_dir, lan_host)
+            context = ssl_context(cert, key)
 
     registry = PhoneRegistry(max_slots=4)
     sources: list[ControllerSource] = [PhoneSource(registry)]
@@ -88,11 +93,12 @@ def start_phone_session(
         hub.stop()
         raise
 
+    scheme = "https" if use_tls else "http"
     return PhoneSession(
         host=lan_host,
         port=port,
         token=session_token,
-        url=f"https://{lan_host}:{port}/?token={session_token}",
+        url=f"{scheme}://{lan_host}:{port}/?token={session_token}",
         hub=hub,
         registry=registry,
         server=server,

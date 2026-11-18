@@ -1,4 +1,4 @@
-"""HTTPS + WebSocket development server for the phone controller."""
+"""HTTP/HTTPS + WebSocket development server for the phone controller."""
 
 from __future__ import annotations
 
@@ -17,10 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 class DevServer:
-    """Serve the PWA and its WebSocket on one HTTPS origin.
+    """Serve the PWA and its WebSocket on one origin.
 
-    One origin matters: the self-signed certificate exception the phone
-    accepts for the page also covers ``wss://``.
+    The default is plain HTTP/WS so the phone can connect without accepting a
+    certificate. With TLS, serving both on the same origin lets the certificate
+    exception accepted for the page cover ``wss://`` too.
     """
 
     def __init__(
@@ -29,7 +30,7 @@ class DevServer:
         host: str,
         port: int,
         controller_web: Path,
-        ssl_context: ssl.SSLContext,
+        ssl_context: ssl.SSLContext | None,
         token: str,
         registry: PhoneRegistry,
     ) -> None:
@@ -63,9 +64,10 @@ class DevServer:
             raise RuntimeError("el servidor de desarrollo no arrancó")
         if self._error is not None:
             raise RuntimeError(
-                f"no pude abrir HTTPS en {self._host}:{self._port}: {self._error}"
+                f"no pude abrir el servidor en {self._host}:{self._port}: {self._error}"
             ) from self._error
-        logger.info("phone controller en https://%s:%s", self._host, self._port)
+        scheme = "https" if self._ssl is not None else "http"
+        logger.info("phone controller en %s://%s:%s", scheme, self._host, self._port)
 
     def set_mode(self, mode: str) -> None:
         with self._lock:
