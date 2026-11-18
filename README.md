@@ -286,8 +286,16 @@ cd /home/ska/Projects/toxinator
 uv run toxinator play mi-juego
 ```
 
-El launcher de la LIGA sigue mostrando la cartelera curada del repo; los juegos
-externos se lanzan por id con `toxinator play`. La guía completa está en
+Los juegos externos aparecen en la **CARTELERA** del launcher al iniciar y se
+pueden lanzar con **A / ENTER** o desde el celular. También podés lanzarlos
+directo por id:
+
+```bash
+uv run toxinator play mi-juego
+```
+
+Para que el launcher los vea, reiniciá la consola después de crear o cambiar el
+`manifest.toml`. La guía completa está en
 `~/Projects/toxinator-games/README.md` y el skill de desarrollo en
 [`.opencode/skills/toxinator-game-dev/SKILL.md`](.opencode/skills/toxinator-game-dev/SKILL.md).
 

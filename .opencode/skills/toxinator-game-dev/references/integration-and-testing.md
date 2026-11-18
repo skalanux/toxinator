@@ -46,8 +46,9 @@ Límites:
   resuelve colisiones de nombres.
 - Usa el venv de la consola; dependencias extra se instalan ahí.
 - Es código Python confiable: no cargues juegos de terceros no confiables.
-- Los juegos externos **no aparecen en el launcher** todavía; se lanzan con
-  `toxinator play <id>`. La LIGA sigue con la cartelera curada del repo.
+- Los juegos externos aparecen en la **CARTELERA** del launcher al iniciar
+  (hasta cuatro; externos primero) y también se lanzan con `toxinator play <id>`.
+  Si creás o cambiás un juego, reiniciá la consola para que lo vea.
 - Un juego roto se loguea y se ignora; no tumba el resto.
 
 ## Template
@@ -65,6 +66,13 @@ uv run toxinator play mi-juego
 
 El template muestra el contrato mínimo: `start` crea raíces, `update` lee
 `input_state`, `stop` limpia. No importa internos del runtime.
+
+## Carga del launcher
+
+`src/toxinator/dev/launcher.py` arma el catálogo con `load_catalog()` y lo
+extiende con `external_entries()`. Cada entrada externa es un `GameEntry` con
+`installed=True`, `rank="EX"` y `factory` apuntando a `create_game`; el launcher
+las muestra en la CARTELERA y las instancia igual que un built-in.
 
 ## Carga de `toxinator play`
 

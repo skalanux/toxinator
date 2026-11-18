@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from importlib.resources import files
 
@@ -22,10 +23,15 @@ class GameEntry:
     installed: bool
     accent: str
     manifest: GameManifest | None = None
+    factory: Callable[[GameManifest], Game] | None = None
 
     def instantiate(self) -> Game:
         if not self.installed:
             raise RuntimeError(f"{self.title} todavía no está instalado")
+        if self.factory is not None:
+            if self.manifest is None:
+                raise RuntimeError(f"{self.title} no tiene manifest")
+            return self.factory(self.manifest)
         if self.id == "maldito-pino":
             from maldito_pino.game import MalditoPinoGame
 

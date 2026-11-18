@@ -8,6 +8,7 @@ import pytest
 from toxinator.core.external_games import (
     GAMES_DIR_ENV,
     discover_external_games,
+    external_entries,
     find_external_game,
     games_dir,
 )
@@ -95,3 +96,20 @@ def test_games_dir_can_be_overridden(
 ) -> None:
     monkeypatch.setenv(GAMES_DIR_ENV, str(tmp_path))
     assert games_dir() == tmp_path
+
+
+def test_external_game_becomes_launcher_entry(tmp_path: Path) -> None:
+    module = f"tox_ext_{uuid4().hex}"
+    _write_game(tmp_path, module, "external-entry")
+
+    entries = external_entries(tmp_path)
+
+    assert len(entries) == 1
+    entry = entries[0]
+    assert entry.id == "external-entry"
+    assert entry.title == "External Test"
+    assert entry.subtitle == "JUEGO EXTERNO"
+    assert entry.rank == "EX"
+    assert entry.installed
+    assert entry.manifest is not None
+    assert entry.instantiate().manifest.id == "external-entry"

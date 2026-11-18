@@ -13,6 +13,7 @@ from types import ModuleType
 from typing import cast
 
 from toxinator.api.game import Game, GameManifest, load_manifest
+from toxinator.core.games import GameEntry
 
 logger = logging.getLogger(__name__)
 
@@ -125,3 +126,28 @@ def find_external_game(
         if game.manifest.id == game_id:
             return game
     return None
+
+
+def as_game_entry(game: ExternalGame) -> GameEntry:
+    """Adapt an external game to the launcher catalog shape."""
+    manifest = game.manifest
+    return GameEntry(
+        id=manifest.id,
+        title=manifest.name,
+        subtitle="JUEGO EXTERNO",
+        description=manifest.description or "Juego de la biblioteca externa.",
+        rank="EX",
+        event="EX",
+        record="—",
+        players=manifest.players,
+        modes=manifest.modes,
+        installed=True,
+        accent="gold",
+        manifest=manifest,
+        factory=game.factory,
+    )
+
+
+def external_entries(directory: Path | None = None) -> list[GameEntry]:
+    """Return external games ready to be listed by the launcher."""
+    return [as_game_entry(game) for game in discover_external_games(directory)]

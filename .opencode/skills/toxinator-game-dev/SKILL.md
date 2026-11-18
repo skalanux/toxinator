@@ -21,8 +21,8 @@ compatibility: >-
 > **Estado del contrato**: API `0.1` (match exacto). Hay dos caminos: juegos
 > **externos** en `~/Projects/toxinator-games` (recomendado) y juegos
 > **built-in** en `games/` del repo (solo para el ejemplo/cartelera de la
-> plataforma). La cartelera del launcher sigue siendo curada/hardcodeada; los
-> externos se lanzan con `toxinator play <id>`.
+> plataforma). Los externos aparecen en la **CARTELERA** del launcher al
+> iniciar y se lanzan con A/ENTER; también con `toxinator play <id>`.
 > i18n, audio, assets, settings, save, clock, rng y PhysicsWorld **no** están
 > expuestos en `GameContext` aunque estén decididos en ADRs.
 > Última revisión: 2026-11-18.
@@ -40,7 +40,7 @@ La regla que más rompe cosas si se ignora: un juego solo puede importar
 
 | Camino | Dónde vive | Cómo se carga | Cuándo usarlo |
 |---|---|---|---|
-| **Externo** | `~/Projects/toxinator-games/<juego>/` | escaneo de `src/*/manifest.toml` y `create_game(manifest)` | juegos nuevos, prototipos, repos separados |
+| **Externo** | `~/Projects/toxinator-games/<juego>/` | escaneo de `src/*/manifest.toml`, `create_game(manifest)` y CARTELERA del launcher | juegos nuevos, prototipos, repos separados |
 | **Built-in** | `games/<juego>/` del repo | catálogo hardcodeado en `core/games.py` | ejemplo/cartelera oficial, tests de plataforma |
 
 Para juegos nuevos, usá el camino externo. Mantené el repo de la plataforma
@@ -62,6 +62,11 @@ limpio de contenido de juego. Maldito Pino queda como referencia built-in.
    uv run toxinator play mi-juego
    uv run toxinator play mi-juego --demo
    ```
+5. Para verlo en la LIGA, reiniciá el launcher:
+   ```bash
+   uv run toxinator
+   ```
+   El juego aparece en la CARTELERA y se lanza con A/ENTER.
 
 El directorio por defecto es `~/Projects/toxinator-games`. Para otra ruta:
 
@@ -155,8 +160,8 @@ modes = ["partida"]
 - `players = [mínimo, máximo]`.
 - `modes` son etiquetas; todavía no hay selector de modos de plataforma.
 - i18n está decidido pero no cableado. UI en español, textos centralizados.
-- Para el camino externo no hace falta metadata de la cartelera (rank, event,
-  accent): el launcher no lista externos todavía.
+- El launcher usa `name`, `description`, `players` y `modes` del manifest. El
+  resto de la metadata de cartelera (rank, event, accent) la pone la plataforma.
 
 ## Input del celular
 
@@ -188,7 +193,7 @@ uv run toxinator play mi-juego
 uv run toxinator play mi-juego --demo
 uv run toxinator play mi-juego --demo --offscreen \
   --screenshot /tmp/mi-juego.png --screenshot-after 3 --seconds 5
-uv run toxinator                 # launcher (juegos built-in)
+uv run toxinator                 # launcher con built-in + juegos externos
 uv run pytest
 uv run ruff check src tests games
 uv run mypy
@@ -216,8 +221,10 @@ La carga está hardcodeada; no hay entry points todavía.
 4. `tests/unit/test_catalog.py`: actualizá la lista hardcodeada de ids.
 5. `uv sync --all-packages`.
 
-El catálogo del launcher muestra una cartelera curada; agregar muchos juegos
-externos a la LIGA requiere una pantalla de biblioteca que todavía no existe.
+El launcher lista hasta cuatro desafíos en la CARTELERA (externos primero, luego
+los built-in no instalados). Si hay más, el resto se lanza por id con
+`toxinator play <id>`. La cartelera se arma al iniciar: reiniciá la consola si
+creás o cambiás un juego.
 
 ## Checklist de entrega
 

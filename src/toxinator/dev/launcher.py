@@ -7,6 +7,7 @@ from pathlib import Path
 
 from panda3d.core import loadPrcFileData
 
+from toxinator.core.external_games import external_entries
 from toxinator.core.games import load_catalog
 from toxinator.dev.announce import announce_phone
 from toxinator.dev.session import start_phone_session
@@ -32,6 +33,10 @@ def run_launcher(
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     catalog = load_catalog()
+    external = external_entries()
+    if external:
+        logger.info("juegos externos encontrados: %s", ", ".join(e.id for e in external))
+    catalog.extend(external)
     session = start_phone_session(
         host=host,
         port=port,

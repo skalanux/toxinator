@@ -110,6 +110,7 @@ razonable o restaurá la del launcher en `stop`. Las luces deben colgar de
 ## Juegos externos vs built-in
 
 - **Externo**: el cargador agrega `src/` al `sys.path`, importa el paquete y
-  llama `create_game(manifest)`. No toca el catálogo de la LIGA.
+  llama `create_game(manifest)`. El launcher lo lista en la CARTELERA usando
+  `name`, `description`, `players` y `modes` del manifest.
 - **Built-in**: se agrega a `core/games.py` y al workspace; aparece en la
   cartelera curada. Es el camino de Maldito Pino y de los ejemplos oficiales.

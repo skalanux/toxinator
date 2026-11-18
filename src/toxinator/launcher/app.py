@@ -33,6 +33,8 @@ HINTS = (
     "C CELULAR  |  ESC SALIR"
 )
 
+LADDER_SLOTS = (0.50, 0.33, 0.16, -0.01)
+
 
 @dataclass
 class FocusItem:
@@ -95,7 +97,10 @@ class ConsoleApp(ShowBase):
             (entry for entry in catalog if entry.installed),
             catalog[0] if catalog else None,
         )
-        self.ladder = [entry for entry in catalog if entry is not self.featured]
+        self.ladder = sorted(
+            (entry for entry in catalog if entry is not self.featured),
+            key=lambda entry: 0 if entry.installed else 1,
+        )
 
         self._build_background()
         self._build_topbar()
@@ -399,7 +404,7 @@ class ConsoleApp(ShowBase):
         ui.panel(self.ui_root, Rect(0.50, 1.30, -0.58, 0.80), theme.BONE)
         ui.text(
             self.ui_root,
-            "PRÓXIMOS DESAFÍOS",
+            "CARTELERA",
             (0.58, 0.705),
             0.038,
             theme.NAVY,
@@ -422,67 +427,22 @@ class ConsoleApp(ShowBase):
             align=TextNode.ACenter,
         )
 
-        z_positions = (0.50, 0.30)
-        for entry, z1 in zip(self.ladder[:2], z_positions, strict=False):
-            row = Rect(0.56, 1.24, z1, z1 + 0.15)
-            row_button, row_focus = ui.button(
-                self.ui_root,
-                "",
-                row,
-                theme.BONE_2,
-                theme.NAVY,
-                self.font_ui,
-                partial(self._open_coming, entry),
-                text_scale=0.03,
-                base_bin=30,
-            )
-            rank = DirectFrame(
-                parent=self.ui_root,
-                frameColor=theme.GOLD if entry.rank == "A" else theme.BONE,
-                frameSize=(0.60, 0.68, z1 + 0.035, z1 + 0.115),
-                relief=DGG.FLAT,
-            )
-            rank.setBin("fixed", 40)
+        visible = self.ladder[: len(LADDER_SLOTS)]
+        if not visible:
             ui.text(
                 self.ui_root,
-                entry.rank,
-                (0.64, z1 + 0.053),
-                0.035,
-                theme.NAVY,
-                self.font_display,
-                align=TextNode.ACenter,
-            )
-            ui.text(
-                self.ui_root,
-                entry.title.upper(),
-                (0.73, z1 + 0.072),
-                0.034,
-                theme.NAVY,
-                self.font_display,
-            )
-            ui.text(
-                self.ui_root,
-                entry.subtitle,
-                (0.73, z1 + 0.040),
-                0.022,
+                "Todavía no hay desafíos.",
+                (0.58, 0.42),
+                0.028,
                 theme.MUTED,
                 self.font_mono,
             )
-            ui.text(
-                self.ui_root,
-                "PRONTO",
-                (1.18, z1 + 0.060),
-                0.024,
-                theme.MUTED,
-                self.font_mono,
-                align=TextNode.ARight,
-            )
-            self.focus_items.append(
-                FocusItem(row, row_focus, partial(self._open_coming, entry))
-            )
-            _ = row_button
+        for entry, z1 in zip(visible, LADDER_SLOTS, strict=False):
+            self._build_ladder_row(entry, z1)
 
-        add_rect = Rect(0.56, 1.24, 0.08, 0.22)
+        last_z1 = LADDER_SLOTS[len(visible) - 1] if visible else 0.55
+        add_z2 = last_z1 - 0.03
+        add_rect = Rect(0.56, 1.24, add_z2 - 0.12, add_z2)
         add_button, add_focus = ui.button(
             self.ui_root,
             "+ SUMAR DESAFÍO",
@@ -491,20 +451,90 @@ class ConsoleApp(ShowBase):
             theme.MUTED,
             self.font_mono,
             self._open_add,
-            text_scale=0.028,
+            text_scale=0.026,
             base_bin=30,
         )
         self.focus_items.append(FocusItem(add_rect, add_focus, self._open_add))
         _ = add_button
 
+        hidden = len(self.ladder) - len(visible)
+        note = (
+            f"+{hidden} más · toxinator play <id>"
+            if hidden > 0
+            else "La liga se juega en casa."
+        )
         ui.text(
             self.ui_root,
-            "La liga se juega en casa.",
+            note,
             (0.58, -0.49),
-            0.026,
+            0.024,
             theme.MUTED,
             self.font_mono,
         )
+
+    def _build_ladder_row(self, entry: GameEntry, z1: float) -> None:
+        command = partial(self._open_entry, entry)
+        row = Rect(0.56, 1.24, z1, z1 + 0.15)
+        row_button, row_focus = ui.button(
+            self.ui_root,
+            "",
+            row,
+            theme.BONE_2,
+            theme.NAVY,
+            self.font_ui,
+            command,
+            text_scale=0.03,
+            base_bin=30,
+        )
+        rank = DirectFrame(
+            parent=self.ui_root,
+            frameColor=theme.GOLD if entry.installed else theme.BONE,
+            frameSize=(0.60, 0.70, z1 + 0.035, z1 + 0.115),
+            relief=DGG.FLAT,
+        )
+        rank.setBin("fixed", 40)
+        ui.text(
+            self.ui_root,
+            entry.rank,
+            (0.65, z1 + 0.053),
+            0.031,
+            theme.NAVY,
+            self.font_display,
+            align=TextNode.ACenter,
+        )
+        ui.text(
+            self.ui_root,
+            entry.title.upper(),
+            (0.75, z1 + 0.080),
+            0.031,
+            theme.NAVY,
+            self.font_display,
+        )
+        ui.text(
+            self.ui_root,
+            entry.subtitle,
+            (0.75, z1 + 0.044),
+            0.020,
+            theme.MUTED,
+            self.font_mono,
+        )
+        ui.text(
+            self.ui_root,
+            "JUGAR" if entry.installed else "PRONTO",
+            (1.18, z1 + 0.060),
+            0.022,
+            theme.CRIMSON if entry.installed else theme.MUTED,
+            self.font_mono,
+            align=TextNode.ARight,
+        )
+        self.focus_items.append(FocusItem(row, row_focus, command))
+        _ = row_button
+
+    def _open_entry(self, entry: GameEntry) -> None:
+        if entry.installed:
+            self._start_launch(entry)
+        else:
+            self._open_coming(entry)
 
     def _build_bench(self) -> None:
         ui.panel(self.ui_root, Rect(-1.30, 1.30, -0.90, -0.64), theme.BONE)
