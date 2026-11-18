@@ -411,6 +411,45 @@ body.mode-launcher .sensors {
   box-shadow: 0 0 0 2px var(--line);
 }
 
+.b-button {
+  display: flex;
+  order: 3;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 118px;
+  min-height: 38px;
+  padding: 5px 12px;
+  color: var(--bone);
+  background: var(--crimson);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: transform 60ms ease, background 60ms ease;
+}
+
+.b-button span {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.b-button small {
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+}
+
+.b-button.pressed {
+  transform: translate(2px, 2px);
+  background: var(--navy);
+  box-shadow: 1px 1px 0 var(--line);
+}
+
 .secondary-stack {
   display: flex;
   order: 1;

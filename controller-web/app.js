@@ -40,6 +40,8 @@ const elements = {
   touchHint: document.getElementById("touch-hint"),
   stick: document.getElementById("stick"),
   aButton: document.getElementById("a-button"),
+  bButton: document.getElementById("b-button"),
+  bLabel: document.getElementById("b-label"),
   calibrate: document.getElementById("calibrate"),
   enableSensors: document.getElementById("enable-sensors"),
   toast: document.getElementById("toast"),
@@ -73,6 +75,7 @@ const state = {
   reconnectTimer: null,
   calibrationTimer: null,
   toastTimer: null,
+  bReleaseTimer: null,
   deferredPrompt: null,
   installed: false,
   scanner: {
@@ -115,6 +118,7 @@ function applyMode(mode) {
   document.body.classList.toggle("mode-game", !launcher);
   elements.mode.textContent = launcher ? "LAUNCHER" : "JUEGO";
   elements.aLabel.textContent = launcher ? "ELEGIR" : "ACCIÓN";
+  elements.bLabel.textContent = launcher ? "ATRÁS" : "VOLVER";
   elements.touchHint.innerHTML = launcher
     ? "Arrastrá para mover<br>y soltá en el centro"
     : "Incliná el teléfono<br>o arrastrá acá";
@@ -349,9 +353,14 @@ function clearReconnect() {
 
 function resetInputs() {
   state.buttons.clear();
+  if (state.bReleaseTimer !== null) {
+    window.clearTimeout(state.bReleaseTimer);
+    state.bReleaseTimer = null;
+  }
   state.touch = [];
   touchPointer = null;
   elements.aButton.classList.remove("pressed");
+  elements.bButton.classList.remove("pressed");
   elements.stick.style.left = "50%";
   elements.stick.style.top = "50%";
 }
@@ -811,6 +820,32 @@ elements.aButton.addEventListener("pointerup", releaseA);
 elements.aButton.addEventListener("pointercancel", releaseA);
 elements.aButton.addEventListener("pointerleave", releaseA);
 elements.aButton.addEventListener("contextmenu", (event) => event.preventDefault());
+
+elements.bButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  if (state.bReleaseTimer !== null) {
+    window.clearTimeout(state.bReleaseTimer);
+    state.bReleaseTimer = null;
+  }
+  state.buttons.add("B");
+  elements.bButton.classList.add("pressed");
+  buzz(12);
+});
+
+function releaseB(event) {
+  event.preventDefault();
+  elements.bButton.classList.remove("pressed");
+  if (state.bReleaseTimer !== null) window.clearTimeout(state.bReleaseTimer);
+  state.bReleaseTimer = window.setTimeout(() => {
+    state.bReleaseTimer = null;
+    state.buttons.delete("B");
+  }, 150);
+}
+
+elements.bButton.addEventListener("pointerup", releaseB);
+elements.bButton.addEventListener("pointercancel", releaseB);
+elements.bButton.addEventListener("pointerleave", releaseB);
+elements.bButton.addEventListener("contextmenu", (event) => event.preventDefault());
 
 elements.calibrate.addEventListener("click", () => {
   if (!state.connected) {

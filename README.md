@@ -78,17 +78,22 @@ Controles:
 - **Esc**: volver o cerrar la liga.
 - **Touchpad del celular**: joystick para mover el foco.
 - **A del celular**: confirma el foco actual.
+- **B del celular**: cierra el overlay actual o vuelve a la liga desde el juego.
 - **Mouse**: los botones también responden.
 
-Al elegir **JUGAR**, el launcher cede la pantalla al juego; **Esc** en el juego
-vuelve a la liga. El servidor del celular sigue vivo entre launcher y juego.
+Al elegir **JUGAR**, el launcher cede la pantalla al juego; **Esc** en el juego o
+**B / VOLVER** en el celular vuelven a la liga. El servidor del celular sigue
+vivo entre launcher y juego.
 
 La PWA tiene **dos pantallas** y cambia sola según el modo:
 
-- **LAUNCHER**: joystick grande + **A / ELEGIR**; sin sensores. Arrastrás para
-  mover el foco y soltás en el centro.
-- **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN** y
-  calibración; los sensores y el readout vuelven a aparecer.
+- **LAUNCHER**: joystick grande + **A / ELEGIR** + **B / ATRÁS**; sin sensores.
+  Arrastrás para mover el foco y soltás en el centro. **B** cierra FICHA,
+  AJUSTES o la pantalla de vinculación; en la pantalla principal devuelve el
+  foco a JUGAR.
+- **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN**,
+  **B / VOLVER** a la liga y calibración; los sensores y el readout vuelven a
+  aparecer.
 
 ### Conectar el celular (modo HTTP, sin certificado)
 
@@ -222,6 +227,7 @@ enlace en el navegador del celular sin aceptar certificado. Desde el celular:
 
 - **Arrastrá** en el touchpad para apuntar.
 - **Mantené A** para cargar potencia y **soltá** para tirar.
+- **B / VOLVER** corta el juego y vuelve a la liga.
 - **Calibrar** toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si el pie dice **SENSORES OFF**, tocá **Activar sensores** primero.
 - Con `--https`, además podés **inclinar** el teléfono para dar efecto.
 

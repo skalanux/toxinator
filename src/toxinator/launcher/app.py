@@ -85,6 +85,7 @@ class ConsoleApp(ShowBase):
         self.pending: GameEntry | None = None
         self.launch_timer = 0.0
         self._last_a = False
+        self._last_b = False
         self._has_controller = False
         self._pairing_dismissed = False
         self._phone_waiting = False
@@ -930,6 +931,29 @@ class ConsoleApp(ShowBase):
             return
         self._open_quit()
 
+    def _check_phone_back(self, state: InputState) -> bool:
+        b_pressed = any(item.button("B") for item in state.frames.values())
+        triggered = b_pressed and not self._last_b
+        self._last_b = b_pressed
+        if triggered:
+            self._phone_back()
+        return triggered
+
+    def _phone_back(self) -> None:
+        logger.info("phone back state=%s overlay=%s", self.state, self.overlay)
+        if self.state == "game":
+            self._return_to_launcher()
+            return
+        if self.overlay == "launching":
+            self._cancel_launch()
+            return
+        if self.overlay is not None:
+            self._close_overlay()
+            return
+        if self.focus_items:
+            self.focus_index = 0
+            self._refresh_focus()
+
     def _launch_featured(self) -> None:
         if self.featured is None:
             return
@@ -1162,6 +1186,7 @@ class ConsoleApp(ShowBase):
         if self.state == "game":
             if self.host is not None:
                 self.host.update(dt)
+                self._check_phone_back(self.host.ctx.input_state)
         else:
             state = self.hub.poll()
             self._update_bench(state)
@@ -1169,8 +1194,9 @@ class ConsoleApp(ShowBase):
             if frame is None and state.frames:
                 frame = next(iter(state.frames.values()))
             self._update_joystick(frame, dt)
+            back_triggered = self._check_phone_back(state)
             a_pressed = any(item.button("A") for item in state.frames.values())
-            if a_pressed and not self._last_a:
+            if not back_triggered and a_pressed and not self._last_a:
                 self._activate()
             self._last_a = a_pressed
 
