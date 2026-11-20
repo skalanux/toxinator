@@ -17,8 +17,9 @@ el gesto se puede mapear a movimiento.
 - El juego tiene que seguir siendo jugable con **stick + touch + ×** sin sensores.
 - No bloquees el arranque ni pidas calibración obligatoria: si no llega
   orientación, seguí con `pointer`/`move`.
-- Los sensores solo funcionan en HTTPS y con permiso del usuario. No prometas
-  movimiento en HTTP.
+- Los sensores solo funcionan en HTTPS. La PWA intenta activarlos al conectar;
+  si el navegador exige permiso (iOS), el primer toque lo pide y el pie muestra
+  **SENSORES · TOCÁ**. No prometas movimiento en HTTP.
 - Un juego touch-first es válido (punteros, grillas, cartas), pero si el gesto
   principal puede ser movimiento, usalo.
 
@@ -168,7 +169,8 @@ if frame.button("cross"):
 - Por eso un juego debe ser jugable con **stick + touch + ×**. El movimiento es
   la entrada preferida cuando está disponible, pero es opcional.
 - `--https` habilita sensores y cámara; el usuario debe aceptar el certificado o
-  instalar una CA de confianza.
+  instalar una CA de confianza. En HTTPS los sensores arrancan solos, salvo que
+  el navegador exija un gesto de permiso.
 - La foto de avatar y el escaneo de QR requieren HTTPS.
 
 ## Patrones útiles

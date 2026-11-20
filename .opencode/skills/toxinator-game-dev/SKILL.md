@@ -215,9 +215,10 @@ pero no debería ser el único esquema si el juego puede aprovechar el movimient
   girar, lanzar, balancear, acelerar.
 - El touch queda como apoyo y como fallback. Un juego de puntero puede ser
   touch-first, pero si el gesto se puede mapear a movimiento, hacelo.
-- Los sensores son **opcionales**: solo funcionan en HTTPS y el usuario tiene
-  que habilitarlos. El juego debe seguir siendo jugable con **stick + touch + ×**
-  sin bloquearse ni mostrar errores.
+- Los sensores son **opcionales**: solo funcionan en HTTPS. La PWA intenta
+  activarlos sola; si el navegador exige permiso (iOS), el primer toque lo pide
+  y el pie muestra **SENSORES · TOCÁ**. El juego debe seguir siendo jugable con
+  **stick + touch + ×** sin bloquearse ni mostrar errores.
 - No hagas el tilt obligatorio para arrancar. Detectá el primer frame con
   orientación/gyro distinto de cero y activá el modo movimiento; si no llega,
   seguí con `pointer`/`move`.

@@ -47,9 +47,10 @@ video corto). Un `blocked` no es un `pass`.
 - [ ] **Botones**: × ○ □ △, `options`, L1, R1.
       *Esperado*: cada uno llega como nombre canónico; ×/○ también emiten los
       alias `A`/`B`. Sin dobles pulsaciones.
-- [ ] **Sensores**: inclinar/rotar el teléfono.
-      *Esperado*: `accel`, `gyro` y orientación a 60 Hz; fallback a stick/touch
-      si no hay permisos.
+- [ ] **Sensores**: conectar por HTTPS e inclinar/rotar el teléfono.
+      *Esperado*: arrancan solos; si el navegador pide permiso, el primer toque
+      lo solicita y el pie muestra **SENSORES · TOCÁ** hasta concederlo. Llegan
+      `accel`, `gyro` y orientación a 60 Hz; fallback a stick/touch sin permisos.
 - [ ] **Calibración**: adoptar pose neutra y calibrar.
       *Esperado*: la lectura β/γ vuelve a 0 y el juego recibe orientación
       relativa; repetible.

@@ -124,6 +124,7 @@ const state = {
   move: [0, 0],
   touch: [],
   sensorsOn: false,
+  sensorRequest: false,
   mode: "launcher",
   controller: { ...DEFAULT_CONTROLLER, labels: { ...LABEL_FALLBACK } },
   advanced: false,
@@ -731,6 +732,7 @@ function showController() {
   document.body.classList.remove("mode-pairing");
   applyMode(state.mode);
   updateReadout();
+  startSensorsIfPossible();
 }
 
 function secureContext() {
@@ -821,7 +823,11 @@ function updateReadout() {
     elements.rtt.textContent = state.rtt === null ? "—" : `${Math.round(state.rtt)} ms`;
   }
   if (elements.sensors) {
-    elements.sensors.textContent = state.sensorsOn ? "SENSORES ON" : "SENSORES OFF";
+    let text = "SENSORES OFF";
+    if (state.sensorsOn) text = "SENSORES ON";
+    else if (!secureContext()) text = "SENSORES · HTTPS";
+    else if (needsPermission()) text = "SENSORES · TOCÁ";
+    elements.sensors.textContent = text;
     elements.sensors.classList.toggle("on", state.sensorsOn);
   }
 }
@@ -1067,29 +1073,63 @@ function needsPermission() {
 
 function startSensorsIfPossible() {
   if (state.sensorsOn) return;
-  if (!needsPermission()) {
-    startSensors();
-  } else if (elements.enableSensors) {
-    elements.enableSensors.classList.remove("hidden");
+  if (!secureContext() || needsPermission()) {
+    updateReadout();
+    return;
   }
+  startSensors();
 }
 
-async function enableSensors() {
+function requestSensorPermission() {
+  const requests = [];
+  if (
+    typeof window.DeviceMotionEvent !== "undefined" &&
+    typeof window.DeviceMotionEvent.requestPermission === "function"
+  ) {
+    requests.push(window.DeviceMotionEvent.requestPermission());
+  }
+  if (
+    typeof window.DeviceOrientationEvent !== "undefined" &&
+    typeof window.DeviceOrientationEvent.requestPermission === "function"
+  ) {
+    requests.push(window.DeviceOrientationEvent.requestPermission());
+  }
+  return Promise.all(requests);
+}
+
+async function enableSensors({ silent = false } = {}) {
+  if (state.sensorsOn || state.sensorRequest) return;
+  if (!secureContext()) {
+    showToast("Los sensores necesitan HTTPS", "warn", 4200);
+    return;
+  }
+  state.sensorRequest = true;
   try {
     if (needsPermission()) {
-      const result = await window.DeviceMotionEvent.requestPermission();
-      if (result !== "granted") {
+      const results = await requestSensorPermission();
+      if (results.some((result) => result !== "granted")) {
         setStatus("Sensores bloqueados", "warn");
         showToast("Sensores bloqueados", "error");
+        updateReadout();
         return;
       }
     }
     startSensors();
-    showToast("Sensores activados");
+    if (!silent) showToast("Sensores activados");
   } catch {
     setStatus("Sensores bloqueados", "warn");
     showToast("No pude activar los sensores", "error");
+    updateReadout();
+  } finally {
+    state.sensorRequest = false;
   }
+}
+
+function autoEnableSensors(event) {
+  if (state.screen !== "controller" || state.sensorsOn) return;
+  if (!secureContext() || !needsPermission()) return;
+  document.removeEventListener("pointerdown", autoEnableSensors, true);
+  void enableSensors({ silent: true });
 }
 
 /* ---------- scanner ---------- */
@@ -1708,6 +1748,12 @@ elements.enableSensors.addEventListener("click", () => {
   enableSensors();
 });
 
+if (elements.sensors) {
+  elements.sensors.addEventListener("click", () => {
+    if (!state.sensorsOn) enableSensors();
+  });
+}
+
 if (elements.cameraButton) {
   elements.cameraButton.addEventListener("click", openCamera);
 }
@@ -1740,6 +1786,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 document.addEventListener("pointerdown", unlockAudio, { once: true });
+document.addEventListener("pointerdown", autoEnableSensors, true);
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();

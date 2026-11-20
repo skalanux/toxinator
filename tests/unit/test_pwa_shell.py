@@ -68,6 +68,9 @@ def test_controller_shell_has_playstation_buttons_and_layouts() -> None:
     assert 'id="feedback-banner"' in html
     assert 'id="readout"' in html
     assert 'id="enable-sensors"' in html
+    assert 'id="sensors"' in html
+    assert "autoEnableSensors" in (WEB / "app.js").read_text(encoding="utf-8")
+    assert "startSensorsIfPossible" in (WEB / "app.js").read_text(encoding="utf-8")
 
     assert 'body[data-orientation="landscape"] .deck' in css
     assert ".face-button.triangle" in css

@@ -103,8 +103,9 @@ El teclado/mouse entra como **simulador de mando** (`--no-keyboard` lo apaga,
 
 La PWA tiene **dos pantallas** y cambia sola según el modo:
 
-- **LAUNCHER**: stick izquierdo + **× / ELEGIR** + **○ / ATRÁS**; sin sensores
-  ni readout. El stick es relativo y vuelve al centro al soltar. **○** cierra
+- **LAUNCHER**: stick izquierdo + **× / ELEGIR** + **○ / ATRÁS**; sin readout.
+  Los sensores arrancan solos y quedan listos para el juego. El stick es
+  relativo y vuelve al centro al soltar. **○** cierra
   FICHA, MANDOS, AJUSTES o la pantalla de vinculación; en la pantalla principal
   devuelve el foco a **Jugar**.
 - **JUEGO**: × ○ □ △, `options`, `L1`/`R1`, stick izquierdo y zona táctil
@@ -274,7 +275,7 @@ enlace en el navegador del celular sin aceptar certificado. Desde el celular:
 - **Arrastrá** en la zona táctil para apuntar (o movés el mouse en la consola).
 - **Mantené ×** para cargar potencia y **soltá** para tirar.
 - **○ / VOLVER** corta el juego y vuelve al launcher.
-- **Calibrar** (ajustes ⋯) toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si dice **SENSORES OFF**, tocá **Activar** primero.
+- **Calibrar** (ajustes ⋯) toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Los sensores se activan solos; si el navegador exige permiso, el pie muestra **SENSORES · TOCÁ** y el primer toque lo pide.
 - Con `--https`, además podés **inclinar** el teléfono para dar efecto.
 
 Para la PWA instalable y los sensores por HTTPS:
