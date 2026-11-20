@@ -5,10 +5,13 @@ from __future__ import annotations
 import os
 import secrets
 import ssl
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from toxinator.dev.cert import ensure_cert, get_lan_ip, ssl_context
+from toxinator.dev.cloudflare import CloudflareQuickTunnel
 from toxinator.dev.demo import DemoSource
 from toxinator.dev.server import DevServer
 from toxinator.input.hub import InputHub
@@ -26,13 +29,53 @@ class PhoneSession:
     hub: InputHub
     registry: PhoneRegistry
     server: DevServer
+    tunnel: CloudflareQuickTunnel | None = None
 
     def set_mode(self, mode: str) -> None:
         self.server.set_mode(mode)
 
+    def set_controller(self, profile: dict[str, Any] | None) -> None:
+        self.server.set_controller(profile)
+
+    @property
+    def feedback(self) -> PhoneFeedback:
+        return PhoneFeedback(self.server)
+
     def stop(self) -> None:
+        if self.tunnel is not None:
+            self.tunnel.stop()
+            self.tunnel = None
         self.server.stop()
         self.hub.stop()
+
+
+@dataclass
+class PhoneFeedback:
+    """Game-facing phone feedback adapter."""
+
+    server: DevServer
+
+    def vibrate(self, pattern: int | Sequence[int], slot: int | None = None) -> None:
+        self.server.send_haptic(pattern, slot)
+
+    def tone(
+        self,
+        frequency: float,
+        duration_ms: int,
+        *,
+        volume: float = 0.35,
+        slot: int | None = None,
+    ) -> None:
+        self.server.send_audio_tone(
+            frequency,
+            duration_ms,
+            volume=volume,
+            slot=slot,
+        )
+
+    def stop(self, slot: int | None = None) -> None:
+        self.server.send_audio_stop(slot)
+        self.server.send_haptic([], slot)
 
 
 def _repo_root() -> Path:
@@ -50,6 +93,7 @@ def start_phone_session(
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
+    cloudflare: bool = False,
 ) -> PhoneSession:
     lan_host = host or get_lan_ip()
     if lan_host in {"0.0.0.0", ""}:
@@ -59,6 +103,11 @@ def start_phone_session(
     if (cert is None) != (key is None):
         raise RuntimeError("--cert y --key tienen que ir juntos")
     use_tls = https or cert is not None or key is not None
+    if cloudflare and use_tls:
+        raise RuntimeError(
+            "--cloudflare ya entrega HTTPS con certificado válido; "
+            "no lo combines con --https, --cert ni --key"
+        )
     context: ssl.SSLContext | None = None
     if use_tls:
         if cert is not None and key is not None:
@@ -93,13 +142,27 @@ def start_phone_session(
         hub.stop()
         raise
 
-    scheme = "https" if use_tls else "http"
+    tunnel: CloudflareQuickTunnel | None = None
+    if cloudflare:
+        tunnel = CloudflareQuickTunnel(port)
+        try:
+            public_url = tunnel.start()
+        except Exception:
+            server.stop()
+            hub.stop()
+            raise
+        url = f"{public_url}/?token={session_token}"
+    else:
+        scheme = "https" if use_tls else "http"
+        url = f"{scheme}://{lan_host}:{port}/?token={session_token}"
+
     return PhoneSession(
         host=lan_host,
         port=port,
         token=session_token,
-        url=f"{scheme}://{lan_host}:{port}/?token={session_token}",
+        url=url,
         hub=hub,
         registry=registry,
         server=server,
+        tunnel=tunnel,
     )

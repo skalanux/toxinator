@@ -143,6 +143,12 @@ def as_game_entry(game: ExternalGame) -> GameEntry:
         modes=manifest.modes,
         installed=True,
         accent="gold",
+        controller_layout=manifest.controller_layout,
+        controller_skin=manifest.controller_skin,
+        controller_action=manifest.controller_action,
+        controller_back=manifest.controller_back,
+        controller_hint=manifest.controller_hint,
+        art_motif=manifest.art_motif,
         manifest=manifest,
         factory=game.factory,
     )

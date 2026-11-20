@@ -1,8 +1,54 @@
 "use strict";
 
 const STORAGE_KEY = "toxinator.pairing.v1";
+const SKIN_KEY = "toxinator.skin.v1";
+const ADVANCED_KEY = "toxinator.advanced.v1";
 const params = new URLSearchParams(window.location.search);
 const queryToken = (params.get("token") || "").trim();
+
+const SKINS = [
+  {
+    id: "tokyo-night",
+    name: "Tokyo Night",
+    short: "Night",
+    bg: "#1a1b26",
+    accent: "#7aa2f7",
+    status: "#9ece6a",
+  },
+  {
+    id: "tokyo-storm",
+    name: "Tokyo Storm",
+    short: "Storm",
+    bg: "#24283b",
+    accent: "#bb9af7",
+    status: "#7dcfff",
+  },
+  {
+    id: "tokyo-moon",
+    name: "Tokyo Moon",
+    short: "Moon",
+    bg: "#222436",
+    accent: "#82aaff",
+    status: "#c3e88d",
+  },
+  {
+    id: "tokyo-mint",
+    name: "Tokyo Mint",
+    short: "Mint",
+    bg: "#1a1b26",
+    accent: "#73daca",
+    status: "#9ece6a",
+  },
+];
+const LAYOUTS = ["default", "motion", "touch"];
+const DEFAULT_CONTROLLER = {
+  layout: "default",
+  skin: "tokyo-night",
+  action: "Acción",
+  back: "Volver",
+  hint: "",
+  game: "",
+};
 
 const elements = {
   pairing: document.getElementById("pairing"),
@@ -46,8 +92,17 @@ const elements = {
   enableSensors: document.getElementById("enable-sensors"),
   toast: document.getElementById("toast"),
   mode: document.getElementById("mode"),
+  brandSubtitle: document.getElementById("brand-subtitle"),
   aLabel: document.getElementById("a-label"),
   footHint: document.getElementById("foot-hint"),
+  skinButton: document.getElementById("skin-button"),
+  advancedButton: document.getElementById("advanced-button"),
+  skinSheet: document.getElementById("skin-sheet"),
+  skinList: document.getElementById("skin-list"),
+  skinClose: document.getElementById("skin-close"),
+  feedbackBanner: document.getElementById("feedback-banner"),
+  feedbackTitle: document.getElementById("feedback-title"),
+  feedbackCopy: document.getElementById("feedback-copy"),
 };
 
 const state = {
@@ -60,6 +115,7 @@ const state = {
   everConnected: false,
   attempts: 0,
   slot: null,
+  slotText: "SIN SLOT",
   controllerId: "",
   orientation: [0, 0, 0],
   neutral: [0, 0, 0],
@@ -69,6 +125,11 @@ const state = {
   buttons: new Set(),
   sensorsOn: false,
   mode: "launcher",
+  controller: { ...DEFAULT_CONTROLLER },
+  skin: DEFAULT_CONTROLLER.skin,
+  skinOverride: null,
+  advanced: false,
+  feedbackReady: false,
   lastSent: 0,
   rtt: null,
   welcomeTimer: null,
@@ -90,8 +151,202 @@ function round(value, digits) {
   return Math.round(value * factor) / factor;
 }
 
+function haptic(pattern) {
+  if (!navigator.vibrate) return false;
+  let values = pattern;
+  if (typeof values === "number") values = values > 0 ? [values] : [];
+  if (!Array.isArray(values)) return false;
+  values = values
+    .filter((value) => typeof value === "number" && Number.isFinite(value))
+    .map((value) => Math.max(0, Math.min(5000, Math.round(value))))
+    .slice(0, 12);
+  try {
+    return navigator.vibrate(values.length ? values : 0);
+  } catch {
+    return false;
+  }
+}
+
 function buzz(milliseconds) {
-  if (navigator.vibrate) navigator.vibrate(milliseconds);
+  haptic(milliseconds);
+}
+
+let audioContext = null;
+const activeTones = new Set();
+let feedbackPulseTimer = null;
+
+function pulseFeedback() {
+  if (!elements.touchpad) return;
+  elements.touchpad.classList.remove("feedback-pulse");
+  void elements.touchpad.offsetWidth;
+  elements.touchpad.classList.add("feedback-pulse");
+  if (feedbackPulseTimer !== null) window.clearTimeout(feedbackPulseTimer);
+  feedbackPulseTimer = window.setTimeout(() => {
+    feedbackPulseTimer = null;
+    elements.touchpad.classList.remove("feedback-pulse");
+  }, 190);
+}
+
+function ensureAudio() {
+  if (audioContext) return audioContext;
+  const AudioCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtor) return null;
+  try {
+    audioContext = new AudioCtor();
+  } catch {
+    return null;
+  }
+  return audioContext;
+}
+
+function unlockAudio() {
+  const context = ensureAudio();
+  if (context && context.state === "suspended") {
+    context.resume().catch(() => {});
+  }
+}
+
+function playTone(frequency, duration, volume) {
+  const context = ensureAudio();
+  if (!context) return;
+  if (context.state === "suspended") {
+    context.resume().catch(() => {});
+  }
+  const now = context.currentTime;
+  const durationMs = Math.max(20, Math.min(5000, Number(duration) || 120));
+  const frequencyHz = Math.max(40, Math.min(12000, Number(frequency) || 440));
+  const gainValue = Math.max(0, Math.min(1, Number(volume) || 0.35));
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequencyHz, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, gainValue), now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+  oscillator.connect(gain).connect(context.destination);
+  oscillator.start(now);
+  oscillator.stop(now + durationMs / 1000 + 0.025);
+  activeTones.add(oscillator);
+  oscillator.onended = () => activeTones.delete(oscillator);
+}
+
+function stopAudio() {
+  for (const oscillator of activeTones) {
+    try {
+      oscillator.stop();
+    } catch {
+      // already stopped
+    }
+  }
+  activeTones.clear();
+}
+
+function applyFeedback(message) {
+  pulseFeedback();
+  if (message.type === "haptic") {
+    haptic(message.pattern);
+    return;
+  }
+  if (message.type !== "audio") return;
+  if (message.action === "stop") {
+    stopAudio();
+    return;
+  }
+  if (message.action === "tone") {
+    playTone(message.frequency, message.duration, message.volume);
+  }
+}
+
+function updateFeedbackBanner() {
+  if (!elements.feedbackBanner) return;
+  const hint = feedbackHint();
+  if (elements.feedbackTitle) elements.feedbackTitle.textContent = hint.title;
+  if (elements.feedbackCopy) elements.feedbackCopy.textContent = hint.copy;
+  elements.feedbackBanner.hidden =
+    state.screen !== "controller" || state.mode === "launcher" || state.feedbackReady;
+}
+
+function feedbackHint() {
+  const userAgent = navigator.userAgent || "";
+  const ios =
+    /iPad|iPhone|iPod/i.test(userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const firefoxAndroid = /Android/i.test(userAgent) && /Firefox|Focus/i.test(userAgent);
+  const hasVibration = typeof navigator.vibrate === "function";
+  if (ios) {
+    return {
+      title: "ACTIVAR SONIDO",
+      copy: "iPhone no permite vibrar desde la web; tocá para activar el audio.",
+      vibration: false,
+      ios: true,
+      firefox: false,
+    };
+  }
+  if (firefoxAndroid) {
+    return {
+      title: "ACTIVAR SONIDO",
+      copy: "Firefox Android no vibra; abrí el QR en Chrome para sentir la vibración.",
+      vibration: false,
+      ios: false,
+      firefox: true,
+    };
+  }
+  if (!hasVibration) {
+    return {
+      title: "ACTIVAR SONIDO",
+      copy: "Este navegador no expone vibración; tocá para activar el audio.",
+      vibration: false,
+      ios: false,
+      firefox: false,
+    };
+  }
+  return {
+    title: "ACTIVAR SONIDO Y VIBRACIÓN",
+    copy: "Tocá acá para probar el parlante y la vibración.",
+    vibration: true,
+    ios: false,
+    firefox: false,
+  };
+}
+
+function activateFeedback() {
+  unlockAudio();
+  const hint = feedbackHint();
+  const audio = Boolean(ensureAudio());
+  const vibrated = hint.vibration ? haptic([250, 100, 400]) : false;
+  if (audio) {
+    playTone(660, 110, 0.35);
+    window.setTimeout(() => playTone(880, 150, 0.30), 140);
+  }
+  state.feedbackReady = true;
+  updateFeedbackBanner();
+  if (!audio && !hint.vibration) {
+    showToast("Este navegador no permite sonido ni vibración", "warn", 4200);
+  } else if (!audio) {
+    showToast("Vibración activada · audio no disponible", "warn", 4200);
+  } else if (hint.ios) {
+    showToast(
+      "Audio activado · iPhone no permite vibrar desde la web",
+      "warn",
+      6000,
+    );
+  } else if (hint.firefox) {
+    showToast(
+      "Audio activado · Firefox Android no vibra; abrí el QR en Chrome",
+      "warn",
+      6000,
+    );
+  } else if (!hint.vibration) {
+    showToast(
+      "Audio activado · este navegador no expone vibración",
+      "warn",
+      6000,
+    );
+  } else if (vibrated === false) {
+    showToast("Audio activado · el navegador no dejó vibrar", "warn", 4200);
+  } else {
+    showToast("Sonido y vibración activados");
+  }
 }
 
 function setStatus(text, kind) {
@@ -101,7 +356,13 @@ function setStatus(text, kind) {
 }
 
 function setSlot(text) {
-  elements.slot.textContent = text;
+  state.slotText = text;
+  renderSlot();
+}
+
+function renderSlot() {
+  const compact = state.slotText.split(" · ")[0];
+  elements.slot.textContent = state.advanced ? state.slotText : compact;
 }
 
 function setPairingStatus(text, kind = "") {
@@ -112,23 +373,186 @@ function setPairingStatus(text, kind = "") {
 
 function applyMode(mode) {
   state.mode = mode === "game" ? "game" : "launcher";
+  if (state.mode === "launcher") stopAudio();
+  updateFeedbackBanner();
   if (state.screen !== "controller") return;
   const launcher = state.mode === "launcher";
   document.body.classList.toggle("mode-launcher", launcher);
   document.body.classList.toggle("mode-game", !launcher);
   elements.mode.textContent = launcher ? "LAUNCHER" : "JUEGO";
-  elements.aLabel.textContent = launcher ? "ELEGIR" : "ACCIÓN";
-  elements.bLabel.textContent = launcher ? "ATRÁS" : "VOLVER";
-  elements.touchHint.innerHTML = launcher
-    ? "Arrastrá para mover<br>y soltá en el centro"
-    : "Incliná el teléfono<br>o arrastrá acá";
-  elements.footHint.textContent = launcher
-    ? "JOYSTICK · A ELEGIR"
-    : "Misma Wi-Fi · certificado aceptado";
+  renderControllerChrome();
   if (!launcher && state.connected) startSensorsIfPossible();
 }
 
-function showToast(message, kind = "") {
+function skinById(skinId) {
+  return SKINS.find((skin) => skin.id === skinId) || SKINS[0];
+}
+
+function loadSkinOverride() {
+  try {
+    const stored = window.localStorage.getItem(SKIN_KEY);
+    return SKINS.some((skin) => skin.id === stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSkinOverride(skinId) {
+  try {
+    if (skinId) window.localStorage.setItem(SKIN_KEY, skinId);
+    else window.localStorage.removeItem(SKIN_KEY);
+  } catch {
+    // private mode: the skin still applies for this session
+  }
+}
+
+function loadAdvanced() {
+  try {
+    return window.localStorage.getItem(ADVANCED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveAdvanced(enabled) {
+  try {
+    window.localStorage.setItem(ADVANCED_KEY, enabled ? "1" : "0");
+  } catch {
+    // private mode: the setting still applies for this session
+  }
+}
+
+function applyAdvanced(enabled, { persist = false } = {}) {
+  state.advanced = Boolean(enabled);
+  document.body.classList.toggle("advanced", state.advanced);
+  if (elements.advancedButton) {
+    elements.advancedButton.textContent = state.advanced ? "Simple" : "Avanzado";
+    elements.advancedButton.classList.toggle("active", state.advanced);
+  }
+  renderSlot();
+  if (persist) saveAdvanced(state.advanced);
+}
+
+function applySkin(skinId, { persist = false } = {}) {
+  const skin = skinById(skinId);
+  state.skin = skin.id;
+  document.body.dataset.skin = skin.id;
+  if (elements.skinButton) {
+    elements.skinButton.textContent = `Skin · ${skin.short}`;
+  }
+  if (persist) {
+    state.skinOverride = skin.id;
+    saveSkinOverride(skin.id);
+  }
+  renderSkinSheet();
+}
+
+function renderSkinSheet() {
+  if (!elements.skinList) return;
+  const current = state.skinOverride || state.skin;
+  elements.skinList.textContent = "";
+  for (const skin of SKINS) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "skin-option";
+    option.classList.toggle("active", skin.id === current);
+    option.setAttribute("aria-pressed", skin.id === current ? "true" : "false");
+
+    const swatch = document.createElement("span");
+    swatch.className = "skin-swatch";
+    swatch.style.background =
+      `linear-gradient(135deg, ${skin.bg}, ${skin.accent} 62%, ${skin.status})`;
+
+    const copy = document.createElement("span");
+    copy.className = "skin-copy";
+    const name = document.createElement("strong");
+    name.textContent = skin.name;
+    const meta = document.createElement("small");
+    meta.textContent = skin.id === current ? "ACTIVA" : "TOCAR PARA USAR";
+    copy.append(name, meta);
+    option.append(swatch, copy);
+
+    option.addEventListener("click", () => {
+      applySkin(skin.id, { persist: true });
+      buzz(10);
+      showToast(`Skin: ${skin.name}`);
+    });
+    elements.skinList.append(option);
+  }
+}
+
+function openSkinSheet() {
+  if (!elements.skinSheet) return;
+  renderSkinSheet();
+  elements.skinSheet.hidden = false;
+  document.body.classList.add("sheet-open");
+}
+
+function closeSkinSheet() {
+  if (!elements.skinSheet) return;
+  elements.skinSheet.hidden = true;
+  document.body.classList.remove("sheet-open");
+}
+
+function layoutHint(layout) {
+  if (layout === "motion") return "Incliná el teléfono o arrastrá acá";
+  if (layout === "touch") return "Arrastrá para apuntar";
+  return "Incliná el teléfono o arrastrá acá";
+}
+
+function layoutFoot(layout) {
+  if (layout === "motion") return "MOVIMIENTO · TOUCH OPCIONAL";
+  if (layout === "touch") return "TOUCH · A ACCIÓN";
+  return "MISMA WI-FI · CERTIFICADO ACEPTADO";
+}
+
+function renderControllerChrome() {
+  const launcher = state.mode === "launcher";
+  const controller = state.controller;
+  if (elements.brandSubtitle) {
+    elements.brandSubtitle.textContent = launcher
+      ? "MANDO · TOXINATOR"
+      : controller.game
+        ? controller.game.toUpperCase()
+        : "MANDO · JUEGO";
+  }
+  elements.aLabel.textContent = launcher ? "ELEGIR" : controller.action;
+  elements.bLabel.textContent = launcher ? "ATRÁS" : controller.back;
+  if (launcher) {
+    elements.touchHint.innerHTML = "Arrastrá para mover<br>y soltá al centro";
+    elements.footHint.textContent = "ARRASTRÁ · A ELEGIR";
+  } else {
+    elements.touchHint.textContent = controller.hint || layoutHint(controller.layout);
+    elements.footHint.textContent = controller.hint || layoutFoot(controller.layout);
+  }
+}
+
+function applyController(profile) {
+  const source = profile && typeof profile === "object" ? profile : {};
+  const layout = LAYOUTS.includes(source.layout) ? source.layout : DEFAULT_CONTROLLER.layout;
+  const skin = SKINS.some((item) => item.id === source.skin)
+    ? source.skin
+    : DEFAULT_CONTROLLER.skin;
+  state.controller = {
+    layout,
+    skin,
+    action:
+      typeof source.action === "string" && source.action.trim()
+        ? source.action.trim().slice(0, 24)
+        : DEFAULT_CONTROLLER.action,
+    back:
+      typeof source.back === "string" && source.back.trim()
+        ? source.back.trim().slice(0, 24)
+        : DEFAULT_CONTROLLER.back,
+    hint: typeof source.hint === "string" ? source.hint.trim().slice(0, 80) : "",
+    game: typeof source.game === "string" ? source.game.slice(0, 60) : "",
+  };
+  document.body.dataset.layout = state.controller.layout;
+  applySkin(state.skinOverride || state.controller.skin);
+  renderControllerChrome();
+}
+
+function showToast(message, kind = "", duration = 1900) {
   elements.toast.textContent = message;
   elements.toast.classList.remove("warn", "error");
   if (kind) elements.toast.classList.add(kind);
@@ -137,7 +561,7 @@ function showToast(message, kind = "") {
   state.toastTimer = window.setTimeout(() => {
     state.toastTimer = null;
     elements.toast.classList.remove("show");
-  }, 1900);
+  }, duration);
 }
 
 function loadPairing() {
@@ -230,7 +654,9 @@ function fillManual() {
 }
 
 function showPairing(message, kind = "") {
+  stopAudio();
   state.screen = "pairing";
+  updateFeedbackBanner();
   document.body.classList.remove("mode-launcher", "mode-game");
   document.body.classList.add("mode-pairing");
   elements.pairing.hidden = false;
@@ -359,6 +785,7 @@ function resetInputs() {
   }
   state.touch = [];
   touchPointer = null;
+  touchOrigin = null;
   elements.aButton.classList.remove("pressed");
   elements.bButton.classList.remove("pressed");
   elements.stick.style.left = "50%";
@@ -367,6 +794,7 @@ function resetInputs() {
 
 function closeSocket() {
   clearReconnect();
+  stopAudio();
   if (state.welcomeTimer !== null) {
     window.clearTimeout(state.welcomeTimer);
     state.welcomeTimer = null;
@@ -467,6 +895,10 @@ function connect() {
       buzz(18);
     } else if (message.type === "mode") {
       applyMode(message.mode);
+    } else if (message.type === "controller") {
+      applyController(message.profile);
+    } else if (message.type === "haptic" || message.type === "audio") {
+      applyFeedback(message);
     } else if (message.type === "error") {
       state.fatal = true;
       let text = "Error de conexión.";
@@ -770,14 +1202,23 @@ function registerServiceWorker() {
 elements.touchpad.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   touchPointer = event.pointerId;
+  touchOrigin = { x: event.clientX, y: event.clientY };
   elements.touchpad.setPointerCapture(event.pointerId);
+  elements.touchHint.classList.add("hidden");
+  if (state.mode === "launcher") {
+    state.touch = [{ id: 0, x: 0.5, y: 0.5, pressure: 1 }];
+    elements.stick.style.left = "50%";
+    elements.stick.style.top = "50%";
+    return;
+  }
   updateTouch(event);
 });
 
 elements.touchpad.addEventListener("pointermove", (event) => {
   if (event.pointerId !== touchPointer) return;
   event.preventDefault();
-  updateTouch(event);
+  if (state.mode === "launcher") updateLauncherStick(event);
+  else updateTouch(event);
 });
 
 function updateTouch(event) {
@@ -790,11 +1231,34 @@ function updateTouch(event) {
   elements.touchHint.classList.add("hidden");
 }
 
+const LAUNCHER_STICK_RADIUS = 0.36;
+const LAUNCHER_STICK_GAIN = 2.1;
+
+function updateLauncherStick(event) {
+  if (!touchOrigin) return;
+  const rect = elements.touchpad.getBoundingClientRect();
+  let dx = ((event.clientX - touchOrigin.x) / rect.width) * LAUNCHER_STICK_GAIN;
+  let dy = ((event.clientY - touchOrigin.y) / rect.height) * LAUNCHER_STICK_GAIN;
+  const distance = Math.hypot(dx, dy);
+  if (distance > LAUNCHER_STICK_RADIUS) {
+    const scale = LAUNCHER_STICK_RADIUS / distance;
+    dx *= scale;
+    dy *= scale;
+  }
+  const x = 0.5 + dx;
+  const y = 0.5 + dy;
+  state.touch = [{ id: 0, x, y, pressure: 1 }];
+  elements.stick.style.left = `${x * 100}%`;
+  elements.stick.style.top = `${y * 100}%`;
+}
+
 let touchPointer = null;
+let touchOrigin = null;
 
 function endTouch(event) {
   if (event.pointerId !== touchPointer) return;
   touchPointer = null;
+  touchOrigin = null;
   state.touch = [];
   elements.stick.style.left = "50%";
   elements.stick.style.top = "50%";
@@ -879,6 +1343,35 @@ elements.calibrate.addEventListener("click", () => {
 elements.enableSensors.addEventListener("click", () => {
   enableSensors();
 });
+
+if (elements.skinButton) {
+  elements.skinButton.addEventListener("click", () => {
+    openSkinSheet();
+    buzz(10);
+  });
+}
+
+if (elements.advancedButton) {
+  elements.advancedButton.addEventListener("click", () => {
+    applyAdvanced(!state.advanced, { persist: true });
+    buzz(10);
+    showToast(state.advanced ? "Modo avanzado" : "Mando simple");
+  });
+}
+
+if (elements.skinClose) {
+  elements.skinClose.addEventListener("click", closeSkinSheet);
+}
+
+if (elements.skinSheet) {
+  elements.skinSheet.addEventListener("click", (event) => {
+    if (event.target === elements.skinSheet) closeSkinSheet();
+  });
+}
+
+if (elements.feedbackBanner) {
+  elements.feedbackBanner.addEventListener("click", activateFeedback);
+}
 
 elements.scanButton.addEventListener("click", () => {
   if (state.scanner.active) {
@@ -995,10 +1488,14 @@ window.setInterval(() => {
 }, 3000);
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden || !state.scanner.active) return;
+  if (!document.hidden) return;
+  stopAudio();
+  if (!state.scanner.active) return;
   stopScanner();
   setPairingStatus("Escaneo en pausa. Tocá ESCANEAR QR para volver.");
 });
+
+document.addEventListener("pointerdown", unlockAudio, { once: true });
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
@@ -1016,6 +1513,10 @@ window.addEventListener("appinstalled", () => {
 window.addEventListener("load", registerServiceWorker);
 
 function init() {
+  state.skinOverride = loadSkinOverride();
+  applyController({});
+  applyAdvanced(loadAdvanced());
+  updateFeedbackBanner();
   updateReadout();
   updateInstallButtons();
   updatePairingMode();

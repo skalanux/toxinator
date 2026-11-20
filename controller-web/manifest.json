@@ -10,8 +10,8 @@
   "display": "standalone",
   "display_override": ["standalone", "fullscreen"],
   "orientation": "any",
-  "background_color": "#0e1726",
-  "theme_color": "#0e1726",
+  "background_color": "#1a1b26",
+  "theme_color": "#1a1b26",
   "categories": ["games", "utilities"],
   "icons": [
     {

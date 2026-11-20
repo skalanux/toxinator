@@ -8,7 +8,7 @@ Fuente de verdad: `src/toxinator/api/game.py`, `src/toxinator/api/input.py`,
 
 ## Versión
 
-`API_VERSION = "0.1"`. `GameHost.start()` exige que
+`API_VERSION = "0.2"`. `GameHost.start()` exige que
 `game.manifest.requires_api == API_VERSION`; no hay compatibilidad semver
 todavía. Si el contrato cambia, subí la versión y actualizá el host/loader.
 
@@ -26,10 +26,20 @@ class GameManifest:
     default_locale: str = "es"
     players: tuple[int, int] = (1, 4)
     modes: tuple[str, ...] = ("partida",)
+    controller_layout: str = "default"
+    controller_skin: str = "tokyo-night"
+    controller_action: str = "Acción"
+    controller_back: str = "Volver"
+    controller_hint: str = ""
+    art_motif: str = "auto"
 ```
 
 `load_manifest(text_or_path)` parsea TOML y normaliza `players` a una tupla de
-dos enteros. El campo `id` es la clave para `toxinator play <id>`.
+dos enteros. El campo `id` es la clave para `toxinator play <id>`. La sección
+opcional `[controller]` define el layout, la skin y las etiquetas del mando para
+ese juego; se envía al celular al lanzarlo. La sección `[art]` elige el prop del
+diorama (`pin`, `flag`, `paddle`, `pong`, `star`, `heart`, `coin`, `cube` o
+`auto`).
 
 ## `GameContext`
 
@@ -40,22 +50,50 @@ class GameContext:
     scene: Any
     ui: Any
     input_state: InputState
+    phone: PhoneService
     locale: str = "es"
     request_exit: Callable[[], None] | None = None
 ```
 
-Es todo lo que existe hoy. No hay `ctx.audio`, `ctx.assets`, `ctx.settings`,
-`ctx.save`, `ctx.i18n`, `ctx.clock`, `ctx.rng`, `ctx.physics` ni `ctx.events`
-en el código actual, aunque estén decididos en ADRs. No inventes esos servicios:
-si los necesitás, primero se agregan a la API y al host.
+Estos son los campos actuales. No hay `ctx.audio`, `ctx.assets`,
+`ctx.settings`, `ctx.save`, `ctx.i18n`, `ctx.clock`, `ctx.rng`, `ctx.physics`
+ni `ctx.events`, aunque estén decididos en ADRs. No inventes esos servicios: si
+los necesitás, primero se agregan a la API y al host. `ctx.phone` es solo
+feedback del celular (vibración/tonos), no audio de la consola.
 
 - `scene`: raíz del juego en `render` (`base.render.attach_new_node(...)`).
 - `ui`: raíz del juego en `aspect2d`.
 - `input_state`: último snapshot del `InputHub`, actualizado por `GameHost` en
   cada frame.
+- `phone`: feedback opcional en el teléfono.
 - `locale`: hoy `"es"`; i18n no está cableado.
 - `request_exit`: apunta a `base.userExit`. **No lo uses para volver al
   launcher**: cierra toda la consola. El back lo maneja la plataforma.
+
+## `PhoneService`
+
+```python
+class PhoneService(Protocol):
+    def vibrate(self, pattern: int | Sequence[int], slot: int | None = None) -> None: ...
+    def tone(
+        self,
+        frequency: float,
+        duration_ms: int,
+        *,
+        volume: float = 0.35,
+        slot: int | None = None,
+    ) -> None: ...
+    def stop(self, slot: int | None = None) -> None: ...
+```
+
+- `slot=None` manda a todos los celulares; un slot apunta a un jugador.
+- `vibrate` usa milisegundos y patrón on/off. Android sí; iPhone/Safari no
+  expone vibración web.
+- `tone` reproduce un seno corto con Web Audio. El audio necesita un gesto del
+  usuario para desbloquearse; funciona en HTTP.
+- `stop` corta audio y vibración.
+- Si no hay celular, la implementación es no-op. El juego no debe bloquearse ni
+  asumir que el feedback existe.
 
 ## `Game`
 
@@ -110,7 +148,7 @@ razonable o restaurá la del launcher en `stop`. Las luces deben colgar de
 ## Juegos externos vs built-in
 
 - **Externo**: el cargador agrega `src/` al `sys.path`, importa el paquete y
-  llama `create_game(manifest)`. El launcher lo lista en la CARTELERA usando
+  llama `create_game(manifest)`. El launcher lo lista en la biblioteca usando
   `name`, `description`, `players` y `modes` del manifest.
 - **Built-in**: se agrega a `core/games.py` y al workspace; aparece en la
-  cartelera curada. Es el camino de Maldito Pino y de los ejemplos oficiales.
+  biblioteca de ejemplo. Es el camino de Maldito Pino y de los ejemplos oficiales.

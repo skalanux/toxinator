@@ -1,7 +1,7 @@
 [project]
 name = "toxinator"
 version = "0.1.0"
-description = "Personal 3D game console with Wiimote and Android phone controllers"
+description = "Personal 3D game console with a phone controller and keyboard/mouse simulator"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
 dependencies = [

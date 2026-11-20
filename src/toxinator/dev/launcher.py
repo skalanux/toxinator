@@ -1,4 +1,4 @@
-"""``toxinator launcher``: LIGA · Noche home and game launch."""
+"""``toxinator launcher``: the Toxinator console home and game launch."""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ def run_launcher(
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
+    cloudflare: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -46,8 +47,9 @@ def run_launcher(
         https=https,
         cert=cert,
         key=key,
+        cloudflare=cloudflare,
     )
-    if session.host.startswith("127."):
+    if session.tunnel is None and session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "
             "Pasá --host con la IP de la LAN.",
@@ -57,9 +59,9 @@ def run_launcher(
     try:
         announce_phone(
             session,
-            title="TOXINATOR · LIGA",
+            title="TOXINATOR",
             demo=demo,
-            extra="Elegí un desafío con las flechas y Enter.",
+            extra="Elegí un juego con las flechas y Enter.",
         )
 
         window_type = "offscreen" if offscreen or screenshot is not None else "onscreen"
@@ -84,6 +86,8 @@ def run_launcher(
             screenshot_after=screenshot_after,
             seconds=seconds,
             set_mode=session.set_mode,
+            set_controller=session.set_controller,
+            phone=session.feedback,
         )
         app.run()
     finally:

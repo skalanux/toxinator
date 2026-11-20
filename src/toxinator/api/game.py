@@ -9,8 +9,18 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from toxinator.api.input import InputState
+from toxinator.api.phone import PhoneService
 
-API_VERSION = "0.1"
+API_VERSION = "0.2"
+
+CONTROLLER_LAYOUTS = ("default", "motion", "touch")
+CONTROLLER_SKINS = ("tokyo-night", "tokyo-storm", "tokyo-moon", "tokyo-mint")
+DEFAULT_CONTROLLER_LAYOUT = "default"
+DEFAULT_CONTROLLER_SKIN = "tokyo-night"
+DEFAULT_CONTROLLER_ACTION = "Acción"
+DEFAULT_CONTROLLER_BACK = "Volver"
+ART_MOTIFS = ("auto", "pin", "flag", "paddle", "pong", "star", "heart", "coin", "cube")
+DEFAULT_ART_MOTIF = "auto"
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +34,12 @@ class GameManifest:
     default_locale: str = "es"
     players: tuple[int, int] = (1, 4)
     modes: tuple[str, ...] = ("partida",)
+    controller_layout: str = DEFAULT_CONTROLLER_LAYOUT
+    controller_skin: str = DEFAULT_CONTROLLER_SKIN
+    controller_action: str = DEFAULT_CONTROLLER_ACTION
+    controller_back: str = DEFAULT_CONTROLLER_BACK
+    controller_hint: str = ""
+    art_motif: str = DEFAULT_ART_MOTIF
 
 
 @dataclass
@@ -38,6 +54,7 @@ class GameContext:
     scene: Any
     ui: Any
     input_state: InputState
+    phone: PhoneService
     locale: str = "es"
     request_exit: Callable[[], None] | None = None
 
@@ -63,6 +80,26 @@ def load_manifest(source: str | Path) -> GameManifest:
     if len(players) != 2:
         players = (1, 4)
 
+    controller = data.get("controller", {})
+    if not isinstance(controller, dict):
+        controller = {}
+    layout = str(controller.get("layout", DEFAULT_CONTROLLER_LAYOUT))
+    if layout not in CONTROLLER_LAYOUTS:
+        layout = DEFAULT_CONTROLLER_LAYOUT
+    skin = str(controller.get("skin", DEFAULT_CONTROLLER_SKIN))
+    if skin not in CONTROLLER_SKINS:
+        skin = DEFAULT_CONTROLLER_SKIN
+    action = str(controller.get("action", DEFAULT_CONTROLLER_ACTION))[:24]
+    back = str(controller.get("back", DEFAULT_CONTROLLER_BACK))[:24]
+    hint = str(controller.get("hint", ""))[:80]
+
+    art = data.get("art", {})
+    if not isinstance(art, dict):
+        art = {}
+    art_motif = str(art.get("motif", DEFAULT_ART_MOTIF))
+    if art_motif not in ART_MOTIFS:
+        art_motif = DEFAULT_ART_MOTIF
+
     return GameManifest(
         id=str(data["id"]),
         name=str(data["name"]),
@@ -73,4 +110,10 @@ def load_manifest(source: str | Path) -> GameManifest:
         default_locale=str(data.get("default_locale", "es")),
         players=(players[0], players[1]),
         modes=tuple(str(value) for value in data.get("modes", ["partida"])),
+        controller_layout=layout,
+        controller_skin=skin,
+        controller_action=action,
+        controller_back=back,
+        controller_hint=hint,
+        art_motif=art_motif,
     )

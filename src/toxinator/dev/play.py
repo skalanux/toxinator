@@ -47,15 +47,33 @@ def run_play(
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
+    cloudflare: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     manifest, game = load_game(game_id)
     session = start_phone_session(
-        host=host, port=port, token=token, demo=demo, https=https, cert=cert, key=key
+        host=host,
+        port=port,
+        token=token,
+        demo=demo,
+        https=https,
+        cert=cert,
+        key=key,
+        cloudflare=cloudflare,
     )
     session.set_mode("game")
-    if session.host.startswith("127."):
+    session.set_controller(
+        {
+            "layout": manifest.controller_layout,
+            "skin": manifest.controller_skin,
+            "action": manifest.controller_action,
+            "back": manifest.controller_back,
+            "hint": manifest.controller_hint,
+            "game": manifest.name,
+        }
+    )
+    if session.tunnel is None and session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "
             "Pasá --host con la IP de la LAN.",
@@ -90,6 +108,7 @@ def run_play(
             screenshot=screenshot,
             screenshot_after=screenshot_after,
             seconds=seconds,
+            phone=session.feedback,
         )
         app.run()
     finally:

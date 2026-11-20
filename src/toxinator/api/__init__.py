@@ -14,6 +14,7 @@ from toxinator.api.input import (
     InputState,
     TouchPoint,
 )
+from toxinator.api.phone import PhoneService
 
 __all__ = [
     "API_VERSION",
@@ -24,6 +25,7 @@ __all__ = [
     "GameManifest",
     "InputEvent",
     "InputState",
+    "PhoneService",
     "TouchPoint",
     "load_manifest",
 ]

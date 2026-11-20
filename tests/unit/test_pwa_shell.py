@@ -45,3 +45,41 @@ def test_service_worker_shell_files_exist() -> None:
         else:
             file = WEB / path.removeprefix("/static/")
         assert file.is_file(), f"falta {path} en el shell de la PWA"
+
+
+def test_controller_shell_has_profiles_and_skins() -> None:
+    html = (WEB / "index.html").read_text(encoding="utf-8")
+    css = (WEB / "styles.css").read_text(encoding="utf-8")
+    app = (WEB / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="skin-button"' in html
+    assert 'id="skin-sheet"' in html
+    assert 'id="skin-list"' in html
+    assert 'id="advanced-button"' in html
+    assert 'class="joystick-ring"' in html
+    assert 'data-skin="tokyo-night"' in html
+    assert 'data-layout="default"' in html
+    for skin in ("tokyo-storm", "tokyo-moon", "tokyo-mint"):
+        assert f'data-skin="{skin}"' in css
+    assert 'message.type === "controller"' in app
+    assert "applyAdvanced" in app
+    assert "openSkinSheet" in app
+    assert "updateLauncherStick" in app
+    assert "body.mode-launcher .touchpad" in css
+    assert "body.advanced .readout" in css
+
+
+def test_phone_feedback_shell() -> None:
+    app = (WEB / "app.js").read_text(encoding="utf-8")
+    html = (WEB / "index.html").read_text(encoding="utf-8")
+    css = (WEB / "styles.css").read_text(encoding="utf-8")
+
+    assert "navigator.vibrate" in app
+    assert 'message.type === "haptic"' in app
+    assert 'message.type === "audio"' in app
+    assert "AudioContext" in app
+    assert "applyFeedback" in app
+    assert "pulseFeedback" in app
+    assert "feedback-pulse" in css
+    assert 'id="feedback-banner"' in html
+    assert "activateFeedback" in app

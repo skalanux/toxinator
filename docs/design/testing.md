@@ -142,7 +142,7 @@ toxinator --sim --sim-gamepad --sim-noise 0.02
 
 `F1` en dev muestra un overlay con preset, fuente, slot, botones, ejes,
 accel/gyro, pointer y touch. El overlay no existe en release. El simulador
-también sirve en el launcher para probar plantel, join/leave y estados de error.
+también sirve en el launcher para probar mandos, join/leave y estados de error.
 
 ## Trazas
 

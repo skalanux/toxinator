@@ -7,7 +7,9 @@ import json
 import logging
 import ssl
 import threading
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from aiohttp import WSMsgType, web
 
@@ -46,8 +48,9 @@ class DevServer:
         self._stop_event: asyncio.Event | None = None
         self._error: Exception | None = None
         self._lock = threading.Lock()
-        self._clients: set[web.WebSocketResponse] = set()
+        self._clients: dict[web.WebSocketResponse, int] = {}
         self._mode = "launcher"
+        self._controller: dict[str, Any] | None = None
 
     def start(self) -> None:
         if self._thread is not None:
@@ -72,20 +75,73 @@ class DevServer:
     def set_mode(self, mode: str) -> None:
         with self._lock:
             self._mode = mode
-            clients = list(self._clients)
+        self._broadcast({"type": "mode", "mode": mode})
+
+    def set_controller(self, profile: dict[str, Any] | None) -> None:
+        """Publish the selected game's controller layout and skin."""
+        with self._lock:
+            self._controller = dict(profile) if profile is not None else None
+            controller = self._controller
+        self._broadcast({"type": "controller", "profile": controller})
+
+    def send_haptic(self, pattern: int | Sequence[int], slot: int | None = None) -> None:
+        """Send a vibration pattern to one phone or all phones."""
+        raw = [pattern] if isinstance(pattern, int) else list(pattern)
+        values = [
+            max(0, min(5000, int(value)))
+            for value in raw
+            if isinstance(value, (int, float))
+        ][:12]
+        logger.info("phone haptic slot=%s pattern=%s", slot, values)
+        self._broadcast({"type": "haptic", "pattern": values}, slot=slot)
+
+    def send_audio_tone(
+        self,
+        frequency: float,
+        duration_ms: int,
+        *,
+        volume: float = 0.35,
+        slot: int | None = None,
+    ) -> None:
+        """Play a short sine tone on the phone speaker."""
+        payload = {
+            "type": "audio",
+            "action": "tone",
+            "frequency": max(40.0, min(12000.0, float(frequency))),
+            "duration": max(20, min(5000, int(duration_ms))),
+            "volume": max(0.0, min(1.0, float(volume))),
+        }
+        logger.info(
+            "phone audio slot=%s tone=%sHz/%sms",
+            slot,
+            payload["frequency"],
+            payload["duration"],
+        )
+        self._broadcast(payload, slot=slot)
+
+    def send_audio_stop(self, slot: int | None = None) -> None:
+        self._broadcast({"type": "audio", "action": "stop"}, slot=slot)
+
+    def _broadcast(self, payload: dict[str, Any], *, slot: int | None = None) -> None:
+        with self._lock:
+            clients = [
+                client
+                for client, client_slot in self._clients.items()
+                if slot is None or client_slot == slot
+            ]
         loop = self._loop
-        if loop is None:
+        if loop is None or not clients:
             return
 
-        async def send_mode() -> None:
-            payload = json.dumps({"type": "mode", "mode": mode})
+        async def send() -> None:
+            encoded = json.dumps(payload)
             for client in clients:
                 try:
-                    await client.send_str(payload)
+                    await client.send_str(encoded)
                 except Exception:
                     continue
 
-        asyncio.run_coroutine_threadsafe(send_mode(), loop)
+        asyncio.run_coroutine_threadsafe(send(), loop)
 
     def stop(self) -> None:
         loop = self._loop
@@ -195,9 +251,11 @@ class DevServer:
             request.remote or "?",
         )
         with self._lock:
-            self._clients.add(ws)
+            self._clients[ws] = connection.slot
             mode = self._mode
+            controller = self._controller
         await ws.send_json({"type": "mode", "mode": mode})
+        await ws.send_json({"type": "controller", "profile": controller})
 
         try:
             async for message in ws:
@@ -221,7 +279,7 @@ class DevServer:
                     break
         finally:
             with self._lock:
-                self._clients.discard(ws)
+                self._clients.pop(ws, None)
             self._registry.leave(connection.slot)
             logger.info("phone slot %s desconectado", connection.slot)
 

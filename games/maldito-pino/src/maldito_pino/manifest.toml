@@ -1,9 +1,19 @@
 id = "maldito-pino"
 name = "Maldito Pino, hijo de pu**"
 version = "0.1.0"
-requires_api = "0.1"
+requires_api = "0.2"
 description = "Bolos de barrio con pinos con actitud."
 locales = ["es", "en"]
 default_locale = "es"
 players = [1, 1]
 modes = ["partida"]
+
+[controller]
+layout = "motion"
+skin = "tokyo-night"
+action = "Tirar"
+back = "Volver"
+hint = "Incliná para dar efecto"
+
+[art]
+motif = "pin"

@@ -51,14 +51,22 @@ def run_phone_dev(
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
+    cloudflare: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     session = start_phone_session(
-        host=host, port=port, token=token, demo=demo, https=https, cert=cert, key=key
+        host=host,
+        port=port,
+        token=token,
+        demo=demo,
+        https=https,
+        cert=cert,
+        key=key,
+        cloudflare=cloudflare,
     )
     session.set_mode("game")
-    if session.host.startswith("127."):
+    if session.tunnel is None and session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "
             "Pasá --host con la IP de la LAN.",

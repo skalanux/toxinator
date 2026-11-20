@@ -32,6 +32,17 @@ def _add_cert_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_cloudflare_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--cloudflare",
+        action="store_true",
+        help=(
+            "crear un Cloudflare Quick Tunnel HTTPS (requiere cloudflared); "
+            "el QR usa la URL pública y no hay que tocar la CA del teléfono"
+        ),
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="toxinator",
@@ -53,6 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     phone.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
     phone.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(phone)
+    _add_cloudflare_argument(phone)
     phone.add_argument(
         "--demo",
         action="store_true",
@@ -87,11 +99,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="seconds before the screenshot",
     )
 
-    launcher = subparsers.add_parser("launcher", help="open the LIGA launcher")
+    launcher = subparsers.add_parser("launcher", help="open the Toxinator launcher")
     launcher.add_argument("--host", default=None, help="LAN IP or hostname for the QR")
     launcher.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
     launcher.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(launcher)
+    _add_cloudflare_argument(launcher)
     launcher.add_argument(
         "--demo",
         action="store_true",
@@ -115,6 +128,7 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
     play.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(play)
+    _add_cloudflare_argument(play)
     play.add_argument(
         "--demo",
         action="store_true",
@@ -128,6 +142,43 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=3.0,
         help="seconds before the screenshot",
+    )
+
+    new = subparsers.add_parser(
+        "new",
+        help="crear el esqueleto de un juego externo",
+    )
+    new.add_argument(
+        "game",
+        help="id del juego (minúsculas, números, '-' o '_'; el módulo usa '_')",
+    )
+    new.add_argument(
+        "--dir",
+        type=Path,
+        default=None,
+        help="directorio donde crear <id> (por defecto, el actual)",
+    )
+    new.add_argument(
+        "--name",
+        default=None,
+        help="nombre visible del juego (por defecto, derivado del id)",
+    )
+
+    install = subparsers.add_parser(
+        "install",
+        help="instalar un juego externo con un symlink al directorio",
+    )
+    install.add_argument(
+        "path",
+        nargs="?",
+        type=Path,
+        default=Path("."),
+        help="directorio del juego con src/<módulo>/manifest.toml (por defecto, el actual)",
+    )
+    install.add_argument(
+        "--force",
+        action="store_true",
+        help="reemplazar un symlink existente en el directorio de juegos",
     )
     return parser
 
@@ -154,6 +205,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 screenshot_after=args.screenshot_after,
                 cert=args.cert,
                 key=args.key,
+                cloudflare=args.cloudflare,
             )
         except KeyboardInterrupt:
             return 130
@@ -176,6 +228,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 screenshot_after=args.screenshot_after,
                 cert=args.cert,
                 key=args.key,
+                cloudflare=args.cloudflare,
             )
         except KeyboardInterrupt:
             return 130
@@ -198,9 +251,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                 screenshot_after=args.screenshot_after,
                 cert=args.cert,
                 key=args.key,
+                cloudflare=args.cloudflare,
             )
         except KeyboardInterrupt:
             return 130
         except (OSError, RuntimeError) as error:
             parser.exit(1, f"toxinator: {error}\n")
+    elif args.command == "new":
+        from toxinator.dev.projects import SKILL_NAME, create_game_project
+
+        try:
+            project = create_game_project(
+                args.game,
+                args.dir or Path.cwd(),
+                title=args.name,
+            )
+        except (OSError, RuntimeError) as error:
+            parser.exit(1, f"toxinator: {error}\n")
+        print(f"Juego creado en {project.root}")
+        print(f"  id: {project.game_id}   módulo: {project.module}")
+        print(f"  skill: .opencode/skills/{SKILL_NAME}/")
+        print(f"Siguiente: toxinator install {project.root}")
+    elif args.command == "install":
+        from toxinator.dev.projects import install_game_project
+
+        try:
+            link = install_game_project(args.path, force=args.force)
+        except (OSError, RuntimeError) as error:
+            parser.exit(1, f"toxinator: {error}\n")
+        print(f"Juego instalado en {link}")
+        print("Reiniciá el launcher para verlo en la biblioteca.")
     return 0

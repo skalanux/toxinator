@@ -139,7 +139,7 @@ Una rebanada fina que atraviesa todas las capas (input → juego → render → 
 _Avoid_: MVP (puede ser más amplio), demo
 
 **Corte phone-only (Phone-only slice)**:
-El primer corte vertical, con el celular Android como único mando y una escena 3D mínima; el Wiimote llega después.
+El primer corte vertical, con el celular como único mando y una escena 3D mínima; el Wiimote quedó descartado (ADR-0007).
 _Avoid_: mobile-first (demasiado amplio), phone demo
 
 ## Sesión
@@ -160,6 +160,14 @@ _Avoid_: pass-the-controller (en docs), shared pad
 Una identidad de jugador guardada en la consola: nombre, color/avatar y mando preferido. No hay cuenta ni nube.
 _Avoid_: cuenta, usuario
 
+**Avatar**:
+Un personaje 3D paramétrico creado por la consola a partir de una foto y editable después; se guarda por perfil local y los juegos lo consumen con `ctx.avatar`.
+_Avoid_: Mii, personaje, skin
+
+**Foto de avatar (Avatar photo)**:
+La captura del celular que inicializa un avatar; se procesa localmente y se descarta al terminar.
+_Avoid_: selfie, retrato
+
 **Save de juego (Game save)**:
 Los datos que un juego persiste (récords, desbloqueos). La consola provee el almacenamiento, no el significado.
 _Avoid_: progreso, estado
@@ -175,12 +183,20 @@ El servicio de la consola que reúne las fuentes de mandos, normaliza sus datos 
 _Avoid_: input manager, device manager
 
 **Mando (Controller)**:
-Un dispositivo físico o virtual que produce `ControllerFrame`s: Wiimote, celular Android, gamepad o teclado/mouse.
+Un dispositivo físico o virtual que produce `ControllerFrame`s: celular, teclado/mouse o gamepad.
 _Avoid_: controlador, control, dispositivo
 
 **Controlador web (Controller web)**:
-La PWA Android que la consola sirve por LAN para que el celular actúe como mando; recibe input, estado y el idioma activo.
+La PWA que la consola sirve por LAN para que el celular actúe como mando; botones PlayStation, stick, touch, landscape/vertical y panel por juego.
 _Avoid_: phone app, web controller, app del celular
+
+**Botón canónico (Canonical button)**:
+El nombre estable de un botón en `ControllerFrame` (`cross`, `circle`, `square`, `triangle`, `options`, `l1`, `r1`), independiente del glyph y del mando.
+_Avoid_: tecla, botón físico
+
+**Panel de mando (Controller panel)**:
+El área de la PWA donde el juego muestra una imagen estática (mapa, referencia) sin capturar input.
+_Avoid_: overlay, pantalla secundaria
 
 **Descriptor de mando (ControllerInfo)**:
 La identidad y las capacidades de un mando conectado, separadas del estado instantáneo: id, source, capabilities, slot, conexión y batería.
@@ -203,7 +219,7 @@ Un cambio de ciclo de vida (join, leave, asignación, desconexión o calibració
 _Avoid_: callback, signal
 
 **Capacidad (Capability)**:
-Una característica que un mando o un juego declara: `buttons`, `axes`, `motion`, `gyro`, `pointer`, `touch`, `haptics`, `screen` o `battery`; el launcher negocia las requeridas y opcionales.
+Una característica que un mando o un juego declara: `buttons`, `axes`, `motion`, `gyro`, `pointer`, `touch`, `haptics`, `screen`, `camera`, `panel` o `battery`; el launcher negocia las requeridas y opcionales.
 _Avoid_: feature, flag
 
 **Acción (Action)**:
@@ -243,7 +259,7 @@ La fuente del `InputHub` que reproduce una traza de input a tiempo de juego fijo
 _Avoid_: replayer, playback
 
 **Simulador de mandos (Controller simulator)**:
-Un mando falso controlado por teclado, mouse o gamepad que produce `ControllerFrame`s (`source="sim"`) para desarrollar y testear sin hardware.
+Un mando falso controlado por teclado, mouse o gamepad que produce `ControllerFrame`s (`source="sim"`) para desarrollar, testear y jugar sin hardware; lo implementa `KeyboardMouseSource`.
 _Avoid_: emulador, fake controller
 
 **Preset de simulador (Simulator preset)**:

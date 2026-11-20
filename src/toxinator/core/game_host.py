@@ -8,6 +8,7 @@ from typing import Any
 
 from toxinator.api.game import API_VERSION, Game, GameContext
 from toxinator.api.input import InputState
+from toxinator.api.phone import NullPhoneService, PhoneService
 from toxinator.input.hub import InputHub
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class GameHost:
         input_hub: InputHub,
         *,
         locale: str = "es",
+        phone: PhoneService | None = None,
     ) -> None:
         self.base = base
         self.game = game
@@ -35,6 +37,7 @@ class GameHost:
             ui=self.ui,
             input_state=InputState(time.monotonic(), {}, {}),
             locale=locale,
+            phone=phone or NullPhoneService(),
             request_exit=base.userExit,
         )
         self.started = False
@@ -59,5 +62,6 @@ class GameHost:
             except Exception:
                 logger.exception("game stop failed")
             self.started = False
+        self.ctx.phone.stop()
         self.scene.remove_node()
         self.ui.remove_node()

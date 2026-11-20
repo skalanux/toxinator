@@ -1,19 +1,22 @@
 # Toxinator 3
 
-Consola personal de juegos 3D en Python, con mandos intercambiables (Wiimote original + celular Android) y juegos originales. El primer juego es **Maldito Pino**, un bolos con pinos con actitud.
+Consola personal de juegos 3D en Python, con el celular como mando y teclado/mouse como simulador, y juegos originales. El primer juego es **Maldito Pino**, un bolos con pinos con actitud.
 
 ## Estado
 
 El **mapa de decisiones** está completo en el issue [#1](https://github.com/skalanux/toxinator/issues/1): arquitectura, input, render, física, launcher, i18n y testing. Cada decisión cerrada está en su ticket y resumida en el mapa.
 
-Ya corren tres cortes: el **launcher LIGA** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El mando del celular funciona por **HTTP/WS sin certificado**; con HTTPS se puede instalar la PWA y usar la cámara. La PWA cambia sola entre **LAUNCHER** y **JUEGO**. Los juegos nuevos pueden vivir fuera del repo, en `~/Projects/toxinator-games`. El Wiimote, i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
+Ya corren tres cortes: el **launcher de Toxinator** (`toxinator`), **Maldito Pino** (`toxinator play maldito-pino`) y el banco de input (`toxinator dev phone`). El mando del celular funciona por **HTTP/WS sin certificado**; con HTTPS se puede instalar la PWA y usar la cámara. La PWA cambia sola entre **LAUNCHER** y **JUEGO**. Los juegos nuevos pueden vivir fuera del repo, en `~/Projects/toxinator-games`. El mando v2 (botones PlayStation, landscape/vertical, panel por juego y foto para avatares) está especificado en [docs/design/controller-v2.md](docs/design/controller-v2.md); i18n y el hot-seat de 1–4 jugadores todavía no están integrados.
 
 ## Documentos
 
 - [GLOSSARY.md](GLOSSARY.md): vocabulario canónico.
 - [AGENTS.md](AGENTS.md): cómo trabajan los agentes en este repo.
 - [docs/adr/](docs/adr/): decisiones de arquitectura.
-- [docs/design/launcher-liga.md](docs/design/launcher-liga.md): identidad y estructura del launcher (**LIGA · Noche**).
+- [docs/adr/0007-phone-controller-v2.md](docs/adr/0007-phone-controller-v2.md): mando v2, fin del Wiimote y simulador de teclado/mouse.
+- [docs/adr/0008-avatar-from-photo.md](docs/adr/0008-avatar-from-photo.md): avatares 3D locales desde foto.
+- [docs/design/controller-v2.md](docs/design/controller-v2.md): anatomía, perfil por juego y protocolo del mando v2.
+- [docs/design/launcher-toxinator.md](docs/design/launcher-toxinator.md): pantalla de inicio, catálogo y paleta Tokyo Night.
 - [docs/design/i18n.md](docs/design/i18n.md): internacionalización, catálogos y cambio de idioma en runtime.
 - [docs/design/testing.md](docs/design/testing.md): simulador de mandos, trazas y CI headless.
 - [docs/testing/manual-checklist.md](docs/testing/manual-checklist.md): validación con Wiimote, Android, GPU y performance.
@@ -48,52 +51,67 @@ uv run ruff check
 uv run mypy
 ```
 
-## Launcher LIGA
+## Launcher
 
 ```bash
 uv sync --all-packages
 uv run toxinator
 ```
 
-Abre **LIGA · Noche**, la pantalla de inicio de la consola:
+Abre la pantalla de inicio de **Toxinator**, un catálogo navegable con:
 
-- **Contendiente destacado**: Maldito Pino, con rank, evento, récord, formatos y
-  los botones **JUGAR** y **FICHA**.
-- **Próximos desafíos**: Kart y Tenis como contendientes futuros.
-- **Plantel**: los 4 slots; el celular aparece como P1 cuando se vincula con el
-  QR (con la cámara del teléfono o, en HTTPS, desde la propia PWA).
-- **Ajustes** y **sumar celular** con el **QR en pantalla** y la URL de la sesión.
+- **Rail lateral**: Inicio, Catálogo, Mandos y Ajustes, con reloj, fecha y el
+  estado de los cuatro controles.
+- **Juego destacado**: arte, descripción, jugadores, formatos y los botones
+  **Jugar** y **Ficha**. El arte es un diorama isométrico; `[art] motif` en el
+  manifest elige el prop.
+- **Tus juegos**: la fila de juegos instalados y del catálogo; al mover el foco
+  por una tarjeta cambia el juego destacado.
+- **Catálogo**: grilla filtrable por *Todos*, *Instalados*, *Para varios* y
+  *Próximamente*, con paginación cuando hay más de ocho juegos.
+- **Ficha**: arte grande, descripción, jugadores, formatos, id y estado.
+- **Mandos**: estado de P1–P4 y botón para vincular el celular con QR. El mando
+  puede cambiar de layout y skin según el juego (`[controller]` en el manifest),
+  y el jugador puede cambiar la skin desde el propio celular. Los juegos pueden
+  hacer vibrar el celular y reproducir tonos cortos por el parlante; el mando
+  muestra un aviso **ACTIVAR SONIDO Y VIBRACIÓN** para habilitarlo con un toque.
+  Para vibración usá Chrome o Samsung Internet en Android; Firefox Android no
+  vibra desde la web.
+- **Ajustes**: paleta Tokyo Night, idioma y salida de la consola.
 - Si no hay ningún mando conectado, el launcher abre el QR de vinculación
-  automáticamente. No hace falta teclado ni mouse para el primer vínculo: la
-  pantalla se cierra sola cuando el celular se conecta. **VOLVER** (o **Esc**)
-  permite explorar la liga con teclado/mouse y **C** vuelve a abrir el QR.
+  automáticamente. **Esc** permite explorar con teclado/mouse y **C** vuelve a
+  abrir el QR.
 
 Controles:
 
 - **Flechas**: navegar.
-- **Enter**: elegir / jugar.
-- **D**: ficha del desafío.
+- **Enter**: elegir / jugar / abrir ficha.
+- **D**: ficha del juego destacado.
 - **S**: ajustes.
-- **C**: sumar celular y ver el QR.
-- **Esc**: volver o cerrar la liga.
+- **C**: vincular celular y ver el QR.
+- **Esc**: volver, cerrar el overlay o apagar la consola.
 - **Touchpad del celular**: joystick para mover el foco.
 - **A del celular**: confirma el foco actual.
-- **B del celular**: cierra el overlay actual o vuelve a la liga desde el juego.
-- **Mouse**: los botones también responden.
+- **B del celular**: cierra el overlay actual o vuelve al launcher desde el juego.
+- **Mouse**: las tarjetas, el rail y los botones también responden.
 
-Al elegir **JUGAR**, el launcher cede la pantalla al juego; **Esc** en el juego o
-**B / VOLVER** en el celular vuelven a la liga. El servidor del celular sigue
+Al elegir **Jugar**, el launcher cede la pantalla al juego; **Esc** en el juego o
+**B / VOLVER** en el celular vuelven al launcher. El servidor del celular sigue
 vivo entre launcher y juego.
 
 La PWA tiene **dos pantallas** y cambia sola según el modo:
 
-- **LAUNCHER**: joystick grande + **A / ELEGIR** + **B / ATRÁS**; sin sensores.
-  Arrastrás para mover el foco y soltás en el centro. **B** cierra FICHA,
-  AJUSTES o la pantalla de vinculación; en la pantalla principal devuelve el
-  foco a JUGAR.
+- **LAUNCHER**: joystick grande + **A / ELEGIR** + **B / ATRÁS**; sin sensores
+  ni readout. El joystick es relativo: arrastrás desde donde apoyás el dedo y
+  soltás para volver al centro. **B** cierra FICHA, MANDOS, AJUSTES o la pantalla
+  de vinculación; en la pantalla principal devuelve el foco a **Jugar**.
 - **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN**,
-  **B / VOLVER** a la liga y calibración; los sensores y el readout vuelven a
-  aparecer.
+  **B / VOLVER** al launcher y calibración. El gesto principal debería ser
+  movimiento; el touch queda como apoyo. El mando puede cambiar de layout,
+  etiquetas y skin según el juego.
+- **Skin** abre un selector visual y recuerda la elección. **Avanzado** muestra
+  el readout β/γ/ACC/RTT, el estado de sensores y **Calibrar / Activar
+  sensores**; por defecto el mando queda simple.
 
 ### Conectar el celular (modo HTTP, sin certificado)
 
@@ -146,9 +164,29 @@ imprime `mkcert -CAROOT`, como **certificado de CA de usuario** desde Ajustes �
 Seguridad. Después abrí `https://192.168.0.141:8443/` una vez y verificá el
 candado. La IP o el nombre del certificado tienen que coincidir con el host del
 QR (`--host` si usás un nombre). `--https`, `--cert` y `--key` también funcionan
-en `toxinator play` y `toxinator dev phone`. Si tu versión de Android no confía en
-la CA de usuario, la alternativa es publicar la consola por un túnel HTTPS con
-certificado público.
+en `toxinator play` y `toxinator dev phone`.
+
+### Túnel Cloudflare (`--cloudflare`)
+
+Si no querés tocar la CA del teléfono, la consola puede crear un **Cloudflare
+Quick Tunnel** con certificado válido:
+
+```bash
+sudo pacman -S cloudflared   # una vez
+uv run toxinator --cloudflare
+```
+
+La consola levanta el servidor local, arranca `cloudflared tunnel --url` y usa
+la URL pública `https://...trycloudflare.com` para el QR. Sensores, cámara y PWA
+funcionan porque el origen es HTTPS válido.
+
+- Necesita conexión a internet y `cloudflared` en el PATH.
+- La URL es temporal y cambia en cada arranque.
+- Agrega latencia; para jugar en la misma LAN, `mkcert` es más rápido.
+- `--cloudflare` no se combina con `--https`, `--cert` ni `--key`.
+- También está disponible en `toxinator play --cloudflare` y
+  `toxinator dev phone --cloudflare`.
+- La URL incluye el token de sesión; no la compartas fuera de tu red.
 
 Por defecto, el token cambia cada vez que arranca la consola. Si la PWA queda en
 **Token inválido**, volvé a escanear el QR (no hace falta reinstalarla).
@@ -181,7 +219,7 @@ Por defecto, el token cambia cada vez que arranca la consola. Si la PWA queda en
 
 ```bash
 uv run toxinator launcher --demo        # P1 sintético
-uv run toxinator launcher --demo --offscreen --screenshot /tmp/liga.png
+uv run toxinator launcher --demo --offscreen --screenshot /tmp/launcher.png
 ```
 
 ## Primer corte: `toxinator dev phone`
@@ -193,9 +231,10 @@ uv run toxinator launcher --demo --offscreen --screenshot /tmp/liga.png
 4. Si abrís la PWA sin token, escaneá el QR con la cámara del teléfono y abrí el
    enlace, o usá **INGRESAR DATOS**. La cámara interna y **ESCANEAR QR** de la
    PWA necesitan `--https`; en HTTP no están disponibles.
-5. Tocá la pantalla para mover la bola de P1. **A** es el botón de acción;
-   **Calibrar** toma la pose actual como neutra. Con HTTPS, además, podés
-   inclinar el teléfono para dar efecto.
+5. Tocá o arrastrá en el touchpad para apuntar con P1. **A** es el botón de
+   acción. **Avanzado** muestra el readout y **Calibrar**, que toma la pose
+   actual como neutra. Con HTTPS, además, podés inclinar el teléfono para dar
+   efecto.
 
 Por defecto el servidor es **HTTP/WS** y no genera certificado. Con `--https` usa
 un certificado autofirmado en `~/.config/toxinator/dev-cert`; con `--cert/--key`
@@ -212,8 +251,9 @@ uv run toxinator dev phone --host 192.168.0.141 --port 8443
 uv run toxinator dev phone --https                # PWA/cámara (autofirmado)
 ```
 
-En esta etapa el único mando es el celular; Wiimote y gamepad entran en los
-siguientes cortes.
+En esta etapa el mando es el celular; el teclado/mouse funciona como simulador
+para manejar la consola y jugar sin teléfono. El Wiimote quedó descartado
+([ADR-0007](docs/adr/0007-phone-controller-v2.md)).
 
 ## Maldito Pino jugable
 
@@ -227,7 +267,7 @@ enlace en el navegador del celular sin aceptar certificado. Desde el celular:
 
 - **Arrastrá** en el touchpad para apuntar.
 - **Mantené A** para cargar potencia y **soltá** para tirar.
-- **B / VOLVER** corta el juego y vuelve a la liga.
+- **B / VOLVER** corta el juego y vuelve al launcher.
 - **Calibrar** toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si el pie dice **SENSORES OFF**, tocá **Activar sensores** primero.
 - Con `--https`, además podés **inclinar** el teléfono para dar efecto.
 
@@ -276,17 +316,28 @@ mi-juego/src/mi_juego/
 El cargador agrega `src/` al `sys.path`, importa el paquete y llama
 `create_game(manifest)`. No se instala nada; el juego usa el venv de la consola.
 
-Para arrancar desde el template:
+Para crear el esqueleto de un juego e instalarlo:
 
 ```bash
-cd ~/Projects/toxinator-games
-cp -r _template mi-juego
-mv mi-juego/src/template_game mi-juego/src/mi_juego
-cd /home/ska/Projects/toxinator
+uv run toxinator new mi-juego          # crea ./mi-juego/
+uv run toxinator install mi-juego      # symlink en ~/Projects/toxinator-games
 uv run toxinator play mi-juego
 ```
 
-Los juegos externos aparecen en la **CARTELERA** del launcher al iniciar y se
+`new` arma `src/<módulo>/manifest.toml`, `__init__.py`, `game.py`, un
+`pyproject.toml`, un README y una copia del skill
+`.opencode/skills/toxinator-game-dev/` para que un agente tenga la guía de
+desarrollo dentro del juego; acepta `--dir` para elegir el directorio destino y
+`--name` para el nombre visible. `install` toma un directorio con
+`src/<módulo>/manifest.toml` (por defecto, el actual) y lo enlaza en el
+directorio de juegos externos. Todavía no copia archivos ni instala paquetes
+Python: es un symlink. `--force` reemplaza un symlink existente, nunca un
+directorio real.
+
+También podés partir del template de `~/Projects/toxinator-games/_template` si
+preferís el flujo manual.
+
+Los juegos externos aparecen en la **biblioteca** del launcher al iniciar y se
 pueden lanzar con **A / ENTER** o desde el celular. También podés lanzarlos
 directo por id:
 
@@ -314,7 +365,6 @@ Abrí el [mapa #1](https://github.com/skalanux/toxinator/issues/1), leé **Decis
 
 Los prototipos viven en branches y no se mergean:
 
-- `prototype/launcher-ux`: launcher **LIGA · Noche**.
 - `prototype/bowling-physics`: física de pinos y tuning de bolos. Informe en
   `prototype/bowling-physics.md` del branch; video y mediciones incluidos.
 

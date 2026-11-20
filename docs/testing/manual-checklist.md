@@ -85,18 +85,34 @@ video corto). Un `blocked` no es un `pass`.
 ## Launcher
 
 - [ ] **Inicio**: abrir el launcher en 1080p.
-      *Esperado*: LIGA · Noche, sin texto cortado, foco visible.
-- [ ] **Plantel**: conectar 1–4 mandos; asignar y liberar slots.
+      *Esperado*: Tokyo Night, sin texto cortado, foco visible.
+- [ ] **Mandos**: conectar 1–4 mandos; asignar y liberar slots.
       *Esperado*: estados online/offline/warn correctos; gracia 30 s.
 - [ ] **Join/leave**: sumar y sacar un mando en caliente.
       *Esperado*: el slot se actualiza sin reiniciar.
-- [ ] **Idioma**: cambiar `es`/`en` en ajustes.
-      *Esperado*: todo el launcher se re-renderiza al instante.
-- [ ] **Ficha**: abrir detalle, cambiar formato y volver.
+- [ ] **Idioma**: revisar Ajustes.
+      *Esperado*: muestra Español; el cambio de idioma queda pendiente.
+- [ ] **Ficha**: abrir detalle y volver.
       *Esperado*: foco y estado consistentes.
+- [ ] **Mando por juego**: lanzar un juego con `[controller]`.
+      *Esperado*: layout, skin y etiquetas del celular cambian; el selector de
+      **Skin** se recuerda.
+- [ ] **Joystick de consola**: en LAUNCHER, arrastrar desde cualquier punto.
+      *Esperado*: el knob sigue el dedo dentro del aro, el foco se mueve por
+      filas/columnas y al soltar vuelve al centro. Sin readout ni calibración.
+- [ ] **Avanzado**: tocar **Avanzado** en el mando.
+      *Esperado*: aparecen β/γ/ACC/RTT, estado de sensores y **Calibrar /
+      Activar sensores**; **Simple** los oculta otra vez.
+- [ ] **Feedback**: golpe/punto en Pong.
+      *Esperado*: al entrar al juego aparece **ACTIVAR SONIDO Y VIBRACIÓN**;
+      al tocarlo suena un tono y vibra Android. Sin bloquear si el celular no lo
+      soporta.
+- [ ] **HTTPS sin CA**: `uv run toxinator --cloudflare`.
+      *Esperado*: con `cloudflared` instalado, el QR usa
+      `https://...trycloudflare.com` y Chrome habilita sensores/cámara.
 - [ ] **Lanzar/salir**: entrar a Maldito Pino y volver.
       *Esperado*: sin parpadeo de ventana; el launcher queda igual.
-- [ ] **Estados**: error de capacidades, liga vacía, sumar celular, apagar.
+- [ ] **Estados**: error de capacidades, biblioteca vacía, sumar celular, apagar.
       *Esperado*: copy correcto, navegación con mando/teclado.
 - [ ] **4 mandos**: Wiimote + teléfonos + gamepad a la vez.
       *Esperado*: 4 slots, sin conflictos.

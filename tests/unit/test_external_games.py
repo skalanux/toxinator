@@ -22,8 +22,18 @@ def _write_game(root: Path, module: str, game_id: str) -> Path:
 id = "{game_id}"
 name = "External Test"
 version = "0.1.0"
-requires_api = "0.1"
+requires_api = "0.2"
 description = "Juego de prueba"
+
+[controller]
+layout = "motion"
+skin = "tokyo-storm"
+action = "Lanzar"
+back = "Volver"
+hint = "Incliná para apuntar"
+
+[art]
+motif = "flag"
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -83,7 +93,7 @@ def test_skips_templates_and_packages_without_factory(tmp_path: Path) -> None:
     broken.mkdir(parents=True)
     broken.joinpath("manifest.toml").write_text(
         'id = "broken"\nname = "Broken"\nversion = "0.1.0"\n'
-        'requires_api = "0.1"\n',
+        'requires_api = "0.2"\n',
         encoding="utf-8",
     )
     broken.joinpath("__init__.py").write_text("", encoding="utf-8")
@@ -111,5 +121,10 @@ def test_external_game_becomes_launcher_entry(tmp_path: Path) -> None:
     assert entry.subtitle == "JUEGO EXTERNO"
     assert entry.rank == "EX"
     assert entry.installed
+    assert entry.controller_layout == "motion"
+    assert entry.controller_skin == "tokyo-storm"
+    assert entry.controller_action == "Lanzar"
+    assert entry.controller_hint == "Incliná para apuntar"
+    assert entry.art_motif == "flag"
     assert entry.manifest is not None
     assert entry.instantiate().manifest.id == "external-entry"

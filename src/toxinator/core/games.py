@@ -22,6 +22,12 @@ class GameEntry:
     modes: tuple[str, ...]
     installed: bool
     accent: str
+    controller_layout: str = "default"
+    controller_skin: str = "tokyo-night"
+    controller_action: str = "Acción"
+    controller_back: str = "Volver"
+    controller_hint: str = ""
+    art_motif: str = "auto"
     manifest: GameManifest | None = None
     factory: Callable[[GameManifest], Game] | None = None
 
@@ -63,6 +69,12 @@ def _maldito_pino() -> GameEntry | None:
         modes=manifest.modes,
         installed=True,
         accent="crimson",
+        controller_layout=manifest.controller_layout,
+        controller_skin=manifest.controller_skin,
+        controller_action=manifest.controller_action,
+        controller_back=manifest.controller_back,
+        controller_hint=manifest.controller_hint,
+        art_motif=manifest.art_motif,
         manifest=manifest,
     )
 
@@ -80,7 +92,7 @@ def load_catalog() -> list[GameEntry]:
                 subtitle="CARRERAS",
                 description=(
                     "Cuatro karts, una cuadra y ninguna regla de tránsito. El próximo "
-                    "desafío de la liga."
+                    "juego de la consola."
                 ),
                 rank="C",
                 event="02",
@@ -89,13 +101,19 @@ def load_catalog() -> list[GameEntry]:
                 modes=("carrera",),
                 installed=False,
                 accent="gold",
+                controller_layout="motion",
+                controller_skin="tokyo-storm",
+                controller_action="Acelerar",
+                controller_back="Volver",
+                controller_hint="Incliná para doblar",
+                art_motif="flag",
             ),
             GameEntry(
                 id="tenis",
                 title="Tenis de vereda",
                 subtitle="PALETA Y CALLE",
                 description=(
-                    "Pelota, paleta y cordón. Otro clásico de la liga que todavía está "
+                    "Pelota, paleta y cordón. Otro clásico que todavía está "
                     "calentando."
                 ),
                 rank="C",
@@ -105,6 +123,12 @@ def load_catalog() -> list[GameEntry]:
                 modes=("partido",),
                 installed=False,
                 accent="jade",
+                controller_layout="motion",
+                controller_skin="tokyo-moon",
+                controller_action="Golpear",
+                controller_back="Volver",
+                controller_hint="Incliná para dirigir",
+                art_motif="paddle",
             ),
         ]
     )

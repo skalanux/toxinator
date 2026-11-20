@@ -11,6 +11,7 @@ from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import Filename
 
 from toxinator.api.game import Game
+from toxinator.api.phone import PhoneService
 from toxinator.core.game_host import GameHost
 from toxinator.input.hub import InputHub
 
@@ -27,6 +28,7 @@ class GameApp(ShowBase):
         screenshot: Path | None = None,
         screenshot_after: float = 3.0,
         seconds: float | None = None,
+        phone: PhoneService | None = None,
     ) -> None:
         super().__init__(windowType=window_type)
         self.setBackgroundColor(0.025, 0.04, 0.07, 1.0)
@@ -35,7 +37,7 @@ class GameApp(ShowBase):
         self.started_at = time.monotonic()
         self.exit_at = self.started_at + seconds if seconds is not None else None
 
-        self.host = GameHost(self, game, hub)
+        self.host = GameHost(self, game, hub, phone=phone)
         self.host.start()
         self.accept("escape", self._exit)
         self.taskMgr.add(self._update, "game-update")
