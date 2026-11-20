@@ -14,7 +14,7 @@ skin = "toxinator"
 orientation = "auto"
 action = "Tirar"
 back = "Volver"
-hint = "Incliná para dar efecto"
+hint = "Mantené × para cargar · incliná para efecto"
 
 [controller.labels]
 cross = "Tirar"

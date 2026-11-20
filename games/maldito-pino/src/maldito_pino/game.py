@@ -487,7 +487,7 @@ class MalditoPinoGame:
             self._hud["power"].setText("")
         elif self.state == "aim":
             self._hud["prompt"].setText(
-                "Tocá para apuntar | incliná para efecto | mantené A"
+                "Tocá para apuntar | incliná para efecto | mantené X"
             )
             self._hud["power"].setText(
                 f"OBJETIVO {self.aim_x:+.2f} m  |  EFECTO {self.last_spin:+.0f}"
