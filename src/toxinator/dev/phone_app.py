@@ -19,6 +19,7 @@ from panda3d.core import (
 
 from toxinator.api.input import ControllerFrame
 from toxinator.input.hub import InputHub
+from toxinator.input.keyboard import KeyboardMouseSource
 
 SLOT_COLORS = (
     Vec4(0.69, 0.18, 0.26, 1.0),  # crimson
@@ -40,9 +41,13 @@ class PhoneApp(ShowBase):
         screenshot_after: float = 2.0,
         seconds: float | None = None,
         window_type: str = "onscreen",
+        keyboard: KeyboardMouseSource | None = None,
     ) -> None:
         super().__init__(windowType=window_type)
         self.hub = hub
+        self.keyboard = keyboard
+        if keyboard is not None:
+            keyboard.attach(self)
         self.screenshot = screenshot
         self.screenshot_after = screenshot_after
         self.started_at = time.monotonic()
@@ -138,14 +143,14 @@ class PhoneApp(ShowBase):
             marker.set_color_scale(0.18)
             return
 
-        if frame.touch:
-            x = (frame.touch[0].x - 0.5) * 9.0
-            y = (0.5 - frame.touch[0].y) * 9.0
+        if frame.pointer is not None:
+            x = (frame.pointer[0] - 0.5) * 9.0
+            y = (0.5 - frame.pointer[1]) * 9.0
         else:
             x = max(-4.5, min(4.5, frame.orientation[2] / 45.0 * 4.5))
             y = max(-4.5, min(4.5, frame.orientation[1] / 45.0 * 4.5))
         marker.set_pos(x, y, 0.45)
-        marker.set_color_scale(1.0 if frame.button("A") else 0.85)
+        marker.set_color_scale(1.0 if frame.button("cross") else 0.85)
 
     def _update(self, task: Any) -> Any:
         state = self.hub.poll()
@@ -159,11 +164,11 @@ class PhoneApp(ShowBase):
                 beta = frame.orientation[1]
                 gamma = frame.orientation[2]
                 touch = (
-                    f"{frame.touch[0].x:.2f},{frame.touch[0].y:.2f}"
-                    if frame.touch
+                    f"{frame.pointer[0]:.2f},{frame.pointer[1]:.2f}"
+                    if frame.pointer
                     else "—"
                 )
-                action = "A" if frame.button("A") else "—"
+                action = "X" if frame.button("cross") else "—"
                 lines.append(
                     f"P{slot + 1} {info.display_name if info else 'phone'}  "
                     f"{latency:3.0f} ms  B {beta:+5.1f}°  G {gamma:+5.1f}°  "

@@ -17,8 +17,14 @@ CAPABILITIES: frozenset[str] = frozenset(
         "touch",
         "haptics",
         "screen",
+        "camera",
+        "panel",
         "battery",
     }
+)
+
+CANONICAL_BUTTONS: frozenset[str] = frozenset(
+    {"cross", "circle", "square", "triangle", "options", "l1", "r1"}
 )
 
 
@@ -83,6 +89,30 @@ class InputState:
 
     def controller(self, slot: int) -> ControllerInfo | None:
         return self.controllers.get(slot)
+
+    def primary_slot(self) -> int | None:
+        """Return the slot a single-player game should read.
+
+        Phones win over the keyboard/mouse simulator; within a source the
+        lowest slot wins. Falls back to any live frame with no controller info.
+        """
+        if not self.frames:
+            return None
+        phones = [
+            slot
+            for slot in self.frames
+            if (info := self.controllers.get(slot)) is not None
+            and info.source == "phone"
+        ]
+        return min(phones) if phones else min(self.frames)
+
+    def primary_frame(self) -> ControllerFrame | None:
+        slot = self.primary_slot()
+        return None if slot is None else self.frames.get(slot)
+
+    def primary_controller(self) -> ControllerInfo | None:
+        slot = self.primary_slot()
+        return None if slot is None else self.controllers.get(slot)
 
     @property
     def connected_slots(self) -> tuple[int, ...]:

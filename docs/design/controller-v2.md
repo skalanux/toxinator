@@ -5,6 +5,9 @@ Spec de implementación del mando celular v2. Las decisiones están en
 [ADR-0008](../adr/0008-avatar-from-photo.md). Este documento fija el contrato que
 comparten la PWA, el servidor, la API y los juegos.
 
+> **Estado**: milestone 1 implementado (PWA v2, protocolo v2, teclado/mouse,
+> panel y foto). El editor de avatares es milestone 2.
+
 ## Alcance
 
 Entra en la v1:
@@ -82,7 +85,7 @@ Reglas:
 - El launcher usa `cross` para activar y `circle` para volver.
 - `options` lo consume el juego; la consola no lo intercepta.
 - Los labels visibles salen de `profile.labels`; si faltan, se usan `Acción`,
-  `Volver`, y vacío para el resto.
+  `Volver`, `Pausa` para `options` y vacío para el resto.
 
 ## Ejes, stick y touch
 
@@ -149,10 +152,13 @@ fit = "contain"           # contain | cover | stretch
   pero solo cambia el hint y el énfasis visual del panel.
 - `skin` mantiene el motor; las skins tokyo se retiran del CSS y quedan como deuda
   si alguien las pide.
-- `camera = true` muestra el botón de captura; sin HTTPS el botón aparece
-  deshabilitado con la explicación.
+- `camera = true` muestra el botón de captura; sin HTTPS el mando avisa que hace
+  falta HTTPS al tocarlo.
 - Un juego externo con `[controller]` incompleto sigue funcionando con los
   defaults.
+- El perfil que viaja por WebSocket agrega `buttons` (qué controles mostrar) y
+  `panel`; el servidor resuelve `panel.image` a una `url` bajo
+  `/game-assets/<game-id>/`.
 
 ## Protocolo WebSocket v2
 
@@ -190,7 +196,7 @@ Servidor → cliente:
 | `welcome`    | `protocol`, `slot`, `controller_id`                  |
 | `mode`       | `mode` (`launcher`/`game`)                           |
 | `controller` | `profile` (sección anterior) o `null`                |
-| `panel`      | `panel` (`{title, image, fit}`) o `null`             |
+| `panel`      | `panel` (`{title, url, fit}`) o `null`               |
 | `haptic`     | `pattern` (ms on/off, ≤ 12 valores)                  |
 | `audio`      | `action`, `frequency`, `duration`, `volume`          |
 | `calibrated` | —                                                    |
@@ -225,8 +231,9 @@ ctx.phone.clear_panel()
 - Cuerpo 16 KB..2 MB; se rechaza con `413` fuera de rango y `415` si el tipo no
   es imagen.
 - Respuesta `201 {"id": "...", "bytes": 123456}`.
-- La consola guarda la foto en el cache de la sesión y la entrega al flujo que la
-  pidió; sin pedido explícito, se descarta al terminar la sesión.
+- La consola guarda la foto en memoria durante la sesión y la entrega al flujo
+  que la pidió (`DevServer.last_photo(slot)`); sin pedido explícito, se descarta
+  al terminar la sesión.
 - Requiere HTTPS en el teléfono; sobre HTTP el botón de cámara se muestra
   deshabilitado.
 - En milestone 1 solo existe la captura y el endpoint; el editor de avatares de

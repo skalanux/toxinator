@@ -33,6 +33,21 @@ class PhoneService(Protocol):
         """Stop tones and vibration on one phone or all phones."""
         ...
 
+    def panel(
+        self,
+        *,
+        title: str = "",
+        image: str | None = None,
+        fit: str = "contain",
+        slot: int | None = None,
+    ) -> None:
+        """Show a static image panel on the phone, or clear it with ``image=None``."""
+        ...
+
+    def clear_panel(self, *, slot: int | None = None) -> None:
+        """Hide the phone panel."""
+        ...
+
 
 class NullPhoneService:
     """No-op implementation used when a game runs without a phone session."""
@@ -51,4 +66,17 @@ class NullPhoneService:
         return None
 
     def stop(self, slot: int | None = None) -> None:
+        return None
+
+    def panel(
+        self,
+        *,
+        title: str = "",
+        image: str | None = None,
+        fit: str = "contain",
+        slot: int | None = None,
+    ) -> None:
+        return None
+
+    def clear_panel(self, *, slot: int | None = None) -> None:
         return None

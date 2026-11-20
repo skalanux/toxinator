@@ -73,6 +73,19 @@ def test_new_then_install_via_cli(
     assert ".opencode/skills/toxinator-game-dev" in output
 
 
+def test_keyboard_flags_are_available_for_launcher_play_and_phone() -> None:
+    parser = build_parser()
+
+    for command in (["launcher"], ["play"], ["dev", "phone"]):
+        args = parser.parse_args(command)
+        assert args.no_keyboard is False
+        assert args.keyboard_slot == 4
+
+        args = parser.parse_args([*command, "--no-keyboard", "--keyboard-slot", "6"])
+        assert args.no_keyboard is True
+        assert args.keyboard_slot == 6
+
+
 def test_cloudflare_flag_is_available_for_launcher_play_and_phone() -> None:
     parser = build_parser()
 

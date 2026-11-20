@@ -14,6 +14,7 @@ from toxinator.api.game import Game
 from toxinator.api.phone import PhoneService
 from toxinator.core.game_host import GameHost
 from toxinator.input.hub import InputHub
+from toxinator.input.keyboard import KeyboardMouseSource
 
 
 class GameApp(ShowBase):
@@ -29,6 +30,7 @@ class GameApp(ShowBase):
         screenshot_after: float = 3.0,
         seconds: float | None = None,
         phone: PhoneService | None = None,
+        keyboard: KeyboardMouseSource | None = None,
     ) -> None:
         super().__init__(windowType=window_type)
         self.setBackgroundColor(0.025, 0.04, 0.07, 1.0)
@@ -36,6 +38,9 @@ class GameApp(ShowBase):
         self.screenshot_after = screenshot_after
         self.started_at = time.monotonic()
         self.exit_at = self.started_at + seconds if seconds is not None else None
+        self.keyboard = keyboard
+        if keyboard is not None:
+            keyboard.attach(self)
 
         self.host = GameHost(self, game, hub, phone=phone)
         self.host.start()
@@ -57,4 +62,6 @@ class GameApp(ShowBase):
 
     def _exit(self) -> None:
         self.host.stop()
+        if self.keyboard is not None:
+            self.keyboard.detach()
         self.userExit()

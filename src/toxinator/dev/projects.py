@@ -27,10 +27,13 @@ modes = ["partida"]
 
 [controller]
 layout = "motion"
-skin = "tokyo-night"
-action = "Acción"
-back = "Volver"
-hint = "Incliná el teléfono o usá el touch"
+skin = "toxinator"
+orientation = "auto"
+hint = "Incliná el teléfono o usá el stick"
+
+[controller.labels]
+cross = "Acción"
+circle = "Volver"
 
 [art]
 motif = "auto"
@@ -49,7 +52,7 @@ def create_game(manifest: GameManifest) -> Game:
 """
 
 GAME_TEMPLATE = '''\
-"""Minimal game: shows a message and reacts to A."""
+"""Minimal game: shows a message and reacts to cross."""
 
 from __future__ import annotations
 
@@ -88,10 +91,10 @@ class {class_name}:
     def update(self, dt: float) -> None:
         if self.ctx is None or self.label is None:
             return
-        frame = self.ctx.input_state.frame(0)
-        pressed = frame is not None and frame.button("A")
+        frame = self.ctx.input_state.primary_frame()
+        pressed = frame is not None and frame.button("cross")
         if pressed and not self.pressed:
-            self.label.setText("A / OK")
+            self.label.setText("X / OK")
             self.ctx.phone.vibrate([18])
             self.ctx.phone.tone(880, 60, volume=0.25)
         elif not pressed and self.pressed:
@@ -155,8 +158,9 @@ en la **biblioteca** al iniciar.
 
 - Importá solo `toxinator.api` del runtime.
 - No crees `ShowBase` ni ventanas; usá `ctx.scene` y `ctx.ui`.
-- Leé el input desde `ctx.input_state`; `B` está reservado para volver.
-- Jugable con **touch + A**; los sensores solo funcionan con HTTPS.
+- Leé el input desde `ctx.input_state.primary_frame()`; `circle` está reservado
+  para volver.
+- Jugable con **stick + touch + ×**; los sensores solo funcionan con HTTPS.
 - Limpiá nodos y recursos en `stop`.
 
 ## Skill de desarrollo
@@ -255,7 +259,7 @@ def create_game_project(
     class_name = module_to_class(module)
     display_title = " ".join(title.split()) if title else default_title(game_id)
     description = f"Juego externo de Toxinator ({display_title})."
-    label_text = repr(f"{display_title.upper()}\nA / ACCIÓN")
+    label_text = repr(f"{display_title.upper()}\nX / ACCIÓN")
     manifest_title = _toml_string(display_title)
     manifest_description = _toml_string(description)
     skill_source = _skill_source()

@@ -26,6 +26,7 @@ from toxinator.api.phone import PhoneService
 from toxinator.core.game_host import GameHost
 from toxinator.core.games import GameEntry
 from toxinator.input.hub import InputHub
+from toxinator.input.keyboard import KeyboardMouseSource
 from toxinator.launcher import art, theme, ui
 from toxinator.launcher.qr import qr_texture
 from toxinator.launcher.ui import Rect
@@ -33,10 +34,10 @@ from toxinator.launcher.ui import Rect
 logger = logging.getLogger(__name__)
 
 HINTS_HOME = (
-    "Flechas mover   ·   Enter elegir   ·   S ajustes   ·   C celular   ·   Esc salir"
+    "Flechas o mouse mover   ·   Enter elegir   ·   S ajustes   ·   C celular"
 )
 HINTS_CATALOG = (
-    "Flechas mover   ·   Enter abrir ficha   ·   Esc volver   ·   S ajustes"
+    "Flechas o mouse mover   ·   Enter abrir ficha   ·   Esc volver   ·   S ajustes"
 )
 
 MONTHS = (
@@ -95,7 +96,9 @@ class ConsoleApp(ShowBase):
         seconds: float | None = None,
         set_mode: Callable[[str], None] | None = None,
         set_controller: Callable[[dict[str, Any] | None], None] | None = None,
+        set_game_assets: Callable[[str, Path | None], None] | None = None,
         phone: PhoneService | None = None,
+        keyboard: KeyboardMouseSource | None = None,
     ) -> None:
         super().__init__(windowType=window_type)
         self.hub = hub
@@ -104,7 +107,12 @@ class ConsoleApp(ShowBase):
         self.phone_secure = phone_url.startswith("https://")
         self._set_mode_callback = set_mode or (lambda mode: None)
         self._set_controller_callback = set_controller or (lambda profile: None)
+        self._set_game_assets_callback = set_game_assets or (lambda _id, _root: None)
         self.phone = phone
+        self.keyboard = keyboard
+        if keyboard is not None:
+            keyboard.attach(self)
+            keyboard.state.set_wasd(False)
         self.screenshot = screenshot
         self.screenshot_after = screenshot_after
         self.started_at = time.monotonic()
@@ -190,12 +198,13 @@ class ConsoleApp(ShowBase):
         self._refresh_clock(datetime.now())
         self._refresh_controllers_empty()
 
-        self.accept("arrow_up", self._move_focus, [0, 1])
-        self.accept("arrow_down", self._move_focus, [0, -1])
-        self.accept("arrow_left", self._move_focus, [-1, 0])
-        self.accept("arrow_right", self._move_focus, [1, 0])
-        self.accept("enter", self._activate)
-        self.accept("escape", self._on_escape)
+        if keyboard is None:
+            self.accept("arrow_up", self._move_focus, [0, 1])
+            self.accept("arrow_down", self._move_focus, [0, -1])
+            self.accept("arrow_left", self._move_focus, [-1, 0])
+            self.accept("arrow_right", self._move_focus, [1, 0])
+            self.accept("enter", self._activate)
+            self.accept("escape", self._on_escape)
         self.accept("d", self._open_detail_from_focus)
         self.accept("s", self._open_settings)
         self.accept("c", self._open_phone)
@@ -1985,7 +1994,7 @@ class ConsoleApp(ShowBase):
         self._open_quit()
 
     def _check_phone_back(self, state: InputState) -> bool:
-        b_pressed = any(item.button("B") for item in state.frames.values())
+        b_pressed = any(item.button("circle") for item in state.frames.values())
         triggered = b_pressed and not self._last_b
         self._last_b = b_pressed
         if triggered:
@@ -2202,6 +2211,7 @@ class ConsoleApp(ShowBase):
         if not entry.installed:
             self._open_detail(entry)
             return
+        self._set_game_assets_callback(entry.id, entry.assets_root)
         self._notify_controller(self._controller_profile(entry))
         self.pending = entry
         self.launch_timer = 0.7
@@ -2226,6 +2236,7 @@ class ConsoleApp(ShowBase):
     def _cancel_launch(self) -> None:
         self.pending = None
         self.overlay = None
+        self._set_game_assets_callback("", None)
         self._notify_controller(None)
         if self.launch_root is not None:
             self.launch_root.hide()
@@ -2236,6 +2247,7 @@ class ConsoleApp(ShowBase):
 
     def _start_game(self, entry: GameEntry) -> None:
         logger.info("start game %s", entry.id)
+        self._set_game_assets_callback(entry.id, entry.assets_root)
         try:
             game: Game = entry.instantiate()
         except Exception as error:
@@ -2271,6 +2283,7 @@ class ConsoleApp(ShowBase):
             self.host = None
         self.state = "launcher"
         self.overlay = None
+        self._set_game_assets_callback("", None)
         self._notify_controller(None)
         self._notify_mode("launcher")
         self.ui_root.show()
@@ -2301,12 +2314,10 @@ class ConsoleApp(ShowBase):
         else:
             state = self.hub.poll()
             self._update_controllers(state)
-            frame = state.frame(0)
-            if frame is None and state.frames:
-                frame = next(iter(state.frames.values()))
+            frame = state.primary_frame()
             self._update_joystick(frame, dt)
             back_triggered = self._check_phone_back(state)
-            a_pressed = any(item.button("A") for item in state.frames.values())
+            a_pressed = any(item.button("cross") for item in state.frames.values())
             if not back_triggered and a_pressed and not self._last_a:
                 self._activate()
             self._last_a = a_pressed
@@ -2331,14 +2342,16 @@ class ConsoleApp(ShowBase):
             self._joy_hold = 0.0
             self._joy_repeat = 0.0
             return
-        if not frame.touch:
-            self._joy_dir = None
-            self._joy_hold = 0.0
-            self._joy_repeat = 0.0
-            return
-        touch = frame.touch[0]
-        dx = touch.x - 0.5
-        dy = 0.5 - touch.y
+        dx = frame.axis("move_x")
+        dy = frame.axis("move_y")
+        if abs(dx) < 0.0001 and abs(dy) < 0.0001:
+            if frame.pointer is None:
+                self._joy_dir = None
+                self._joy_hold = 0.0
+                self._joy_repeat = 0.0
+                return
+            dx = frame.pointer[0] - 0.5
+            dy = 0.5 - frame.pointer[1]
         if math.hypot(dx, dy) < 0.22:
             self._joy_dir = None
             self._joy_hold = 0.0
@@ -2355,6 +2368,9 @@ class ConsoleApp(ShowBase):
             self._joy_hold = 0.0
             self._joy_repeat = 0.0
             self._move_focus(*direction)
+            return
+        mouse_hover = not frame.touch and frame.controller_id.startswith("keyboard")
+        if mouse_hover:
             return
         self._joy_hold += dt
         if self._joy_hold >= 0.35:
@@ -2413,8 +2429,12 @@ class ConsoleApp(ShowBase):
             label.setFg(color)
 
         if self._controller_summary is not None:
-            self._controller_summary.setText(f"MANDOS {connected}/4")
-            self._controller_summary.setFg(selected.status if connected else selected.muted)
+            primary = state.primary_controller()
+            simplex = " · TECLADO" if primary is not None and primary.source == "sim" else ""
+            self._controller_summary.setText(f"MANDOS {connected}/4{simplex}")
+            self._controller_summary.setFg(
+                selected.status if connected or simplex else selected.muted
+            )
 
         for slot, (name, status, _row, p_label) in enumerate(self._controller_rows):
             info = state.controller(slot)
@@ -2439,7 +2459,7 @@ class ConsoleApp(ShowBase):
                 status.setFg(selected.muted)
                 p_label.setFg(selected.muted)
 
-        self._update_pairing(bool(state.connected_slots))
+        self._update_pairing(any(state.frame(slot) is not None for slot in range(4)))
 
     def _update_pairing(self, has_controller: bool) -> None:
         self._has_controller = has_controller
@@ -2457,12 +2477,23 @@ class ConsoleApp(ShowBase):
         self._set_mode_callback(mode)
 
     def _controller_profile(self, entry: GameEntry) -> dict[str, Any]:
+        labels = dict(entry.controller_labels)
+        panel = (
+            entry.controller_panel.as_dict()
+            if entry.controller_panel is not None
+            else None
+        )
         return {
             "layout": entry.controller_layout,
             "skin": entry.controller_skin,
-            "action": entry.controller_action,
-            "back": entry.controller_back,
+            "orientation": entry.controller_orientation,
+            "buttons": ["cross", "circle", "square", "triangle", "options", "l1", "r1"],
+            "labels": labels,
+            "action": labels.get("cross", entry.controller_action),
+            "back": labels.get("circle", entry.controller_back),
             "hint": entry.controller_hint,
+            "camera": entry.controller_camera,
+            "panel": panel,
             "game": entry.title,
         }
 

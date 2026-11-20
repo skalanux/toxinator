@@ -11,7 +11,18 @@ from toxinator.api.input import ControllerFrame
 from toxinator.input.phone.protocol import Vec3, build_frame, vec3
 
 PHONE_CAPABILITIES: frozenset[str] = frozenset(
-    {"buttons", "motion", "gyro", "pointer", "touch", "haptics", "speaker"}
+    {
+        "buttons",
+        "axes",
+        "motion",
+        "gyro",
+        "pointer",
+        "touch",
+        "haptics",
+        "camera",
+        "panel",
+        "speaker",
+    }
 )
 
 

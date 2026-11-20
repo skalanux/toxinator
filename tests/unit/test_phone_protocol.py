@@ -42,6 +42,38 @@ def test_relative_orientation_wraps_alpha() -> None:
     assert relative_orientation((10.0, 20.0, 30.0), None) == (10.0, 20.0, 30.0)
 
 
+def test_buttons_are_canonical_with_legacy_aliases() -> None:
+    frame = build_frame(
+        {"buttons": ["A", "circle", "triangle"]},
+        controller_id="phone-1",
+        timestamp=1.0,
+        neutral=None,
+    )
+
+    assert frame.button("cross")
+    assert frame.button("A")
+    assert frame.button("circle")
+    assert frame.button("B")
+    assert frame.button("triangle")
+
+
+def test_move_is_normalized_and_exposed_as_axes() -> None:
+    frame = build_frame(
+        {"move": [1, 1]},
+        controller_id="phone-1",
+        timestamp=1.0,
+        neutral=None,
+    )
+
+    assert frame.axes["move_x"] == pytest.approx(2**-0.5)
+    assert frame.axes["move_y"] == pytest.approx(2**-0.5)
+    assert frame.axes["move_x"] ** 2 + frame.axes["move_y"] ** 2 == pytest.approx(1.0)
+
+    missing = build_frame({}, controller_id="phone-1", timestamp=1.0, neutral=None)
+    assert missing.axes["move_x"] == 0.0
+    assert missing.axes["move_y"] == 0.0
+
+
 def test_touch_is_clamped_and_invalid_points_are_ignored() -> None:
     frame = build_frame(
         {

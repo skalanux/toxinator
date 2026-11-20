@@ -23,8 +23,12 @@ def _state_line(state: InputState) -> str:
         info = state.controller(slot)
         if frame is not None:
             latency = (state.timestamp - frame.timestamp) * 1000.0
-            action = "A" if frame.button("A") else "-"
-            touch = f"{frame.touch[0].x:.2f},{frame.touch[0].y:.2f}" if frame.touch else "-"
+            action = "X" if frame.button("cross") else "-"
+            touch = (
+                f"{frame.pointer[0]:.2f},{frame.pointer[1]:.2f}"
+                if frame.pointer
+                else "-"
+            )
             parts.append(
                 f"P{slot + 1} {latency:3.0f}ms "
                 f"B{frame.orientation[1]:+5.1f} G{frame.orientation[2]:+5.1f} "
@@ -48,6 +52,8 @@ def run_phone_dev(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 2.0,
+    keyboard: bool = True,
+    keyboard_slot: int = 4,
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
@@ -60,6 +66,8 @@ def run_phone_dev(
         port=port,
         token=token,
         demo=demo,
+        keyboard=keyboard,
+        keyboard_slot=keyboard_slot,
         https=https,
         cert=cert,
         key=key,
@@ -111,6 +119,7 @@ def run_phone_dev(
             screenshot_after=screenshot_after,
             seconds=seconds,
             window_type=window_type,
+            keyboard=session.keyboard,
         )
         app.run()
     finally:

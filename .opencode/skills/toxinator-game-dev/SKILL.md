@@ -5,7 +5,8 @@ description: >-
   (Panda3D + Python). Use whenever the user creates or modifies a game, adds a
   game package in the external games directory or under games/, implements or
   changes the Game/GameContext/GameHost contract, manifest.toml, modes, HUD,
-  scoring, physics, phone controls (A/B/touch/orientation), launcher catalog
+  scoring, physics, phone controls (cross/circle/square/triangle/options/L1/R1,
+  stick/touch/orientation), launcher catalog
   entries, or toxinator play integration; also use for Spanish requests like
   "crear un juego para Toxinator", "agregar un juego", "cómo construyo un
   juego" or "modificar Maldito Pino". Read this before guessing platform APIs
@@ -113,10 +114,10 @@ class MiJuego:
         if self.ctx is None:
             return
         state = self.ctx.input_state
-        frame = state.frame(0)
+        frame = state.primary_frame()
         if frame is None:
             return
-        # frame.button("A"), frame.touch, frame.orientation, etc.
+        # frame.button("cross"), frame.pointer, frame.orientation, etc.
 
     def stop(self) -> None:
         if self.ui_root is not None:
@@ -150,7 +151,7 @@ Reglas:
   (Maldito Pino usa `DT = 1/120`).
 - Limpiá nodos y recursos en `stop`. El host borra las raíces, pero no tus
   mundos Bullet, tareas o audio.
-- **B está reservado** para volver al launcher. No lo uses para gameplay ni
+- **○ está reservado** para volver al launcher. No lo uses para gameplay ni
   llames `ctx.request_exit` para volver: cierra toda la consola.
 - Si cambiás cámara/lente, dejá un estado razonable para el launcher.
 
@@ -160,7 +161,7 @@ Reglas:
 id = "mi-juego"
 name = "Mi Juego"
 version = "0.1.0"
-requires_api = "0.2"
+requires_api = "0.3"
 description = "Una línea para la plataforma."
 locales = ["es"]
 default_locale = "es"
@@ -169,25 +170,35 @@ modes = ["partida"]
 
 [controller]
 layout = "motion"
-skin = "tokyo-night"
-action = "Tirar"
-back = "Volver"
+skin = "toxinator"
+orientation = "auto"
 hint = "Incliná para apuntar"
+camera = false
+
+[controller.labels]
+cross = "Tirar"
+circle = "Volver"
+
+[controller.panel]
+title = "Mapa"
+image = "assets/mapa.png"
+fit = "contain"
 
 [art]
 motif = "pin"
 ```
 
-- `requires_api` debe ser igual a `API_VERSION` (`0.2`) hoy.
+- `requires_api` debe ser igual a `API_VERSION` (`0.3`) hoy.
 - `players = [mínimo, máximo]`.
 - `modes` son etiquetas; todavía no hay selector de modos de plataforma.
 - i18n está decidido pero no cableado. UI en español, textos centralizados.
 - El launcher usa `name`, `description`, `players` y `modes` del manifest. El
   resto de la metadata de catálogo (accent, arte) la pone la plataforma.
 - `[controller]` es opcional. `layout` puede ser `default`, `motion` o `touch`;
-  `skin` puede ser `tokyo-night`, `tokyo-storm`, `tokyo-moon` o `tokyo-mint`.
-  `action`/`back` cambian las etiquetas de A/B y `hint` es la ayuda que muestra
-  el celular. **B sigue reservado por la plataforma.**
+  `skin` es `toxinator`; `orientation` es `auto`, `portrait` o `landscape`.
+  `labels` cambia las etiquetas por botón y `hint` es la ayuda que muestra el
+  celular. `[controller.panel]` muestra una imagen estática y `camera = true`
+  habilita el botón de foto. **○ sigue reservado por la plataforma.**
 - `[art]` es opcional. `motif` elige el prop del diorama: `pin`, `flag`,
   `paddle`, `pong`, `star`, `heart`, `coin` o `cube`. `auto` (default) lo deriva
   del id del juego.
@@ -205,38 +216,41 @@ pero no debería ser el único esquema si el juego puede aprovechar el movimient
 - El touch queda como apoyo y como fallback. Un juego de puntero puede ser
   touch-first, pero si el gesto se puede mapear a movimiento, hacelo.
 - Los sensores son **opcionales**: solo funcionan en HTTPS y el usuario tiene
-  que habilitarlos. El juego debe seguir siendo jugable con **touch + A** sin
-  bloquearse ni mostrar errores.
+  que habilitarlos. El juego debe seguir siendo jugable con **stick + touch + ×**
+  sin bloquearse ni mostrar errores.
 - No hagas el tilt obligatorio para arrancar. Detectá el primer frame con
   orientación/gyro distinto de cero y activá el modo movimiento; si no llega,
-  seguí con touch.
+  seguí con `pointer`/`move`.
 
 ```python
-frame = ctx.input_state.frame(0)
+frame = ctx.input_state.primary_frame()
 if frame is not None:
     yaw, pitch, roll = frame.orientation
-    touch_x = frame.touch[0].x if frame.touch else 0.5
+    aim_x = frame.pointer[0] if frame.pointer else 0.5
     has_motion = abs(pitch) + abs(roll) > 1.0
-    aim_x = max(0.0, min(1.0, 0.5 + roll / 45.0)) if has_motion else touch_x
-    if frame.button("A"):
+    if has_motion:
+        aim_x = max(0.0, min(1.0, 0.5 + roll / 45.0))
+    if frame.button("cross"):
         ...
 ```
 
-- `A`: acción principal. **B: reservado por la plataforma.**
+- `cross`: acción principal. **`circle`: reservado por la plataforma.**
+- `pointer`: apuntado normalizado `0..1`; recomendado para apuntar.
 - `touch`: puntos normalizados `0..1`; puede haber varios.
-- `pointer`: apuntado cuando el mando lo soporta.
+- `axes["move_x"]`/`axes["move_y"]`: stick izquierdo, `-1..1`.
 - `orientation`: `(alpha, beta, gamma)` en grados, relativo a la calibración.
 - `gyro`: rad/s. `accel`: m/s².
 - Slots 0–3; el hot-seat lo implementa el juego, la plataforma todavía no lo
-  administra.
-- No uses el teclado como control del juego; el teclado es de la consola.
+  administra. El teclado/mouse usa el slot 4.
+- El teclado/mouse es un simulador de la consola; el juego no debe depender de
+  él, pero `primary_frame()` lo hace jugable sin celular.
 
 ### Feedback del celular
 
 `GameContext.phone` ofrece feedback opcional en el teléfono:
 
 ```python
-if frame.button("A"):
+if frame.button("cross"):
     ctx.phone.vibrate([20, 30, 40], slot=0)
     ctx.phone.tone(880, 80, volume=0.35, slot=0)
 ```
@@ -265,12 +279,20 @@ El perfil `[controller]` del manifest viaja al celular al lanzar el juego:
 | `touch` | El gesto principal es arrastrar/apuntar. El touchpad gana protagonismo. |
 | `default` | Juego mixto o sin preferencia. |
 
-Skins: `tokyo-night`, `tokyo-storm`, `tokyo-moon`, `tokyo-mint`. La skin del
-perfil es el default del juego; el jugador puede cambiarla desde el botón
-**Skin** del celular, que abre un selector visual, y su elección se recuerda. Las
-etiquetas `action`/`back` y el `hint` se muestran en el mando. El botón
-**Avanzado** revela el readout técnico y la calibración; por defecto el mando se
-mantiene simple.
+La única skin de la v1 es `toxinator`; el motor de skins se mantiene. Las
+etiquetas por botón (`labels`) y el `hint` se muestran en el mando. La
+orientación puede ser `auto`, `portrait` o `landscape`; el jugador puede
+bloquearla desde los ajustes. El panel del juego es una imagen estática que el
+juego puede cambiar en runtime:
+
+```python
+ctx.phone.panel(title="Mapa", image="assets/mapa.png", fit="cover")
+ctx.phone.clear_panel()
+```
+
+El botón **Avanzado** de los ajustes revela el readout técnico (β/γ/ACC/RTT),
+la calibración y los sensores; por defecto el mando se mantiene simple. Si el
+perfil declara `camera = true`, la PWA muestra el botón de foto; requiere HTTPS.
 
 ## Probar y ejecutar
 
@@ -312,7 +334,7 @@ La carga está hardcodeada; no hay entry points todavía.
 5. `uv sync --all-packages`.
 
 La pantalla de inicio muestra hasta cinco juegos en **Tus juegos**; el resto
-vive en el **Catálogo**, con filtros y paginación. Todos se lanzan con A/ENTER o
+vive en el **Catálogo**, con filtros y paginación. Todos se lanzan con ×/ENTER o
 desde el celular, y también por id con `toxinator play <id>`. La biblioteca se
 arma al iniciar: reiniciá la consola si creás o cambiás un juego.
 
@@ -326,12 +348,12 @@ arma al iniciar: reiniciá la consola si creás o cambiás un juego.
 - [ ] `start/update/stop` implementados, sin bloquear.
 - [ ] Escena/HUD en `ctx.scene`/`ctx.ui`; limpieza en `stop`.
 - [ ] Diseñado **motion-first**: el gesto principal usa orientación/giro/accel;
-      touch + A como apoyo y fallback; B no se usa.
-- [ ] Perfil `[controller]` declarado (layout, skin, action, hint) o defaults
-      conscientes.
+      stick + touch + × como apoyo y fallback; ○ no se usa.
+- [ ] Perfil `[controller]` declarado (layout, skin, orientation, labels, hint,
+      panel, camera) o defaults conscientes.
 - [ ] Feedback opcional probado: vibración/tono no bloquea si no está
       disponible.
-- [ ] `requires_api = "0.2"`.
+- [ ] `requires_api = "0.3"`.
 - [ ] Probado con `--demo`/`--offscreen`.
 - [ ] Tests puros, Ruff y mypy.
 - [ ] Skill actualizado si cambió el contrato o la integración.

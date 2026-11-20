@@ -103,12 +103,12 @@ class MalditoPinoGame:
         self._update_hand_swing(dt)
 
         state = self.ctx.input_state
-        frame = state.frame(0)
+        frame = state.primary_frame()
         self._frame = frame
         self._smooth_hand(frame, dt)
 
         if self.match.game_over:
-            if frame is not None and frame.button("A"):
+            if frame is not None and frame.button("cross"):
                 self._restart()
             self._update_hud(frame)
             return
@@ -134,10 +134,10 @@ class MalditoPinoGame:
         self.last_spin = self._spin_from()
         self._pose_hand(charging=False)
         self.lane.hide_power()
-        if frame.touch:
-            self.aim_x = max(-0.45, min(0.45, -0.2 + 0.55 * frame.touch[0].x))
+        if frame.pointer is not None:
+            self.aim_x = max(-0.45, min(0.45, -0.2 + 0.55 * frame.pointer[0]))
             self.lane.show_aim(self.aim_x)
-        if frame.button("A"):
+        if frame.button("cross"):
             self.state = "charge"
             self.charge = 0.0
             self.message = ""
@@ -151,7 +151,7 @@ class MalditoPinoGame:
         self._pose_hand(charging=True)
         assert self.lane is not None
         self.lane.show_power(self._power_level())
-        if not frame.button("A"):
+        if not frame.button("cross"):
             self._throw(frame)
 
     def _spin_from(self) -> float:
@@ -483,7 +483,7 @@ class MalditoPinoGame:
             self.tilt_dot.setPos(1.10, -0.84 + beta / 60.0 * 0.065)
 
         if match.game_over:
-            self._hud["prompt"].setText("A para otra partida")
+            self._hud["prompt"].setText("X para otra partida")
             self._hud["power"].setText("")
         elif self.state == "aim":
             self._hud["prompt"].setText(
@@ -495,7 +495,7 @@ class MalditoPinoGame:
         elif self.state == "charge":
             filled = int(self._power_level() * 10)
             bar = "#" * filled + "-" * (10 - filled)
-            self._hud["prompt"].setText("Soltá A para tirar")
+            self._hud["prompt"].setText("Soltá X para tirar")
             self._hud["power"].setText(f"POTENCIA [{bar}]")
         elif self.state == "rolling":
             self._hud["prompt"].setText("Rodando...")

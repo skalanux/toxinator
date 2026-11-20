@@ -6,4 +6,6 @@ Se eligió frente a depender de hardware real (frágil y no corre en CI), frente
 
 **Status**: accepted
 
-**Consequences**: `ControllerSource`/`ReplaySource` se suman al input; `Clock` y `ctx.rng` entran en `GameContext`; `tests/unit`, `tests/integration` y `tests/e2e` se separan por directorio; CI usa `xvfb` y `window-type none`/`offscreen`; la cobertura se mide en core/input/physics/reglas; Wiimote, Android y performance se validan con `docs/testing/manual-checklist.md`.
+**Consequences**: `ControllerSource`/`ReplaySource` se suman al input; `Clock` y `ctx.rng` entran en `GameContext`; `tests/unit`, `tests/integration` y `tests/e2e` se separan por directorio; CI usa `xvfb` y `window-type none`/`offscreen`; la cobertura se mide en core/input/physics/reglas; Android, teclado/mouse y performance se validan con `docs/testing/manual-checklist.md`.
+
+**Nota**: [ADR-0007](0007-phone-controller-v2.md) retira el Wiimote; la validación manual cubre Android y el simulador de teclado/mouse.

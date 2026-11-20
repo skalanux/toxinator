@@ -12,7 +12,7 @@ vive en [`manual-checklist.md`](manual-checklist.md).
 
 - Testear input, gestos, física, scoring, i18n y game loop sin hardware real.
 - Reproducir bugs con trazas grabadas y un simulador determinista.
-- Correr lo importante en CI (Linux, sin GPU dedicada, sin Wiimote/Android).
+- Correr lo importante en CI (Linux, sin GPU dedicada, sin Android).
 - Dejar explícito qué se valida a mano y con qué hardware.
 - Evitar tests flaky: reloj inyectable, seed y tolerancias.
 
@@ -21,7 +21,7 @@ vive en [`manual-checklist.md`](manual-checklist.md).
 - Tests visuales/snapshot del launcher como gate de CI.
 - Performance benchmarking en CI.
 - Playwright del controlador web en el primer corte.
-- Emular hardware real (Wiimote/Android) a nivel driver.
+- Emular hardware real (Android) a nivel driver.
 - CI con GPU o dispositivos físicos.
 
 ## Pirámide y layout
@@ -31,7 +31,7 @@ vive en [`manual-checklist.md`](manual-checklist.md).
 | Unit | Lógica pura: input mapping, gestos, scoring, i18n, config, matemática de física | `tests/unit/` | Cada PR |
 | Integration | `InputHub` + game loop + Bullet + `ShowBase` headless + loader | `tests/integration/` | Cada PR, serial |
 | E2E | Launcher, lanzar un juego, controlador web | `tests/e2e/` | Smoke en cada PR; resto manual |
-| Manual | Wiimote, Android, GPU, performance, checklist | `docs/testing/manual-checklist.md` | Release |
+| Manual | Android, teclado/mouse, GPU, performance, checklist | `docs/testing/manual-checklist.md` | Release |
 
 ```text
 tests/
@@ -65,14 +65,15 @@ Markers:
 - `slow`: integración pesada; se puede mover a un job aparte si crece.
 - `physics`: usa Bullet y tolerancias.
 - `sim`: requiere el simulador.
-- `hardware`: requiere Wiimote/Android/gamepad real; nunca en CI.
+- `hardware`: requiere Android o gamepad real; nunca en CI.
 - `gpu`: requiere GPU o performance; nunca en CI.
 
 ## Simulador de mandos
 
 `ControllerSimulator` es una `ControllerSource` más del `InputHub`; no es un
 mando especial ni un bypass del hub. Emite `ControllerFrame`s a 60 Hz con
-`source="sim"` e id `sim-0..sim-3`.
+`source="sim"`. La implementación actual es `KeyboardMouseSource` (teclado/mouse,
+slot 4 por defecto); presets y trazas siguen pendientes.
 
 ```python
 class ControllerSource(Protocol):
@@ -84,8 +85,10 @@ class ControllerSource(Protocol):
 
 ### Backends
 
-- **Teclado/mouse** (default): teclas a botones/ejes, mouse a pointer/touch,
-  arrastre o flechas a accel/gyro.
+- **Teclado/mouse** (implementado): flechas/WASD a stick, Enter/J a ×, Esc/K a
+  ○, L/I a □/△, Tab a `options`, Q/E a L1/R1; el mouse llena `pointer` y
+  sintetiza un touch mientras hay un botón apretado. El launcher desactiva WASD
+  para no chocar con los atajos S/D/C.
 - **Gamepad** (opcional): un gamepad real maneja el estado virtual para presets
   que necesitan motion/pointer. Los gamepads reales siguen siendo fuentes
   normales; este backend es para pruebas del simulador.
@@ -151,7 +154,7 @@ UTF-8; `.jsonl.gz` opcional. `trace_version = 1`.
 
 ```jsonl
 {"type":"meta","trace_version":1,"created_at":"2026-11-17T12:00:00Z","commit":"1b16b64","app_version":"0.1.0","game":"maldito-pino","locale":"es","platform":"linux-x86_64","controllers":[{"id":"sim-0","source":"sim","capabilities":["buttons","axes","motion","gyro","pointer","touch"]}],"sim_preset":"bowling","seed":1234,"duration":12.5}
-{"type":"frame","t":0.0,"controller_id":"sim-0","buttons":["A"],"axes":{"left_x":0.0,"left_y":0.0},"accel":[0.0,0.0,9.81],"gyro":[0.0,0.0,0.0],"orientation":[0.0,0.0,0.0,1.0],"pointer":[0.5,0.5],"touch":[]}
+{"type":"frame","t":0.0,"controller_id":"sim-0","buttons":["cross"],"axes":{"move_x":0.0,"move_y":0.0},"accel":[0.0,0.0,9.81],"gyro":[0.0,0.0,0.0],"orientation":[0.0,0.0,0.0,1.0],"pointer":[0.5,0.5],"touch":[]}
 {"type":"event","t":0.0,"kind":"join","controller_id":"sim-0","slot":0}
 ```
 
@@ -234,10 +237,9 @@ reporte global se publica igual.
 
 ## Checklist manual
 
-[`manual-checklist.md`](manual-checklist.md) cubre Wiimote, Android, gamepad y
-teclado, launcher, Maldito Pino, performance e i18n. Cada ítem registra pasos,
-esperado, resultado, commit, fecha y hardware. Wiimote queda `blocked` hasta
-tener pilas. El checklist es gate de release, no de PR.
+[`manual-checklist.md`](manual-checklist.md) cubre Android, teclado/mouse,
+launcher, Maldito Pino, performance e i18n. Cada ítem registra pasos, esperado,
+resultado, commit, fecha y hardware. El checklist es gate de release, no de PR.
 
 ## Riesgos y preguntas abiertas
 
@@ -248,5 +250,5 @@ tener pilas. El checklist es gate de release, no de PR.
 - **Tamaño de trazas**: JSONL es legible pero pesado; `.jsonl.gz` y muestreo se
   evalúan con sesiones largas.
 - **Playwright del controlador web**: se agrega si el PWA crece; hoy es manual.
-- **Hardware real**: Wiimote bloqueado por pilas; Android disponible. El
-  checklist se completa cuando haya hardware.
+- **Hardware real**: Android disponible; el simulador de teclado/mouse cubre el
+  desarrollo cotidiano. El checklist se completa cuando haya hardware.

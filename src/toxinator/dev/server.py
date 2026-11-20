@@ -7,7 +7,8 @@ import json
 import logging
 import ssl
 import threading
-from collections.abc import Sequence
+import time
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,18 @@ from aiohttp import WSMsgType, web
 from toxinator.input.phone.registry import PhoneRegistry
 
 logger = logging.getLogger(__name__)
+
+PROTOCOL = 2
+MAX_PHOTO_BYTES = 2 * 1024 * 1024
+MIN_PHOTO_BYTES = 16 * 1024
+MAX_ASSET_BYTES = 4 * 1024 * 1024
+PHOTO_TYPES = {"image/jpeg": "jpg", "image/png": "png"}
+ASSET_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+}
 
 
 class DevServer:
@@ -51,6 +64,10 @@ class DevServer:
         self._clients: dict[web.WebSocketResponse, int] = {}
         self._mode = "launcher"
         self._controller: dict[str, Any] | None = None
+        self._panel: dict[str, Any] | None = None
+        self._game_id = ""
+        self._game_assets: Path | None = None
+        self._photos: dict[int, dict[str, Any]] = {}
 
     def start(self) -> None:
         if self._thread is not None:
@@ -79,18 +96,38 @@ class DevServer:
 
     def set_controller(self, profile: dict[str, Any] | None) -> None:
         """Publish the selected game's controller layout and skin."""
+        panel = None
         with self._lock:
             self._controller = dict(profile) if profile is not None else None
             controller = self._controller
+            if controller is not None and isinstance(controller.get("panel"), dict):
+                panel = dict(controller["panel"])
+            self._panel = panel
+            payload = self._panel_payload_locked()
         self._broadcast({"type": "controller", "profile": controller})
+        self._broadcast({"type": "panel", "panel": payload})
+
+    def set_panel(self, panel: Mapping[str, Any] | None) -> None:
+        """Show a static panel (title, image, fit) on the phone, or clear it."""
+        with self._lock:
+            self._panel = dict(panel) if panel is not None else None
+            payload = self._panel_payload_locked()
+        self._broadcast({"type": "panel", "panel": payload})
+
+    def clear_panel(self) -> None:
+        self.set_panel(None)
+
+    def set_game_assets(self, game_id: str, root: Path | None) -> None:
+        """Allow the active game's asset directory to be served to the phone."""
+        with self._lock:
+            self._game_id = game_id
+            self._game_assets = root.resolve() if root is not None else None
 
     def send_haptic(self, pattern: int | Sequence[int], slot: int | None = None) -> None:
         """Send a vibration pattern to one phone or all phones."""
         raw = [pattern] if isinstance(pattern, int) else list(pattern)
         values = [
-            max(0, min(5000, int(value)))
-            for value in raw
-            if isinstance(value, (int, float))
+            max(0, min(5000, int(value))) for value in raw if isinstance(value, (int, float))
         ][:12]
         logger.info("phone haptic slot=%s pattern=%s", slot, values)
         self._broadcast({"type": "haptic", "pattern": values}, slot=slot)
@@ -121,6 +158,30 @@ class DevServer:
 
     def send_audio_stop(self, slot: int | None = None) -> None:
         self._broadcast({"type": "audio", "action": "stop"}, slot=slot)
+
+    def last_photo(self, slot: int) -> tuple[str, bytes] | None:
+        """Return the last uploaded photo for a slot, if any."""
+        with self._lock:
+            photo = self._photos.get(slot)
+            if photo is None:
+                return None
+            return (str(photo["id"]), bytes(photo["data"]))
+
+    def _panel_payload_locked(self) -> dict[str, Any] | None:
+        panel = self._panel
+        if panel is None:
+            return None
+        image = panel.get("image")
+        payload = {
+            "title": str(panel.get("title", ""))[:40],
+            "fit": str(panel.get("fit", "contain")),
+            "url": None,
+        }
+        if isinstance(image, str) and image and self._game_assets is not None:
+            payload["url"] = f"/game-assets/{self._game_id}/{image.lstrip('/')}"
+        elif isinstance(panel.get("url"), str):
+            payload["url"] = panel["url"]
+        return payload
 
     def _broadcast(self, payload: dict[str, Any], *, slot: int | None = None) -> None:
         with self._lock:
@@ -160,13 +221,20 @@ class DevServer:
             logger.error("dev server failed: %s", error)
             self._ready.set()
 
-    async def _serve(self) -> None:
-        app = web.Application()
+    def make_app(self) -> web.Application:
+        """Build the aiohttp application (web routes only, no sockets)."""
+        app = web.Application(client_max_size=MAX_PHOTO_BYTES + 64 * 1024)
         app.router.add_get("/", self._index)
         app.router.add_get("/manifest.webmanifest", self._manifest)
         app.router.add_get("/sw.js", self._service_worker)
         app.router.add_get("/ws", self._websocket)
+        app.router.add_post("/api/photo", self._photo)
+        app.router.add_get("/game-assets/{game_id}/{tail:.*}", self._game_asset)
         app.router.add_static("/static/", self._controller_web)
+        return app
+
+    async def _serve(self) -> None:
+        app = self.make_app()
 
         runner = web.AppRunner(app, access_log=None)
         await runner.setup()
@@ -202,6 +270,60 @@ class DevServer:
         response.headers["Service-Worker-Allowed"] = "/"
         return response
 
+    async def _game_asset(self, request: web.Request) -> web.StreamResponse:
+        with self._lock:
+            game_id = self._game_id
+            root = self._game_assets
+        if root is None or request.match_info.get("game_id") != game_id:
+            raise web.HTTPNotFound()
+        tail = request.match_info.get("tail", "")
+        if not tail:
+            raise web.HTTPNotFound()
+        candidate = (root / tail).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            raise web.HTTPNotFound() from None
+        if not candidate.is_file() or candidate.stat().st_size > MAX_ASSET_BYTES:
+            raise web.HTTPNotFound()
+        content_type = ASSET_TYPES.get(candidate.suffix.lower())
+        if content_type is None:
+            raise web.HTTPNotFound()
+        response = web.FileResponse(candidate)
+        response.headers["Content-Type"] = content_type
+        response.headers["Cache-Control"] = "private, max-age=60"
+        return response
+
+    async def _photo(self, request: web.Request) -> web.StreamResponse:
+        token = request.headers.get("X-Toxinator-Token", "")
+        if token != self._token:
+            raise web.HTTPUnauthorized(text="bad token")
+        try:
+            slot = int(request.query.get("slot", "0"))
+        except ValueError:
+            slot = 0
+        if slot < 0 or slot >= self._registry.max_slots:
+            raise web.HTTPBadRequest(text="bad slot")
+        content_type = request.headers.get("Content-Type", "").split(";")[0].strip()
+        extension = PHOTO_TYPES.get(content_type)
+        if extension is None:
+            raise web.HTTPUnsupportedMediaType(text="expected image/jpeg or image/png")
+        data = await request.read()
+        if len(data) > MAX_PHOTO_BYTES:
+            raise web.HTTPRequestEntityTooLarge(max_size=MAX_PHOTO_BYTES, actual_size=len(data))
+        if len(data) < MIN_PHOTO_BYTES:
+            raise web.HTTPBadRequest(text="photo too small")
+        photo_id = f"{int(time.time() * 1000)}-{slot}.{extension}"
+        with self._lock:
+            self._photos[slot] = {
+                "id": photo_id,
+                "data": data,
+                "content_type": content_type,
+                "timestamp": time.monotonic(),
+            }
+        logger.info("phone photo slot=%s bytes=%s", slot, len(data))
+        return web.json_response({"id": photo_id, "bytes": len(data)}, status=201)
+
     def _html_response(self, name: str, *, cache: str) -> web.StreamResponse:
         response = web.FileResponse(self._controller_web / name)
         response.headers["Content-Type"] = "text/html; charset=utf-8"
@@ -215,7 +337,7 @@ class DevServer:
 
         try:
             hello = await asyncio.wait_for(ws.receive_json(), timeout=5.0)
-        except (TimeoutError, ValueError, TypeError, web.HTTPException):
+        except TimeoutError, ValueError, TypeError, web.HTTPException:
             await ws.close(code=1008, message=b"hello required")
             return ws
 
@@ -226,6 +348,12 @@ class DevServer:
         ):
             await ws.send_json({"type": "error", "code": "bad-token"})
             await ws.close(code=1008, message=b"bad token")
+            return ws
+
+        protocol = hello.get("protocol", PROTOCOL)
+        if protocol != PROTOCOL:
+            await ws.send_json({"type": "error", "code": "bad-protocol"})
+            await ws.close(code=1008, message=b"bad protocol")
             return ws
 
         connection = self._registry.join(
@@ -240,7 +368,7 @@ class DevServer:
         await ws.send_json(
             {
                 "type": "welcome",
-                "protocol": 1,
+                "protocol": PROTOCOL,
                 "slot": connection.slot,
                 "controller_id": connection.controller_id,
             }
@@ -254,8 +382,10 @@ class DevServer:
             self._clients[ws] = connection.slot
             mode = self._mode
             controller = self._controller
+            panel = self._panel_payload_locked()
         await ws.send_json({"type": "mode", "mode": mode})
         await ws.send_json({"type": "controller", "profile": controller})
+        await ws.send_json({"type": "panel", "panel": panel})
 
         try:
             async for message in ws:

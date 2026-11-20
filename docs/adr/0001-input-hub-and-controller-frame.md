@@ -7,3 +7,5 @@ Se eligió frente a un servicio de input separado y frente a frames crudos por d
 **Status**: accepted
 
 **Consequences**: el contrato de juego depende de `InputState`/`ActionState`; cada adaptador de mando normaliza a un frame canónico; los juegos pueden optar por gestos de plataforma o implementar los suyos.
+
+**Nota**: [ADR-0007](0007-phone-controller-v2.md) retira el Wiimote del roadmap; el hub y el frame canónico siguen vigentes.

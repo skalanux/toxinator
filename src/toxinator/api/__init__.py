@@ -2,6 +2,7 @@
 
 from toxinator.api.game import (
     API_VERSION,
+    ControllerPanel,
     Game,
     GameContext,
     GameManifest,
@@ -20,6 +21,7 @@ __all__ = [
     "API_VERSION",
     "ControllerFrame",
     "ControllerInfo",
+    "ControllerPanel",
     "Game",
     "GameContext",
     "GameManifest",

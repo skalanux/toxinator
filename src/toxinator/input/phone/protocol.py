@@ -5,9 +5,12 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from toxinator.api.input import ControllerFrame, TouchPoint
+from toxinator.api.input import CANONICAL_BUTTONS, ControllerFrame, TouchPoint
 
 Vec3 = tuple[float, float, float]
+
+BUTTON_ALIASES = {"a": "cross", "b": "circle"}
+BUTTON_COMPAT = {"cross": "A", "circle": "B"}
 
 
 def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
@@ -31,6 +34,42 @@ def relative_orientation(raw: Vec3, neutral: Vec3 | None) -> Vec3:
     return (alpha, raw[1] - neutral[1], raw[2] - neutral[2])
 
 
+def normalize_buttons(raw: Any) -> frozenset[str]:
+    """Map legacy A/B to canonical names and emit A/B as compatibility aliases."""
+    if not isinstance(raw, list):
+        return frozenset()
+    buttons: set[str] = set()
+    for item in raw:
+        name = str(item).strip()
+        if not name:
+            continue
+        key = name.lower()
+        if key in BUTTON_ALIASES:
+            name = BUTTON_ALIASES[key]
+        elif key in CANONICAL_BUTTONS:
+            name = key
+        buttons.add(name)
+    for canonical, alias in BUTTON_COMPAT.items():
+        if canonical in buttons:
+            buttons.add(alias)
+    return frozenset(buttons)
+
+
+def move_axes(value: Any) -> tuple[float, float]:
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return (0.0, 0.0)
+    try:
+        x = clamp(float(value[0]), -1.0, 1.0)
+        y = clamp(float(value[1]), -1.0, 1.0)
+    except (TypeError, ValueError):
+        return (0.0, 0.0)
+    length = math.hypot(x, y)
+    if length > 1.0:
+        x /= length
+        y /= length
+    return (x, y)
+
+
 def build_frame(
     payload: dict[str, Any],
     *,
@@ -43,12 +82,8 @@ def build_frame(
     gyro = (math.radians(gyro_deg[0]), math.radians(gyro_deg[1]), math.radians(gyro_deg[2]))
     orientation = relative_orientation(vec3(payload.get("orientation")), neutral)
 
-    raw_buttons = payload.get("buttons", [])
-    buttons = (
-        frozenset(str(button) for button in raw_buttons)
-        if isinstance(raw_buttons, list)
-        else frozenset()
-    )
+    buttons = normalize_buttons(payload.get("buttons", []))
+    move_x, move_y = move_axes(payload.get("move"))
 
     raw_touch = payload.get("touch", [])
     touches: list[TouchPoint] = []
@@ -65,7 +100,7 @@ def build_frame(
                 continue
             touches.append(TouchPoint(touch_id, x, y, pressure))
 
-    axes: dict[str, float] = {}
+    axes: dict[str, float] = {"move_x": move_x, "move_y": move_y}
     pointer: tuple[float, float] | None = None
     if touches:
         pointer = (touches[0].x, touches[0].y)

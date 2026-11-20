@@ -35,7 +35,7 @@ class DemoSource:
             35.0 * math.cos(elapsed * 0.9),
         )
         pressed = self._buttons and int(elapsed) % 2 == 0
-        buttons = frozenset({"A"}) if pressed else frozenset()
+        buttons = frozenset({"cross"}) if pressed else frozenset()
         frame = ControllerFrame(
             controller_id="demo-1",
             timestamp=now,

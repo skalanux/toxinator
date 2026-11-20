@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE = "toxinator-shell-v10";
+const CACHE = "toxinator-shell-v11";
 const SHELL = [
   "/",
   "/manifest.webmanifest",

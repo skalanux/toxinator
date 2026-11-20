@@ -19,7 +19,7 @@ Ya corren tres cortes: el **launcher de Toxinator** (`toxinator`), **Maldito Pin
 - [docs/design/launcher-toxinator.md](docs/design/launcher-toxinator.md): pantalla de inicio, catálogo y paleta Tokyo Night.
 - [docs/design/i18n.md](docs/design/i18n.md): internacionalización, catálogos y cambio de idioma en runtime.
 - [docs/design/testing.md](docs/design/testing.md): simulador de mandos, trazas y CI headless.
-- [docs/testing/manual-checklist.md](docs/testing/manual-checklist.md): validación con Wiimote, Android, GPU y performance.
+- [docs/testing/manual-checklist.md](docs/testing/manual-checklist.md): validación con Android, teclado/mouse, GPU y performance.
 - [docs/agents/](docs/agents/): configuración de issue tracker y dominio.
 
 ## Research
@@ -28,15 +28,14 @@ Los findings están en branches `research/*` (no se mergean):
 
 | Branch | Tema |
 |---|---|
-| `research/wiimote-linux` | Wiimote en Linux: pairing, HID y sensores |
 | `research/python-3d-engine` | Panda3D vs alternativas |
 | `research/android-phone-controller` | Celular Android como mando |
 
 Para leerlos:
 
 ```bash
-git fetch origin research/wiimote-linux research/python-3d-engine research/android-phone-controller
-git show origin/research/wiimote-linux:research/wiimote-linux.md
+git fetch origin research/python-3d-engine research/android-phone-controller
+git show origin/research/android-phone-controller:research/android-phone-controller.md
 ```
 
 ## Desarrollo
@@ -71,12 +70,12 @@ Abre la pantalla de inicio de **Toxinator**, un catálogo navegable con:
   *Próximamente*, con paginación cuando hay más de ocho juegos.
 - **Ficha**: arte grande, descripción, jugadores, formatos, id y estado.
 - **Mandos**: estado de P1–P4 y botón para vincular el celular con QR. El mando
-  puede cambiar de layout y skin según el juego (`[controller]` en el manifest),
-  y el jugador puede cambiar la skin desde el propio celular. Los juegos pueden
-  hacer vibrar el celular y reproducir tonos cortos por el parlante; el mando
-  muestra un aviso **ACTIVAR SONIDO Y VIBRACIÓN** para habilitarlo con un toque.
-  Para vibración usá Chrome o Samsung Internet en Android; Firefox Android no
-  vibra desde la web.
+  puede cambiar de layout, orientación, etiquetas, panel y cámara según el juego
+  (`[controller]` en el manifest); el jugador puede bloquear la orientación desde
+  los ajustes. Los juegos pueden hacer vibrar el celular y reproducir tonos
+  cortos por el parlante; el mando muestra un aviso **ACTIVAR SONIDO Y
+  VIBRACIÓN** para habilitarlo con un toque. Para vibración usá Chrome o Samsung
+  Internet en Android; Firefox Android no vibra desde la web.
 - **Ajustes**: paleta Tokyo Night, idioma y salida de la consola.
 - Si no hay ningún mando conectado, el launcher abre el QR de vinculación
   automáticamente. **Esc** permite explorar con teclado/mouse y **C** vuelve a
@@ -84,34 +83,39 @@ Abre la pantalla de inicio de **Toxinator**, un catálogo navegable con:
 
 Controles:
 
-- **Flechas**: navegar.
-- **Enter**: elegir / jugar / abrir ficha.
+- **Flechas**: navegar con el simulador de teclado.
+- **Enter o J**: elegir / jugar / abrir ficha (×).
+- **Esc o K**: volver o cerrar el overlay (○).
 - **D**: ficha del juego destacado.
 - **S**: ajustes.
 - **C**: vincular celular y ver el QR.
-- **Esc**: volver, cerrar el overlay o apagar la consola.
-- **Touchpad del celular**: joystick para mover el foco.
-- **A del celular**: confirma el foco actual.
-- **B del celular**: cierra el overlay actual o vuelve al launcher desde el juego.
-- **Mouse**: las tarjetas, el rail y los botones también responden.
+- **Mouse**: apuntar y hacer clic; el botón izquierdo confirma y el derecho vuelve.
+- **Stick del celular**: mover el foco.
+- **× del celular**: confirma el foco actual.
+- **○ del celular**: cierra el overlay actual o vuelve al launcher desde el juego.
 
-Al elegir **Jugar**, el launcher cede la pantalla al juego; **Esc** en el juego o
-**B / VOLVER** en el celular vuelven al launcher. El servidor del celular sigue
-vivo entre launcher y juego.
+Al elegir **Jugar**, el launcher cede la pantalla al juego; **○ / VOLVER** en el
+celular vuelve al launcher. El servidor del celular sigue vivo entre launcher y
+juego.
+
+El teclado/mouse entra como **simulador de mando** (`--no-keyboard` lo apaga,
+`--keyboard-slot` elige el slot, por defecto P5). Se puede jugar sin celular.
 
 La PWA tiene **dos pantallas** y cambia sola según el modo:
 
-- **LAUNCHER**: joystick grande + **A / ELEGIR** + **B / ATRÁS**; sin sensores
-  ni readout. El joystick es relativo: arrastrás desde donde apoyás el dedo y
-  soltás para volver al centro. **B** cierra FICHA, MANDOS, AJUSTES o la pantalla
-  de vinculación; en la pantalla principal devuelve el foco a **Jugar**.
-- **JUEGO**: apuntar con touch, efecto con inclinación, **A / ACCIÓN**,
-  **B / VOLVER** al launcher y calibración. El gesto principal debería ser
-  movimiento; el touch queda como apoyo. El mando puede cambiar de layout,
-  etiquetas y skin según el juego.
-- **Skin** abre un selector visual y recuerda la elección. **Avanzado** muestra
-  el readout β/γ/ACC/RTT, el estado de sensores y **Calibrar / Activar
-  sensores**; por defecto el mando queda simple.
+- **LAUNCHER**: stick izquierdo + **× / ELEGIR** + **○ / ATRÁS**; sin sensores
+  ni readout. El stick es relativo y vuelve al centro al soltar. **○** cierra
+  FICHA, MANDOS, AJUSTES o la pantalla de vinculación; en la pantalla principal
+  devuelve el foco a **Jugar**.
+- **JUEGO**: × ○ □ △, `options`, `L1`/`R1`, stick izquierdo y zona táctil
+  derecha para apuntar. El mando funciona en landscape y vertical; el perfil del
+  juego puede pedir una orientación. El gesto principal debería ser movimiento;
+  el puntero queda como apoyo.
+- Los **ajustes** del mando (⋯) tienen orientación, sensores, calibrar, skin y
+  telemetría. La telemetría muestra β/γ/ACC/RTT y viene oculta por defecto.
+- Si el juego declara `panel`, el mando muestra una imagen estática (mapa,
+  referencia) que se puede expandir. Si declara `camera`, aparece el botón de
+  foto; requiere HTTPS.
 
 ### Conectar el celular (modo HTTP, sin certificado)
 
@@ -125,9 +129,10 @@ certificado y no hace falta instalar nada:
 3. Cuando el celular se conecta, la pantalla de la consola se cierra y la PWA
    pasa a **LAUNCHER**.
 
-En HTTP funcionan el touchpad, **A**, el launcher y los juegos. No funcionan la
-cámara interna de la PWA, la instalación como app ni (según el navegador) los
-sensores. Es un modo para tu LAN: el tráfico no va cifrado.
+En HTTP funcionan el stick, el touch, **×**, el launcher y los juegos. No
+funcionan la cámara interna de la PWA, la foto de avatar, la instalación como app
+ni (según el navegador) los sensores. Es un modo para tu LAN: el tráfico no va
+cifrado.
 
 Abrir directamente `http://IP:8443/?token=...` también vincula y guarda el token.
 
@@ -231,8 +236,8 @@ uv run toxinator launcher --demo --offscreen --screenshot /tmp/launcher.png
 4. Si abrís la PWA sin token, escaneá el QR con la cámara del teléfono y abrí el
    enlace, o usá **INGRESAR DATOS**. La cámara interna y **ESCANEAR QR** de la
    PWA necesitan `--https`; en HTTP no están disponibles.
-5. Tocá o arrastrá en el touchpad para apuntar con P1. **A** es el botón de
-   acción. **Avanzado** muestra el readout y **Calibrar**, que toma la pose
+5. Movete con el stick izquierdo, apuntá con la zona táctil y usá **×** como
+   acción. Los ajustes (⋯) muestran el readout y **Calibrar**, que toma la pose
    actual como neutra. Con HTTPS, además, podés inclinar el teléfono para dar
    efecto.
 
@@ -249,6 +254,7 @@ uv run toxinator dev phone --headless --demo      # servidor + estado por consol
 uv run toxinator dev phone --offscreen --screenshot /tmp/toxinator.png
 uv run toxinator dev phone --host 192.168.0.141 --port 8443
 uv run toxinator dev phone --https                # PWA/cámara (autofirmado)
+uv run toxinator dev phone --no-keyboard          # sin simulador de teclado/mouse
 ```
 
 En esta etapa el mando es el celular; el teclado/mouse funciona como simulador
@@ -265,10 +271,10 @@ uv run toxinator play maldito-pino
 El juego abre con el QR en el terminal. Por defecto usa **HTTP**, así que abrí el
 enlace en el navegador del celular sin aceptar certificado. Desde el celular:
 
-- **Arrastrá** en el touchpad para apuntar.
-- **Mantené A** para cargar potencia y **soltá** para tirar.
-- **B / VOLVER** corta el juego y vuelve al launcher.
-- **Calibrar** toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si el pie dice **SENSORES OFF**, tocá **Activar sensores** primero.
+- **Arrastrá** en la zona táctil para apuntar (o movés el mouse en la consola).
+- **Mantené ×** para cargar potencia y **soltá** para tirar.
+- **○ / VOLVER** corta el juego y vuelve al launcher.
+- **Calibrar** (ajustes ⋯) toma la pose actual como neutra: la lectura β/γ vuelve a 0 y aparece **Pose guardada**. Si dice **SENSORES OFF**, tocá **Activar** primero.
 - Con `--https`, además podés **inclinar** el teléfono para dar efecto.
 
 Para la PWA instalable y los sensores por HTTPS:
@@ -338,7 +344,7 @@ También podés partir del template de `~/Projects/toxinator-games/_template` si
 preferís el flujo manual.
 
 Los juegos externos aparecen en la **biblioteca** del launcher al iniciar y se
-pueden lanzar con **A / ENTER** o desde el celular. También podés lanzarlos
+pueden lanzar con **× / ENTER** o desde el celular. También podés lanzarlos
 directo por id:
 
 ```bash
@@ -375,5 +381,5 @@ Los prototipos viven en branches y no se mergean:
 - `aiohttp` para HTTP/HTTPS + WebSocket del controlador
 - `qrcode` para el QR del terminal
 - Bullet para física (Maldito Pino y prototipo)
-- Wiimote por `hid-wiimote` + `python-evdev` (pendiente)
 - Celular Android por HTTP/WS por defecto; PWA HTTPS/WSS opcional
+- Teclado/mouse como simulador de mando (`KeyboardMouseSource`)

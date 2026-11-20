@@ -32,6 +32,20 @@ def _add_cert_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_keyboard_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--no-keyboard",
+        action="store_true",
+        help="no agregar el simulador de teclado/mouse como mando",
+    )
+    parser.add_argument(
+        "--keyboard-slot",
+        type=int,
+        default=4,
+        help="slot del mando simulado por teclado/mouse (default: 4)",
+    )
+
+
 def _add_cloudflare_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--cloudflare",
@@ -65,6 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
     phone.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(phone)
     _add_cloudflare_argument(phone)
+    _add_keyboard_arguments(phone)
     phone.add_argument(
         "--demo",
         action="store_true",
@@ -105,6 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     launcher.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(launcher)
     _add_cloudflare_argument(launcher)
+    _add_keyboard_arguments(launcher)
     launcher.add_argument(
         "--demo",
         action="store_true",
@@ -129,6 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(play)
     _add_cloudflare_argument(play)
+    _add_keyboard_arguments(play)
     play.add_argument(
         "--demo",
         action="store_true",
@@ -203,6 +220,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
+                keyboard=not args.no_keyboard,
+                keyboard_slot=args.keyboard_slot,
                 cert=args.cert,
                 key=args.key,
                 cloudflare=args.cloudflare,
@@ -226,6 +245,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
+                keyboard=not args.no_keyboard,
+                keyboard_slot=args.keyboard_slot,
                 cert=args.cert,
                 key=args.key,
                 cloudflare=args.cloudflare,
@@ -249,6 +270,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 offscreen=args.offscreen,
                 screenshot=args.screenshot,
                 screenshot_after=args.screenshot_after,
+                keyboard=not args.no_keyboard,
+                keyboard_slot=args.keyboard_slot,
                 cert=args.cert,
                 key=args.key,
                 cloudflare=args.cloudflare,

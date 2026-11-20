@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#1a1b26">
+  <meta name="theme-color" content="#0d0f12">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mando">
   <title>Toxinator · Mando</title>
-  <link rel="stylesheet" href="/static/styles.css?v=10">
+  <link rel="stylesheet" href="/static/styles.css?v=11">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 </head>
-<body class="mode-pairing" data-skin="tokyo-night" data-layout="default">
+<body class="mode-pairing" data-skin="toxinator" data-orientation="portrait" data-layout="default">
 
 <main id="pairing" class="pairing">
   <header class="pairing-top">
@@ -81,82 +81,180 @@
 </main>
 
 <main id="controller" class="pad" hidden>
-  <header class="top">
-    <div class="brand">
+  <header class="rail">
+    <div class="brand compact">
       <span class="crest">T</span>
       <div class="brand-copy">
         <strong>Toxinator</strong>
-        <span id="brand-subtitle">MANDO · TOXINATOR</span>
+        <span id="brand-subtitle">MANDO</span>
       </div>
     </div>
-    <div class="top-right">
+    <div class="rail-right">
       <span id="mode" class="mode">LAUNCHER</span>
-      <div id="status" class="status" role="status">Conectando…</div>
+      <span id="status" class="status" role="status">Conectando…</span>
+      <span id="slot" class="slot">SIN SLOT</span>
+      <button id="camera-button" class="chip-button" type="button" aria-label="Sacar foto" hidden>◉</button>
+      <button id="settings-button" class="chip-button" type="button" aria-label="Ajustes del mando">⋯</button>
     </div>
   </header>
-
-  <section id="readout" class="readout" aria-label="Sensores">
-    <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
-    <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
-    <div class="cell"><span>ACC</span><strong id="accel">0.0</strong></div>
-    <div class="cell"><span>RTT</span><strong id="rtt">—</strong></div>
-  </section>
 
   <section class="stage">
     <button id="feedback-banner" class="feedback-banner" type="button" hidden>
       <strong id="feedback-title">ACTIVAR SONIDO Y VIBRACIÓN</strong>
       <span id="feedback-copy">Tocá acá para probar el parlante y la vibración</span>
     </button>
-    <div id="touchpad" class="touchpad">
-      <div class="touch-grid"></div>
-      <div class="joystick-ring" aria-hidden="true"></div>
-      <div class="dpad dpad-up">▲</div>
-      <div class="dpad dpad-down">▼</div>
-      <div class="dpad dpad-left">◀</div>
-      <div class="dpad dpad-right">▶</div>
-      <div id="stick" class="stick"></div>
-      <span id="touch-hint" class="touch-hint">Arrastrá para mover<br>y soltá al centro</span>
-    </div>
-  </section>
 
-  <section class="actions">
-    <button id="a-button" class="a-button" type="button">
-      <span>A</span>
-      <small id="a-label">ELEGIR</small>
-    </button>
-    <button id="b-button" class="b-button" type="button">
-      <span>B</span>
-      <small id="b-label">ATRÁS</small>
-    </button>
-    <div class="secondary-stack">
-      <button id="calibrate" class="secondary" type="button">Calibrar</button>
-      <button id="enable-sensors" class="secondary" type="button">Activar sensores</button>
+    <section id="panel" class="panel" hidden aria-live="polite">
+      <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="false">
+        <span id="panel-title" class="panel-title">PANEL</span>
+        <span class="panel-mark" aria-hidden="true">⌃</span>
+      </button>
+      <img id="panel-image" class="panel-image" alt="">
+    </section>
+
+    <div id="rotate-hint" class="rotate-hint" hidden>
+      <span>Girá el teléfono</span>
+      <small id="rotate-copy">Este juego pide otra orientación.</small>
+    </div>
+
+    <div class="deck">
+      <button id="l1" class="shoulder" type="button" data-button="l1">
+        <span>L1</span>
+        <small id="label-l1"></small>
+      </button>
+      <button id="r1" class="shoulder" type="button" data-button="r1">
+        <span>R1</span>
+        <small id="label-r1"></small>
+      </button>
+
+      <div id="touch-zone" class="touch-zone">
+        <span class="touch-grid" aria-hidden="true"></span>
+        <span id="touch-dot" class="touch-dot" hidden></span>
+        <span id="touch-hint" class="zone-hint">Arrastrá para apuntar</span>
+      </div>
+
+      <div id="stick-zone" class="stick-zone">
+        <div class="stick-well" aria-hidden="true"></div>
+        <div id="stick-knob" class="stick-knob">
+          <span aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <div class="face" role="group" aria-label="Botones de acción">
+        <button class="face-button triangle" type="button" data-button="triangle">
+          <span class="glyph" aria-hidden="true">△</span>
+          <small id="label-triangle"></small>
+        </button>
+        <button class="face-button circle" type="button" data-button="circle">
+          <span class="glyph" aria-hidden="true">○</span>
+          <small id="label-circle"></small>
+        </button>
+        <button class="face-button cross" type="button" data-button="cross">
+          <span class="glyph" aria-hidden="true">×</span>
+          <small id="label-cross"></small>
+        </button>
+        <button class="face-button square" type="button" data-button="square">
+          <span class="glyph" aria-hidden="true">□</span>
+          <small id="label-square"></small>
+        </button>
+        <button id="options" class="options" type="button" data-button="options">
+          <span class="glyph" aria-hidden="true">≡</span>
+          <small id="label-options">PAUSA</small>
+        </button>
+      </div>
     </div>
   </section>
 
   <footer class="foot">
-    <span id="slot" class="slot">SIN SLOT</span>
+    <span id="foot-hint" class="hint">ARRASTRÁ · × ELEGIR</span>
     <span id="sensors" class="sensors">SENSORES OFF</span>
-    <span id="foot-hint" class="hint">JOYSTICK · A ELEGIR</span>
-    <button id="skin-button" class="foot-button" type="button">Skin</button>
-    <button id="advanced-button" class="foot-button" type="button">Avanzado</button>
-    <button id="pair-button" class="foot-button" type="button">CAMBIAR</button>
-    <button id="install-button-2" class="foot-button" type="button" hidden>INSTALAR</button>
   </footer>
 </main>
 
-<div id="skin-sheet" class="sheet" hidden>
-  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="skin-sheet-title">
-    <span class="eyebrow">SKIN DEL MANDO</span>
-    <h2 id="skin-sheet-title">ELEGÍ UN LOOK</h2>
-    <div id="skin-list" class="skin-list"></div>
-    <button id="skin-close" class="secondary" type="button">CERRAR</button>
+<div id="settings-sheet" class="sheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <header class="sheet-head">
+      <span class="eyebrow">AJUSTES DEL MANDO</span>
+      <h2 id="settings-title">CONTROLES</h2>
+    </header>
+
+    <div class="setting-row">
+      <span class="setting-copy">
+        <strong>Orientación</strong>
+        <small id="orientation-status">AUTO · VERTICAL</small>
+      </span>
+      <button id="orientation-lock" class="secondary compact" type="button">BLOQUEAR</button>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-copy">
+        <strong>Sensores</strong>
+        <small>Inclinación y giro para el juego</small>
+      </span>
+      <button id="enable-sensors" class="secondary compact" type="button">ACTIVAR</button>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-copy">
+        <strong>Calibrar pose</strong>
+        <small>Tomá la posición actual como neutra</small>
+      </span>
+      <button id="calibrate" class="secondary compact" type="button">CALIBRAR</button>
+    </div>
+
+    <div id="readout" class="readout" aria-label="Sensores">
+      <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
+      <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
+      <div class="cell"><span>ACC</span><strong id="accel">0.0</strong></div>
+      <div class="cell"><span>RTT</span><strong id="rtt">—</strong></div>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-copy">
+        <strong>Skin</strong>
+        <small>Toxinator · ámbar y señales</small>
+      </span>
+      <span class="swatch" aria-hidden="true"></span>
+    </div>
+
+    <div class="setting-row">
+      <span class="setting-copy">
+        <strong>Telemetría</strong>
+        <small>β, γ, aceleración y latencia</small>
+      </span>
+      <button id="advanced-button" class="secondary compact" type="button">MOSTRAR</button>
+    </div>
+
+    <div class="sheet-actions">
+      <button id="pair-button" class="secondary" type="button">CAMBIAR CONSOLA</button>
+      <button id="install-button-2" class="secondary" type="button" hidden>INSTALAR</button>
+      <button id="settings-close" class="primary" type="button">LISTO</button>
+    </div>
+  </div>
+</div>
+
+<div id="camera-sheet" class="sheet" hidden>
+  <div class="sheet-card camera-card" role="dialog" aria-modal="true" aria-labelledby="camera-title">
+    <header class="sheet-head">
+      <span class="eyebrow">FOTO DE AVATAR</span>
+      <h2 id="camera-title">MIRÁ A LA CÁMARA</h2>
+    </header>
+    <div class="camera-stage">
+      <video id="camera-video" playsinline muted></video>
+      <canvas id="camera-canvas" hidden></canvas>
+      <div class="camera-ring" aria-hidden="true"></div>
+    </div>
+    <p id="camera-status" class="camera-status" role="status">Encuadrá la cara dentro del círculo.</p>
+    <div class="sheet-actions">
+      <button id="camera-cancel" class="secondary" type="button">CANCELAR</button>
+      <button id="camera-capture" class="primary" type="button">SACAR FOTO</button>
+    </div>
   </div>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="/static/vendor/jsqr.js" defer></script>
-<script src="/static/app.js?v=10" defer></script>
+<script src="/static/app.js?v=11" defer></script>
 </body>
 </html>

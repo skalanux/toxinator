@@ -1,17 +1,22 @@
 id = "maldito-pino"
 name = "Maldito Pino, hijo de pu**"
 version = "0.1.0"
-requires_api = "0.2"
+requires_api = "0.3"
 locales = ["es", "en"]
 default_locale = "es"
 players = [1, 1]
 
 [controller]
 layout = "motion"
-skin = "tokyo-night"
+skin = "toxinator"
+orientation = "auto"
 action = "Tirar"
 back = "Volver"
 hint = "Incliná para dar efecto"
+
+[controller.labels]
+cross = "Tirar"
+circle = "Volver"
 
 [art]
 motif = "pin"

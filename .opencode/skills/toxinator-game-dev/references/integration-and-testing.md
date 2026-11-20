@@ -83,7 +83,8 @@ el contrato mínimo: `start` crea raíces, `update` lee `input_state`, `stop`
 limpia. No importa internos del runtime.
 
 El manifest generado incluye una sección `[controller]` con `layout = "motion"`,
-`skin = "tokyo-night"`, etiquetas y hint. Ajustala al gesto principal del juego:
+`skin = "toxinator"`, `orientation = "auto"`, etiquetas y hint. Ajustala al gesto
+principal del juego:
 ver [`input-and-controls.md`](input-and-controls.md#perfil-controller). También
 incluye `[art] motif = "auto"`; cambialo si querés un prop específico del
 diorama.
@@ -167,10 +168,11 @@ evita instalar una CA en el teléfono; requiere `cloudflared` e internet.
 - [ ] Módulo único y paquete importable.
 - [ ] Solo `toxinator.api` del runtime.
 - [ ] `start/update/stop` y limpieza.
-- [ ] Diseño motion-first con touch + A como fallback.
-- [ ] Perfil `[controller]` (layout/skin/action/hint) declarado.
+- [ ] Diseño motion-first con stick + touch + × como fallback.
+- [ ] Perfil `[controller]` (layout/skin/orientation/labels/hint/panel/camera)
+      declarado.
 - [ ] Feedback opcional probado (vibración/tono) sin bloquear.
-- [ ] B no se usa.
+- [ ] ○ no se usa.
 - [ ] Probado `--demo` y `--offscreen`.
 - [ ] README del juego externo actualizado.
 - [ ] Skill actualizado si cambió el loader/contrato.

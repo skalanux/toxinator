@@ -74,7 +74,8 @@ def test_creates_skeleton_with_manifest_package_and_readme(tmp_path: Path) -> No
     game = root.joinpath("src", "mi_juego", "game.py").read_text(encoding="utf-8")
     assert "class MiJuego:" in game
     assert "MI JUEGO" in game
-    assert "ctx.input_state.frame(0)" in game
+    assert "ctx.input_state.primary_frame()" in game
+    assert 'frame.button("cross")' in game
 
     pyproject = root.joinpath("pyproject.toml").read_text(encoding="utf-8")
     assert 'packages = ["src/mi_juego"]' in pyproject

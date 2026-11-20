@@ -2,8 +2,7 @@
 
 Validación con hardware real, GPU y performance. No corre en CI. Es gate de
 release: cada ítem se marca **pass**, **fail** o **blocked** con commit, fecha y
-hardware. Los ítems asumen que el runtime y el launcher ya existen; hoy el repo
-todavía no tiene código ejecutable.
+hardware.
 
 ## Cómo registrar una corrida
 
@@ -15,52 +14,56 @@ Copiá esta tabla al issue de release o al PR de validación:
 | Fecha | |
 | Máquina / distro | |
 | GPU / driver | |
-| Wiimote | modelo, batería |
 | Android | modelo, versión, Chrome |
-| Gamepad | modelo |
+| Teclado / mouse | layout, modelo |
 | Resultado global | pass / fail / blocked |
 
 Para cada ítem: **pasos → esperado → resultado → evidencia** (log, captura o
 video corto). Un `blocked` no es un `pass`.
 
-## Wiimote
-
-- [ ] **Pairing**: mantener 1+2 o el botón rojo; el Wiimote aparece en BlueZ y
-      el hub lo lista como `wiimote` con `buttons`, `motion` y `battery`.
-      *Esperado*: pairing sin `bluetoothctl` manual; reconexión tras dormir.
-- [ ] **Botones**: A, B, 1, 2, +, -, Home, D-pad y cruces.
-      *Esperado*: cada botón llega al `ControllerFrame` correcto.
-- [ ] **Acelerómetro**: inclinar el mando; `accel` cambia en los tres ejes.
-      *Esperado*: valores estables, sin saltos; calibración de pose neutra.
-- [ ] **Swing/throw**: swing de bolos con B; el gesto detecta fases y release.
-      *Esperado*: el tiro sale con potencia/efecto coherentes; repetible.
-- [ ] **Desconexión**: apagar el Wiimote en partida.
-      *Esperado*: el slot queda en gracia 30 s, aviso de plataforma, reconexión
-      al mismo slot.
-- [ ] **Batería**: leer nivel y avisar bajo.
-      *Esperado*: nivel plausible; sin polling agresivo.
-- [ ] **Rumble**: vibración binaria en un evento de prueba.
-      *Esperado*: on/off; no bloquea el game loop.
-- [ ] **IR/pointer** (opcional): si hay IR bar DIY, apuntar y calibrar.
-      *Esperado*: pointer normalizado; si no hay bar, el celular cubre pointer.
-- [ ] **Dos Wiimotes**: 2 mandos en slots distintos.
-      *Esperado*: sin cruce de frames; 4 slots siguen disponibles.
-
-## Android
+## Celular / PWA
 
 - [ ] **QR y pairing**: escanear el QR de `toxinator dev phone`.
-      *Esperado*: el celular abre la PWA y aparece como `phone` con token.
+      *Esperado*: la PWA abre, se vincula y aparece como `phone` con token.
 - [ ] **HTTPS**: aceptar el certificado local una vez.
-      *Esperado*: la PWA carga sin errores de certificado; los sensores piden
-      permiso.
-- [ ] **Sensores**: inclinar/rotar el teléfono; `accel`, `gyro` y orientación
-      llegan a 60 Hz.
-      *Esperado*: sin permisos denegados; fallback touch si no hay sensores.
+      *Esperado*: carga sin errores; sensores y cámara piden permiso.
+- [ ] **Layout vertical**: abrir en vertical.
+      *Esperado*: × ○ □ △, `options`, L1/R1, stick y zona táctil visibles; nada
+      tapado por notch; sin scroll.
+- [ ] **Layout landscape**: girar a horizontal.
+      *Esperado*: misma paridad funcional, sin botones cortados; el giro no
+      corta la conexión ni deja botones apretados.
+- [ ] **Orientación por juego**: lanzar un juego con `orientation = "portrait"` o
+      `"landscape"` y girar el teléfono al revés.
+      *Esperado*: aparece "Girá el teléfono"; al girar desaparece.
+- [ ] **Candado**: bloquear la orientación desde ajustes y girar.
+      *Esperado*: el layout queda fijo; "LIBERAR" vuelve a auto.
+- [ ] **Stick**: arrastrar desde el centro en las cuatro direcciones.
+      *Esperado*: `move_x`/`move_y` llegan al juego; deadzone; al soltar vuelve
+      al centro y no queda pegado.
+- [ ] **Zona táctil**: tocar y arrastrar.
+      *Esperado*: `pointer` absoluto, sin coordenadas invertidas; el dot sigue
+      el dedo; al soltar se limpia.
+- [ ] **Botones**: × ○ □ △, `options`, L1, R1.
+      *Esperado*: cada uno llega como nombre canónico; ×/○ también emiten los
+      alias `A`/`B`. Sin dobles pulsaciones.
+- [ ] **Sensores**: inclinar/rotar el teléfono.
+      *Esperado*: `accel`, `gyro` y orientación a 60 Hz; fallback a stick/touch
+      si no hay permisos.
 - [ ] **Calibración**: adoptar pose neutra y calibrar.
-      *Esperado*: el eje de la pista coincide con el gesto; repetible.
-- [ ] **Touch**: tocar la pantalla; pointer/touch llegan al juego.
-      *Esperado*: multitouch si el juego lo usa; sin coordenadas invertidas.
-- [ ] **Latencia**: medir ping/eventos y percepción en el swing.
+      *Esperado*: la lectura β/γ vuelve a 0 y el juego recibe orientación
+      relativa; repetible.
+- [ ] **Feedback**: entrar a un juego y tocar el aviso.
+      *Esperado*: suena el tono y vibra (Android Chrome/Samsung); sin bloquear
+      si el navegador no lo soporta. iPhone no vibra desde la web.
+- [ ] **Panel**: lanzar un juego con `[controller.panel]`.
+      *Esperado*: la imagen aparece sobre el mando, se expande/colapsa y no
+      captura input. `ctx.phone.panel()`/`clear_panel()` la cambian.
+- [ ] **Cámara**: lanzar un juego con `camera = true` sobre HTTPS.
+      *Esperado*: aparece el botón de foto, la cámara frontal abre, la captura
+      se sube a `/api/photo` y la consola la recibe. Sobre HTTP el botón avisa
+      que hace falta HTTPS.
+- [ ] **Latencia**: medir ping/eventos y percepción del gesto.
       *Esperado*: <50 ms típico en LAN 5 GHz; anotar 2.4 GHz y distancia.
 - [ ] **Background/foreground**: bloquear el teléfono y volver.
       *Esperado*: reconexión o pausa; el input no queda pegado.
@@ -68,59 +71,61 @@ video corto). Un `blocked` no es un `pass`.
       *Esperado*: aviso de desconexión, gracia 30 s, reconexión.
 - [ ] **Dos teléfonos**: 2 jugadores.
       *Esperado*: tokens distintos, slots distintos, sin cruce.
-- [ ] **Idioma**: cambiar `es`/`en` en la consola con el celular conectado.
-      *Esperado*: el PWA recibe `language` y actualiza sus textos.
 - [ ] **PWA install**: agregar a pantalla de inicio y abrir standalone.
       *Esperado*: misma funcionalidad; sin barra del navegador.
+- [ ] **Protocolo**: abrir un cliente con `protocol: 1`.
+      *Esperado*: la consola responde `bad-protocol` y cierra; la PWA muestra el
+      aviso de recargar.
 
-## Gamepad y teclado
+## Teclado y mouse
 
-- [ ] **Gamepad real**: conectar un gamepad estándar.
-      *Esperado*: D-pad/stick, A, B, Start; aparece como `gamepad`.
-- [ ] **Simulador**: `toxinator --sim --sim-preset bowling`.
-      *Esperado*: botones/ejes/motion responden; `F1` muestra el estado.
-- [ ] **Preset del juego**: el manifest carga el preset del juego.
-      *Esperado*: el preset correcto aparece en el overlay; fallback a `default`.
+- [ ] **Launcher sin celular**: abrir `toxinator`.
+      *Esperado*: el QR aparece, pero flechas/Enter/mouse funcionan; el resumen
+      muestra `TECLADO`.
+- [ ] **Navegación**: flechas y mouse.
+      *Esperado*: el foco se mueve por filas/columnas; el puntero del mouse
+      también navega; sin repetición con el mouse quieto en el centro.
+- [ ] **Atajos**: `S` ajustes, `C` celular, `D` ficha.
+      *Esperado*: no chocan con WASD (el launcher desactiva WASD en el hub).
+- [ ] **Juego sin celular**: `toxinator play maldito-pino`.
+      *Esperado*: WASD/flechas mueven o apuntan, Enter/J tira, Esc/K vuelve;
+      `primary_frame()` usa el teclado.
+- [ ] **Slot**: `--keyboard-slot 6` y `--no-keyboard`.
+      *Esperado*: el simulador usa otro slot o desaparece sin romper el launcher.
+- [ ] **Prioridad**: con celular y teclado conectados.
+      *Esperado*: `primary_frame()` prefiere el celular; el teclado no roba P1.
 
 ## Launcher
 
 - [ ] **Inicio**: abrir el launcher en 1080p.
-      *Esperado*: Tokyo Night, sin texto cortado, foco visible.
-- [ ] **Mandos**: conectar 1–4 mandos; asignar y liberar slots.
+      *Esperado*: sin texto cortado, foco visible.
+- [ ] **Mandos**: conectar 1–4 celulares; asignar y liberar slots.
       *Esperado*: estados online/offline/warn correctos; gracia 30 s.
 - [ ] **Join/leave**: sumar y sacar un mando en caliente.
       *Esperado*: el slot se actualiza sin reiniciar.
-- [ ] **Idioma**: revisar Ajustes.
-      *Esperado*: muestra Español; el cambio de idioma queda pendiente.
-- [ ] **Ficha**: abrir detalle y volver.
-      *Esperado*: foco y estado consistentes.
 - [ ] **Mando por juego**: lanzar un juego con `[controller]`.
-      *Esperado*: layout, skin y etiquetas del celular cambian; el selector de
-      **Skin** se recuerda.
-- [ ] **Joystick de consola**: en LAUNCHER, arrastrar desde cualquier punto.
-      *Esperado*: el knob sigue el dedo dentro del aro, el foco se mueve por
-      filas/columnas y al soltar vuelve al centro. Sin readout ni calibración.
-- [ ] **Avanzado**: tocar **Avanzado** en el mando.
-      *Esperado*: aparecen β/γ/ACC/RTT, estado de sensores y **Calibrar /
-      Activar sensores**; **Simple** los oculta otra vez.
-- [ ] **Feedback**: golpe/punto en Pong.
-      *Esperado*: al entrar al juego aparece **ACTIVAR SONIDO Y VIBRACIÓN**;
-      al tocarlo suena un tono y vibra Android. Sin bloquear si el celular no lo
-      soporta.
+      *Esperado*: layout, orientación, labels, panel y cámara del celular
+      cambian; al volver al launcher se resetean.
+- [ ] **Feedback**: golpe/punto en Maldito Pino.
+      *Esperado*: al entrar al juego aparece **ACTIVAR SONIDO Y VIBRACIÓN**; al
+      tocarlo suena un tono y vibra Android. Sin bloquear si no lo soporta.
 - [ ] **HTTPS sin CA**: `uv run toxinator --cloudflare`.
       *Esperado*: con `cloudflared` instalado, el QR usa
       `https://...trycloudflare.com` y Chrome habilita sensores/cámara.
 - [ ] **Lanzar/salir**: entrar a Maldito Pino y volver.
       *Esperado*: sin parpadeo de ventana; el launcher queda igual.
-- [ ] **Estados**: error de capacidades, biblioteca vacía, sumar celular, apagar.
-      *Esperado*: copy correcto, navegación con mando/teclado.
-- [ ] **4 mandos**: Wiimote + teléfonos + gamepad a la vez.
-      *Esperado*: 4 slots, sin conflictos.
+- [ ] **4 mandos**: teléfonos + teclado a la vez.
+      *Esperado*: 4 slots de teléfono, sin conflictos; el teclado no ocupa un
+      chip de P1–P4.
 
 ## Maldito Pino
 
-- [ ] **Partida completa**: 10 turnos, 1 jugador.
-      *Esperado*: scoring de pleno/spare/abierto correcto.
+- [ ] **Partida con celular**: 10 turnos, 1 jugador.
+      *Esperado*: scoring de pleno/spare/abierto correcto; apuntar con pointer,
+      cargar con × y soltar para tirar.
+- [ ] **Partida con teclado/mouse**: sin celular.
+      *Esperado*: misma partida; mouse apunta, Enter/J carga y suelta, Esc/K
+      vuelve.
 - [ ] **10º turno**: pleno/spare con 3 tiros.
       *Esperado*: bonificaciones correctas.
 - [ ] **Desempate**: empate al final.
@@ -131,8 +136,6 @@ video corto). Un `blocked` no es un `pass`.
       *Esperado*: sin puntaje persistente.
 - [ ] **Física**: bola 7 kg, pinos 1.5 kg, CCD.
       *Esperado*: sin tunneling; pinos caídos estables; sin jitter visible.
-- [ ] **Pausa**: pausa de sistema y de juego.
-      *Esperado*: el juego se congela; el overlay de plataforma responde.
 - [ ] **Desconexión**: sacar el mando en el turno.
       *Esperado*: pausa/aviso; reconexión continúa la partida.
 
@@ -164,8 +167,8 @@ video corto). Un `blocked` no es un `pass`.
 
 ## Blockers conocidos
 
-- **Wiimote**: sin pilas; los ítems de Wiimote quedan `blocked` hasta tenerlas.
-- **Android**: disponible; falta la PWA y el runtime.
-- **Performance**: falta la escena de bolos; se mide en el primer corte jugable.
-- **Playwright**: no se automatiza el PWA en este esfuerzo; el checklist es
+- **Android**: disponible; el mando v2 es la referencia.
+- **Wiimote**: descartado ([ADR-0007](../adr/0007-phone-controller-v2.md)).
+- **Avatares**: la captura de foto existe; el editor llega en el milestone 2.
+- **Playwright**: no se automatiza la PWA en este esfuerzo; el checklist es
   manual.

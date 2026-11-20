@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Toxinator Mando",
   "short_name": "Mando",
-  "description": "Mando Android para la consola Toxinator",
+  "description": "Mando de la consola Toxinator: botones PlayStation, stick, touch, panel y cámara",
   "lang": "es",
   "dir": "ltr",
   "start_url": "/",
@@ -10,8 +10,8 @@
   "display": "standalone",
   "display_override": ["standalone", "fullscreen"],
   "orientation": "any",
-  "background_color": "#1a1b26",
-  "theme_color": "#1a1b26",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
   "categories": ["games", "utilities"],
   "icons": [
     {

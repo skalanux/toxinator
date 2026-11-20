@@ -8,7 +8,7 @@ Fuente de verdad: `src/toxinator/api/game.py`, `src/toxinator/api/input.py`,
 
 ## Versión
 
-`API_VERSION = "0.2"`. `GameHost.start()` exige que
+`API_VERSION = "0.3"`. `GameHost.start()` exige que
 `game.manifest.requires_api == API_VERSION`; no hay compatibilidad semver
 todavía. Si el contrato cambia, subí la versión y actualizá el host/loader.
 
@@ -27,19 +27,24 @@ class GameManifest:
     players: tuple[int, int] = (1, 4)
     modes: tuple[str, ...] = ("partida",)
     controller_layout: str = "default"
-    controller_skin: str = "tokyo-night"
+    controller_skin: str = "toxinator"
     controller_action: str = "Acción"
     controller_back: str = "Volver"
     controller_hint: str = ""
+    controller_orientation: str = "auto"
+    controller_labels: Mapping[str, str] = field(default_factory=dict)
+    controller_panel: ControllerPanel | None = None
+    controller_camera: bool = False
     art_motif: str = "auto"
 ```
 
 `load_manifest(text_or_path)` parsea TOML y normaliza `players` a una tupla de
 dos enteros. El campo `id` es la clave para `toxinator play <id>`. La sección
-opcional `[controller]` define el layout, la skin y las etiquetas del mando para
-ese juego; se envía al celular al lanzarlo. La sección `[art]` elige el prop del
-diorama (`pin`, `flag`, `paddle`, `pong`, `star`, `heart`, `coin`, `cube` o
-`auto`).
+opcional `[controller]` define layout, skin, orientación, labels, panel y cámara
+del mando para ese juego; se envía al celular al lanzarlo. `ControllerPanel` es
+`(title, image, fit)` y `image` es una ruta relativa a los assets del paquete. La
+sección `[art]` elige el prop del diorama (`pin`, `flag`, `paddle`, `pong`,
+`star`, `heart`, `coin`, `cube` o `auto`).
 
 ## `GameContext`
 
@@ -84,9 +89,20 @@ class PhoneService(Protocol):
         slot: int | None = None,
     ) -> None: ...
     def stop(self, slot: int | None = None) -> None: ...
+    def panel(
+        self,
+        *,
+        title: str = "",
+        image: str | None = None,
+        fit: str = "contain",
+        slot: int | None = None,
+    ) -> None: ...
+    def clear_panel(self, *, slot: int | None = None) -> None: ...
 ```
 
 - `slot=None` manda a todos los celulares; un slot apunta a un jugador.
+- `panel` muestra una imagen estática en el mando; `clear_panel` la oculta. Sin
+  celular son no-op.
 - `vibrate` usa milisegundos y patrón on/off. Android sí; iPhone/Safari no
   expone vibración web.
 - `tone` reproduce un seno corto con Web Audio. El audio necesita un gesto del

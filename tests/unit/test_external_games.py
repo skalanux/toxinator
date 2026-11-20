@@ -122,7 +122,7 @@ def test_external_game_becomes_launcher_entry(tmp_path: Path) -> None:
     assert entry.rank == "EX"
     assert entry.installed
     assert entry.controller_layout == "motion"
-    assert entry.controller_skin == "tokyo-storm"
+    assert entry.controller_skin == "toxinator"
     assert entry.controller_action == "Lanzar"
     assert entry.controller_hint == "Incliná para apuntar"
     assert entry.art_motif == "flag"

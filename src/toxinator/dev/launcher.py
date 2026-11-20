@@ -26,6 +26,8 @@ def run_launcher(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 3.0,
+    keyboard: bool = True,
+    keyboard_slot: int = 4,
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
@@ -44,6 +46,8 @@ def run_launcher(
         token=token,
         demo=demo,
         demo_buttons=False,
+        keyboard=keyboard,
+        keyboard_slot=keyboard_slot,
         https=https,
         cert=cert,
         key=key,
@@ -87,7 +91,9 @@ def run_launcher(
             seconds=seconds,
             set_mode=session.set_mode,
             set_controller=session.set_controller,
+            set_game_assets=session.set_game_assets,
             phone=session.feedback,
+            keyboard=session.keyboard,
         )
         app.run()
     finally:

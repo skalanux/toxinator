@@ -13,6 +13,7 @@ def test_manifest_is_installable_and_icons_exist() -> None:
     assert manifest["start_url"] == "/"
     assert manifest["scope"] == "/"
     assert manifest["display"] == "standalone"
+    assert manifest["orientation"] == "any"
     assert manifest["name"]
     assert manifest["short_name"]
 
@@ -47,26 +48,63 @@ def test_service_worker_shell_files_exist() -> None:
         assert file.is_file(), f"falta {path} en el shell de la PWA"
 
 
-def test_controller_shell_has_profiles_and_skins() -> None:
+def test_controller_shell_has_playstation_buttons_and_layouts() -> None:
     html = (WEB / "index.html").read_text(encoding="utf-8")
     css = (WEB / "styles.css").read_text(encoding="utf-8")
+
+    for name in ("cross", "circle", "square", "triangle", "options", "l1", "r1"):
+        assert f'data-button="{name}"' in html
+    assert 'data-skin="toxinator"' in html
+    assert 'data-orientation="portrait"' in html
+    assert 'data-layout="default"' in html
+    assert 'id="touch-zone"' in html
+    assert 'id="stick-zone"' in html
+    assert 'id="panel"' in html
+    assert 'id="panel-image"' in html
+    assert 'id="camera-button"' in html
+    assert 'id="settings-sheet"' in html
+    assert 'id="orientation-lock"' in html
+    assert 'id="advanced-button"' in html
+    assert 'id="feedback-banner"' in html
+    assert 'id="readout"' in html
+    assert 'id="enable-sensors"' in html
+
+    assert 'body[data-orientation="landscape"] .deck' in css
+    assert ".face-button.triangle" in css
+    assert ".stick-knob" in css
+    assert ".touch-zone.feedback-pulse" in css
+    for legacy in ("tokyo-night", "tokyo-storm", "tokyo-moon", "tokyo-mint"):
+        assert legacy not in css
+        assert legacy not in html
+
+
+def test_controller_wires_protocol_v2_and_games_profile() -> None:
     app = (WEB / "app.js").read_text(encoding="utf-8")
 
-    assert 'id="skin-button"' in html
-    assert 'id="skin-sheet"' in html
-    assert 'id="skin-list"' in html
-    assert 'id="advanced-button"' in html
-    assert 'class="joystick-ring"' in html
-    assert 'data-skin="tokyo-night"' in html
-    assert 'data-layout="default"' in html
-    for skin in ("tokyo-storm", "tokyo-moon", "tokyo-mint"):
-        assert f'data-skin="{skin}"' in css
+    assert "const PROTOCOL = 2" in app
+    assert "protocol: PROTOCOL" in app
     assert 'message.type === "controller"' in app
-    assert "applyAdvanced" in app
-    assert "openSkinSheet" in app
-    assert "updateLauncherStick" in app
-    assert "body.mode-launcher .touchpad" in css
-    assert "body.advanced .readout" in css
+    assert 'message.type === "panel"' in app
+    assert "normalizePanel" in app
+    assert "applyPanel" in app
+    assert "move: state.move" in app
+    assert "state.touch" in app
+    assert "primary_frame" not in app
+    assert '"A"' not in app
+    assert "updateLauncherStick" not in app
+
+
+def test_controller_has_camera_capture_flow() -> None:
+    app = (WEB / "app.js").read_text(encoding="utf-8")
+    html = (WEB / "index.html").read_text(encoding="utf-8")
+
+    assert "getUserMedia" in app
+    assert 'facingMode: { ideal: "user" }' in app
+    assert "/api/photo" in app
+    assert "X-Toxinator-Token" in app
+    assert "toBlob" in app
+    assert 'id="camera-sheet"' in html
+    assert 'id="camera-capture"' in html
 
 
 def test_phone_feedback_shell() -> None:

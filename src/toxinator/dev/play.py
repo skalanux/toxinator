@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
+from typing import Any
 
 from panda3d.core import loadPrcFileData
 
@@ -33,6 +35,39 @@ def load_game(game_id: str) -> tuple[GameManifest, Game]:
     raise RuntimeError(f"juego desconocido: {game_id}")
 
 
+def game_assets_root(game: Game) -> Path | None:
+    """Best-effort package directory for a game's static assets."""
+    module = sys.modules.get(type(game).__module__)
+    source = getattr(module, "__file__", None)
+    if not source:
+        return None
+    return Path(source).resolve().parent
+
+
+def controller_profile(
+    manifest: GameManifest, *, game: str | None = None
+) -> dict[str, Any]:
+    labels = dict(manifest.controller_labels)
+    panel = (
+        manifest.controller_panel.as_dict()
+        if manifest.controller_panel is not None
+        else None
+    )
+    return {
+        "layout": manifest.controller_layout,
+        "skin": manifest.controller_skin,
+        "orientation": manifest.controller_orientation,
+        "buttons": ["cross", "circle", "square", "triangle", "options", "l1", "r1"],
+        "labels": labels,
+        "action": labels.get("cross", manifest.controller_action),
+        "back": labels.get("circle", manifest.controller_back),
+        "hint": manifest.controller_hint,
+        "camera": manifest.controller_camera,
+        "panel": panel,
+        "game": game if game is not None else manifest.name,
+    }
+
+
 def run_play(
     *,
     game_id: str = "maldito-pino",
@@ -44,6 +79,8 @@ def run_play(
     offscreen: bool = False,
     screenshot: Path | None = None,
     screenshot_after: float = 3.0,
+    keyboard: bool = True,
+    keyboard_slot: int = 4,
     https: bool = False,
     cert: Path | None = None,
     key: Path | None = None,
@@ -57,22 +94,16 @@ def run_play(
         port=port,
         token=token,
         demo=demo,
+        keyboard=keyboard,
+        keyboard_slot=keyboard_slot,
         https=https,
         cert=cert,
         key=key,
         cloudflare=cloudflare,
     )
     session.set_mode("game")
-    session.set_controller(
-        {
-            "layout": manifest.controller_layout,
-            "skin": manifest.controller_skin,
-            "action": manifest.controller_action,
-            "back": manifest.controller_back,
-            "hint": manifest.controller_hint,
-            "game": manifest.name,
-        }
-    )
+    session.set_game_assets(manifest.id, game_assets_root(game))
+    session.set_controller(controller_profile(manifest))
     if session.tunnel is None and session.host.startswith("127."):
         print(
             "Aviso: el host es loopback; el celular no va a poder conectarse. "
@@ -109,6 +140,7 @@ def run_play(
             screenshot_after=screenshot_after,
             seconds=seconds,
             phone=session.feedback,
+            keyboard=session.keyboard,
         )
         app.run()
     finally:

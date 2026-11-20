@@ -94,7 +94,8 @@ Referencia 16:9. El rail ocupa ~19% del ancho; el contenido usa el resto.
   grilla 4×2 con paginación.
 - **Ficha**: arte grande, descripción, jugadores, formatos, id y estado.
 - **Mandos**: P1–P4 con nombre, estado y botón **Vincular celular**. El mando
-  del celular recibe el layout, las etiquetas y la skin del juego al lanzarlo.
+  del celular recibe layout, orientación, labels, panel y cámara del juego al
+  lanzarlo. El teclado/mouse aparece como `TECLADO` cuando no hay celular.
   Los juegos pueden usar `ctx.phone` para vibrar y reproducir tonos.
 - **Ajustes**: preview de Tokyo Night, idioma, estado de mandos y salida.
 - **QR**: panel de vinculación con QR, URL y estado de espera.
@@ -124,9 +125,10 @@ son `hero` (16:9 ancho), `card` (sala) y `portrait` (catálogo/ficha).
 - `S`: ajustes.
 - `C`: vincular celular / ver QR.
 - `Esc`: cerrar overlay, volver del catálogo o abrir apagado.
-- Touchpad del celular: joystick con repetición.
-- `A` del celular: confirmar.
-- `B` del celular: volver.
+- Stick del celular (o mouse): mover con repetición.
+- `×` del celular: confirmar.
+- `○` del celular: volver.
+- Teclado/mouse: flechas, Enter/J, Esc/K, S/C/D; el simulador usa el slot 4.
 - Mouse: rail, tarjetas, filtros y botones.
 
 El foco se mueve por geometría: desde el centro del ítem actual busca el ítem

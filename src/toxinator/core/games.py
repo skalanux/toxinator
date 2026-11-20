@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from importlib.resources import files
+from pathlib import Path
 
-from toxinator.api.game import Game, GameManifest, load_manifest
+from toxinator.api.game import ControllerPanel, Game, GameManifest, load_manifest
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,10 +24,15 @@ class GameEntry:
     installed: bool
     accent: str
     controller_layout: str = "default"
-    controller_skin: str = "tokyo-night"
+    controller_skin: str = "toxinator"
     controller_action: str = "Acción"
     controller_back: str = "Volver"
     controller_hint: str = ""
+    controller_orientation: str = "auto"
+    controller_labels: Mapping[str, str] = field(default_factory=dict)
+    controller_panel: ControllerPanel | None = None
+    controller_camera: bool = False
+    assets_root: Path | None = None
     art_motif: str = "auto"
     manifest: GameManifest | None = None
     factory: Callable[[GameManifest], Game] | None = None
@@ -74,6 +80,11 @@ def _maldito_pino() -> GameEntry | None:
         controller_action=manifest.controller_action,
         controller_back=manifest.controller_back,
         controller_hint=manifest.controller_hint,
+        controller_orientation=manifest.controller_orientation,
+        controller_labels=manifest.controller_labels,
+        controller_panel=manifest.controller_panel,
+        controller_camera=manifest.controller_camera,
+        assets_root=Path(str(files("maldito_pino"))).resolve(),
         art_motif=manifest.art_motif,
         manifest=manifest,
     )
@@ -102,10 +113,11 @@ def load_catalog() -> list[GameEntry]:
                 installed=False,
                 accent="gold",
                 controller_layout="motion",
-                controller_skin="tokyo-storm",
+                controller_skin="toxinator",
                 controller_action="Acelerar",
                 controller_back="Volver",
                 controller_hint="Incliná para doblar",
+                controller_labels={"cross": "Acelerar", "circle": "Volver"},
                 art_motif="flag",
             ),
             GameEntry(
@@ -124,10 +136,11 @@ def load_catalog() -> list[GameEntry]:
                 installed=False,
                 accent="jade",
                 controller_layout="motion",
-                controller_skin="tokyo-moon",
+                controller_skin="toxinator",
                 controller_action="Golpear",
                 controller_back="Volver",
                 controller_hint="Incliná para dirigir",
+                controller_labels={"cross": "Golpear", "circle": "Volver"},
                 art_motif="paddle",
             ),
         ]

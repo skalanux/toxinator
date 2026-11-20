@@ -1,53 +1,34 @@
 "use strict";
 
 const STORAGE_KEY = "toxinator.pairing.v1";
-const SKIN_KEY = "toxinator.skin.v1";
 const ADVANCED_KEY = "toxinator.advanced.v1";
+const ORIENTATION_KEY = "toxinator.orientation.v1";
+const PROTOCOL = 2;
 const params = new URLSearchParams(window.location.search);
 const queryToken = (params.get("token") || "").trim();
 
-const SKINS = [
-  {
-    id: "tokyo-night",
-    name: "Tokyo Night",
-    short: "Night",
-    bg: "#1a1b26",
-    accent: "#7aa2f7",
-    status: "#9ece6a",
-  },
-  {
-    id: "tokyo-storm",
-    name: "Tokyo Storm",
-    short: "Storm",
-    bg: "#24283b",
-    accent: "#bb9af7",
-    status: "#7dcfff",
-  },
-  {
-    id: "tokyo-moon",
-    name: "Tokyo Moon",
-    short: "Moon",
-    bg: "#222436",
-    accent: "#82aaff",
-    status: "#c3e88d",
-  },
-  {
-    id: "tokyo-mint",
-    name: "Tokyo Mint",
-    short: "Mint",
-    bg: "#1a1b26",
-    accent: "#73daca",
-    status: "#9ece6a",
-  },
-];
+const BUTTON_NAMES = ["cross", "circle", "square", "triangle", "options", "l1", "r1"];
+const LABEL_FALLBACK = {
+  cross: "Acción",
+  circle: "Volver",
+  square: "",
+  triangle: "",
+  options: "Pausa",
+  l1: "",
+  r1: "",
+};
 const LAYOUTS = ["default", "motion", "touch"];
+const ORIENTATIONS = ["auto", "portrait", "landscape"];
 const DEFAULT_CONTROLLER = {
   layout: "default",
-  skin: "tokyo-night",
-  action: "Acción",
-  back: "Volver",
+  skin: "toxinator",
+  orientation: "auto",
+  buttons: [...BUTTON_NAMES],
+  labels: { ...LABEL_FALLBACK },
   hint: "",
   game: "",
+  camera: false,
+  panel: null,
 };
 
 const elements = {
@@ -75,35 +56,53 @@ const elements = {
   openConsole: document.getElementById("open-console"),
   unpairButton: document.getElementById("unpair-button"),
   pairButton: document.getElementById("pair-button"),
+  settingsButton: document.getElementById("settings-button"),
+  settingsSheet: document.getElementById("settings-sheet"),
+  settingsClose: document.getElementById("settings-close"),
+  settingsTitle: document.getElementById("settings-title"),
+  orientationLock: document.getElementById("orientation-lock"),
+  orientationStatus: document.getElementById("orientation-status"),
+  advancedButton: document.getElementById("advanced-button"),
+  calibrate: document.getElementById("calibrate"),
+  enableSensors: document.getElementById("enable-sensors"),
   status: document.getElementById("status"),
+  mode: document.getElementById("mode"),
+  slot: document.getElementById("slot"),
+  brandSubtitle: document.getElementById("brand-subtitle"),
+  footHint: document.getElementById("foot-hint"),
+  sensors: document.getElementById("sensors"),
   beta: document.getElementById("beta"),
   gamma: document.getElementById("gamma"),
   accel: document.getElementById("accel"),
   rtt: document.getElementById("rtt"),
-  slot: document.getElementById("slot"),
-  sensors: document.getElementById("sensors"),
-  touchpad: document.getElementById("touchpad"),
+  touchZone: document.getElementById("touch-zone"),
   touchHint: document.getElementById("touch-hint"),
-  stick: document.getElementById("stick"),
-  aButton: document.getElementById("a-button"),
-  bButton: document.getElementById("b-button"),
-  bLabel: document.getElementById("b-label"),
-  calibrate: document.getElementById("calibrate"),
-  enableSensors: document.getElementById("enable-sensors"),
-  toast: document.getElementById("toast"),
-  mode: document.getElementById("mode"),
-  brandSubtitle: document.getElementById("brand-subtitle"),
-  aLabel: document.getElementById("a-label"),
-  footHint: document.getElementById("foot-hint"),
-  skinButton: document.getElementById("skin-button"),
-  advancedButton: document.getElementById("advanced-button"),
-  skinSheet: document.getElementById("skin-sheet"),
-  skinList: document.getElementById("skin-list"),
-  skinClose: document.getElementById("skin-close"),
+  touchDot: document.getElementById("touch-dot"),
+  stickZone: document.getElementById("stick-zone"),
+  stickKnob: document.getElementById("stick-knob"),
+  panel: document.getElementById("panel"),
+  panelToggle: document.getElementById("panel-toggle"),
+  panelTitle: document.getElementById("panel-title"),
+  panelImage: document.getElementById("panel-image"),
+  rotateHint: document.getElementById("rotate-hint"),
+  rotateCopy: document.getElementById("rotate-copy"),
+  cameraButton: document.getElementById("camera-button"),
+  cameraSheet: document.getElementById("camera-sheet"),
+  cameraVideo: document.getElementById("camera-video"),
+  cameraCanvas: document.getElementById("camera-canvas"),
+  cameraStatus: document.getElementById("camera-status"),
+  cameraCapture: document.getElementById("camera-capture"),
+  cameraCancel: document.getElementById("camera-cancel"),
   feedbackBanner: document.getElementById("feedback-banner"),
   feedbackTitle: document.getElementById("feedback-title"),
   feedbackCopy: document.getElementById("feedback-copy"),
+  toast: document.getElementById("toast"),
 };
+
+const labels = {};
+for (const name of BUTTON_NAMES) {
+  labels[name] = document.getElementById(`label-${name}`);
+}
 
 const state = {
   ws: null,
@@ -121,22 +120,22 @@ const state = {
   neutral: [0, 0, 0],
   accel: [0, 0, 0],
   gyro: [0, 0, 0],
-  touch: [],
   buttons: new Set(),
+  move: [0, 0],
+  touch: [],
   sensorsOn: false,
   mode: "launcher",
-  controller: { ...DEFAULT_CONTROLLER },
-  skin: DEFAULT_CONTROLLER.skin,
-  skinOverride: null,
+  controller: { ...DEFAULT_CONTROLLER, labels: { ...LABEL_FALLBACK } },
   advanced: false,
+  orientationLock: null,
   feedbackReady: false,
   lastSent: 0,
   rtt: null,
+  panel: null,
   welcomeTimer: null,
   reconnectTimer: null,
   calibrationTimer: null,
   toastTimer: null,
-  bReleaseTimer: null,
   deferredPrompt: null,
   installed: false,
   scanner: {
@@ -144,12 +143,18 @@ const state = {
     stream: null,
     lastScan: 0,
   },
+  camera: {
+    active: false,
+    stream: null,
+  },
 };
 
 function round(value, digits) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
 }
+
+/* ---------- feedback ---------- */
 
 function haptic(pattern) {
   if (!navigator.vibrate) return false;
@@ -176,14 +181,14 @@ const activeTones = new Set();
 let feedbackPulseTimer = null;
 
 function pulseFeedback() {
-  if (!elements.touchpad) return;
-  elements.touchpad.classList.remove("feedback-pulse");
-  void elements.touchpad.offsetWidth;
-  elements.touchpad.classList.add("feedback-pulse");
+  if (!elements.touchZone) return;
+  elements.touchZone.classList.remove("feedback-pulse");
+  void elements.touchZone.offsetWidth;
+  elements.touchZone.classList.add("feedback-pulse");
   if (feedbackPulseTimer !== null) window.clearTimeout(feedbackPulseTimer);
   feedbackPulseTimer = window.setTimeout(() => {
     feedbackPulseTimer = null;
-    elements.touchpad.classList.remove("feedback-pulse");
+    elements.touchZone.classList.remove("feedback-pulse");
   }, 190);
 }
 
@@ -257,15 +262,6 @@ function applyFeedback(message) {
   }
 }
 
-function updateFeedbackBanner() {
-  if (!elements.feedbackBanner) return;
-  const hint = feedbackHint();
-  if (elements.feedbackTitle) elements.feedbackTitle.textContent = hint.title;
-  if (elements.feedbackCopy) elements.feedbackCopy.textContent = hint.copy;
-  elements.feedbackBanner.hidden =
-    state.screen !== "controller" || state.mode === "launcher" || state.feedbackReady;
-}
-
 function feedbackHint() {
   const userAgent = navigator.userAgent || "";
   const ios =
@@ -309,6 +305,15 @@ function feedbackHint() {
   };
 }
 
+function updateFeedbackBanner() {
+  if (!elements.feedbackBanner) return;
+  const hint = feedbackHint();
+  if (elements.feedbackTitle) elements.feedbackTitle.textContent = hint.title;
+  if (elements.feedbackCopy) elements.feedbackCopy.textContent = hint.copy;
+  elements.feedbackBanner.hidden =
+    state.screen !== "controller" || state.mode === "launcher" || state.feedbackReady;
+}
+
 function activateFeedback() {
   unlockAudio();
   const hint = feedbackHint();
@@ -316,7 +321,7 @@ function activateFeedback() {
   const vibrated = hint.vibration ? haptic([250, 100, 400]) : false;
   if (audio) {
     playTone(660, 110, 0.35);
-    window.setTimeout(() => playTone(880, 150, 0.30), 140);
+    window.setTimeout(() => playTone(880, 150, 0.3), 140);
   }
   state.feedbackReady = true;
   updateFeedbackBanner();
@@ -325,23 +330,11 @@ function activateFeedback() {
   } else if (!audio) {
     showToast("Vibración activada · audio no disponible", "warn", 4200);
   } else if (hint.ios) {
-    showToast(
-      "Audio activado · iPhone no permite vibrar desde la web",
-      "warn",
-      6000,
-    );
+    showToast("Audio activado · iPhone no permite vibrar desde la web", "warn", 6000);
   } else if (hint.firefox) {
-    showToast(
-      "Audio activado · Firefox Android no vibra; abrí el QR en Chrome",
-      "warn",
-      6000,
-    );
+    showToast("Audio activado · Firefox Android no vibra; abrí el QR en Chrome", "warn", 6000);
   } else if (!hint.vibration) {
-    showToast(
-      "Audio activado · este navegador no expone vibración",
-      "warn",
-      6000,
-    );
+    showToast("Audio activado · este navegador no expone vibración", "warn", 6000);
   } else if (vibrated === false) {
     showToast("Audio activado · el navegador no dejó vibrar", "warn", 4200);
   } else {
@@ -349,207 +342,26 @@ function activateFeedback() {
   }
 }
 
+/* ---------- status / toast ---------- */
+
 function setStatus(text, kind) {
+  if (!elements.status) return;
   elements.status.textContent = text;
-  elements.status.classList.remove("online", "offline", "warn");
+  elements.status.classList.remove("online", "offline", "warn", "error");
   if (kind) elements.status.classList.add(kind);
 }
 
 function setSlot(text) {
   state.slotText = text;
-  renderSlot();
-}
-
-function renderSlot() {
-  const compact = state.slotText.split(" · ")[0];
-  elements.slot.textContent = state.advanced ? state.slotText : compact;
+  if (elements.slot) {
+    elements.slot.textContent = state.advanced ? text : text.split(" · ")[0];
+  }
 }
 
 function setPairingStatus(text, kind = "") {
   elements.pairingStatus.textContent = text;
   elements.pairingStatus.classList.remove("warn", "error", "working");
   if (kind) elements.pairingStatus.classList.add(kind);
-}
-
-function applyMode(mode) {
-  state.mode = mode === "game" ? "game" : "launcher";
-  if (state.mode === "launcher") stopAudio();
-  updateFeedbackBanner();
-  if (state.screen !== "controller") return;
-  const launcher = state.mode === "launcher";
-  document.body.classList.toggle("mode-launcher", launcher);
-  document.body.classList.toggle("mode-game", !launcher);
-  elements.mode.textContent = launcher ? "LAUNCHER" : "JUEGO";
-  renderControllerChrome();
-  if (!launcher && state.connected) startSensorsIfPossible();
-}
-
-function skinById(skinId) {
-  return SKINS.find((skin) => skin.id === skinId) || SKINS[0];
-}
-
-function loadSkinOverride() {
-  try {
-    const stored = window.localStorage.getItem(SKIN_KEY);
-    return SKINS.some((skin) => skin.id === stored) ? stored : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSkinOverride(skinId) {
-  try {
-    if (skinId) window.localStorage.setItem(SKIN_KEY, skinId);
-    else window.localStorage.removeItem(SKIN_KEY);
-  } catch {
-    // private mode: the skin still applies for this session
-  }
-}
-
-function loadAdvanced() {
-  try {
-    return window.localStorage.getItem(ADVANCED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function saveAdvanced(enabled) {
-  try {
-    window.localStorage.setItem(ADVANCED_KEY, enabled ? "1" : "0");
-  } catch {
-    // private mode: the setting still applies for this session
-  }
-}
-
-function applyAdvanced(enabled, { persist = false } = {}) {
-  state.advanced = Boolean(enabled);
-  document.body.classList.toggle("advanced", state.advanced);
-  if (elements.advancedButton) {
-    elements.advancedButton.textContent = state.advanced ? "Simple" : "Avanzado";
-    elements.advancedButton.classList.toggle("active", state.advanced);
-  }
-  renderSlot();
-  if (persist) saveAdvanced(state.advanced);
-}
-
-function applySkin(skinId, { persist = false } = {}) {
-  const skin = skinById(skinId);
-  state.skin = skin.id;
-  document.body.dataset.skin = skin.id;
-  if (elements.skinButton) {
-    elements.skinButton.textContent = `Skin · ${skin.short}`;
-  }
-  if (persist) {
-    state.skinOverride = skin.id;
-    saveSkinOverride(skin.id);
-  }
-  renderSkinSheet();
-}
-
-function renderSkinSheet() {
-  if (!elements.skinList) return;
-  const current = state.skinOverride || state.skin;
-  elements.skinList.textContent = "";
-  for (const skin of SKINS) {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.className = "skin-option";
-    option.classList.toggle("active", skin.id === current);
-    option.setAttribute("aria-pressed", skin.id === current ? "true" : "false");
-
-    const swatch = document.createElement("span");
-    swatch.className = "skin-swatch";
-    swatch.style.background =
-      `linear-gradient(135deg, ${skin.bg}, ${skin.accent} 62%, ${skin.status})`;
-
-    const copy = document.createElement("span");
-    copy.className = "skin-copy";
-    const name = document.createElement("strong");
-    name.textContent = skin.name;
-    const meta = document.createElement("small");
-    meta.textContent = skin.id === current ? "ACTIVA" : "TOCAR PARA USAR";
-    copy.append(name, meta);
-    option.append(swatch, copy);
-
-    option.addEventListener("click", () => {
-      applySkin(skin.id, { persist: true });
-      buzz(10);
-      showToast(`Skin: ${skin.name}`);
-    });
-    elements.skinList.append(option);
-  }
-}
-
-function openSkinSheet() {
-  if (!elements.skinSheet) return;
-  renderSkinSheet();
-  elements.skinSheet.hidden = false;
-  document.body.classList.add("sheet-open");
-}
-
-function closeSkinSheet() {
-  if (!elements.skinSheet) return;
-  elements.skinSheet.hidden = true;
-  document.body.classList.remove("sheet-open");
-}
-
-function layoutHint(layout) {
-  if (layout === "motion") return "Incliná el teléfono o arrastrá acá";
-  if (layout === "touch") return "Arrastrá para apuntar";
-  return "Incliná el teléfono o arrastrá acá";
-}
-
-function layoutFoot(layout) {
-  if (layout === "motion") return "MOVIMIENTO · TOUCH OPCIONAL";
-  if (layout === "touch") return "TOUCH · A ACCIÓN";
-  return "MISMA WI-FI · CERTIFICADO ACEPTADO";
-}
-
-function renderControllerChrome() {
-  const launcher = state.mode === "launcher";
-  const controller = state.controller;
-  if (elements.brandSubtitle) {
-    elements.brandSubtitle.textContent = launcher
-      ? "MANDO · TOXINATOR"
-      : controller.game
-        ? controller.game.toUpperCase()
-        : "MANDO · JUEGO";
-  }
-  elements.aLabel.textContent = launcher ? "ELEGIR" : controller.action;
-  elements.bLabel.textContent = launcher ? "ATRÁS" : controller.back;
-  if (launcher) {
-    elements.touchHint.innerHTML = "Arrastrá para mover<br>y soltá al centro";
-    elements.footHint.textContent = "ARRASTRÁ · A ELEGIR";
-  } else {
-    elements.touchHint.textContent = controller.hint || layoutHint(controller.layout);
-    elements.footHint.textContent = controller.hint || layoutFoot(controller.layout);
-  }
-}
-
-function applyController(profile) {
-  const source = profile && typeof profile === "object" ? profile : {};
-  const layout = LAYOUTS.includes(source.layout) ? source.layout : DEFAULT_CONTROLLER.layout;
-  const skin = SKINS.some((item) => item.id === source.skin)
-    ? source.skin
-    : DEFAULT_CONTROLLER.skin;
-  state.controller = {
-    layout,
-    skin,
-    action:
-      typeof source.action === "string" && source.action.trim()
-        ? source.action.trim().slice(0, 24)
-        : DEFAULT_CONTROLLER.action,
-    back:
-      typeof source.back === "string" && source.back.trim()
-        ? source.back.trim().slice(0, 24)
-        : DEFAULT_CONTROLLER.back,
-    hint: typeof source.hint === "string" ? source.hint.trim().slice(0, 80) : "",
-    game: typeof source.game === "string" ? source.game.slice(0, 60) : "",
-  };
-  document.body.dataset.layout = state.controller.layout;
-  applySkin(state.skinOverride || state.controller.skin);
-  renderControllerChrome();
 }
 
 function showToast(message, kind = "", duration = 1900) {
@@ -563,6 +375,247 @@ function showToast(message, kind = "", duration = 1900) {
     elements.toast.classList.remove("show");
   }, duration);
 }
+
+/* ---------- mode / profile ---------- */
+
+function applyMode(mode) {
+  state.mode = mode === "game" ? "game" : "launcher";
+  if (state.mode === "launcher") stopAudio();
+  updateFeedbackBanner();
+  if (state.screen === "controller") {
+    const launcher = state.mode === "launcher";
+    document.body.classList.toggle("mode-launcher", launcher);
+    document.body.classList.toggle("mode-game", !launcher);
+    if (elements.mode) elements.mode.textContent = launcher ? "LAUNCHER" : "JUEGO";
+    renderControllerChrome();
+    updatePanelVisibility();
+    updateCameraButton();
+    if (!launcher && state.connected) startSensorsIfPossible();
+  }
+}
+
+function normalizeLabels(source) {
+  const result = { ...LABEL_FALLBACK };
+  if (!source || typeof source !== "object") return result;
+  for (const name of BUTTON_NAMES) {
+    const value = source[name];
+    if (typeof value === "string" && value.trim()) {
+      result[name] = value.trim().slice(0, 24);
+    }
+  }
+  return result;
+}
+
+function normalizePanel(source) {
+  if (!source || typeof source !== "object") return null;
+  if (typeof source.url !== "string" || !source.url) return null;
+  return {
+    title: typeof source.title === "string" ? source.title.slice(0, 40) : "",
+    url: source.url,
+    fit: source.fit === "cover" || source.fit === "stretch" ? source.fit : "contain",
+  };
+}
+
+function applyController(profile) {
+  const source = profile && typeof profile === "object" ? profile : {};
+  const layout = LAYOUTS.includes(source.layout)
+    ? source.layout
+    : DEFAULT_CONTROLLER.layout;
+  const orientation = ORIENTATIONS.includes(source.orientation)
+    ? source.orientation
+    : DEFAULT_CONTROLLER.orientation;
+  const available = Array.isArray(source.buttons)
+    ? BUTTON_NAMES.filter((name) => source.buttons.includes(name))
+    : [...BUTTON_NAMES];
+  state.controller = {
+    layout,
+    skin: "toxinator",
+    orientation,
+    buttons: available,
+    labels: normalizeLabels(source.labels),
+    hint: typeof source.hint === "string" ? source.hint.trim().slice(0, 80) : "",
+    game: typeof source.game === "string" ? source.game.slice(0, 60) : "",
+    camera: source.camera === true,
+    panel: normalizePanel(source.panel),
+  };
+  document.body.dataset.layout = layout;
+  document.body.dataset.skin = "toxinator";
+  for (const element of buttonElements) {
+    const name = element.dataset.button;
+    element.hidden = name ? !available.includes(name) : element.hidden;
+  }
+  state.panel = state.controller.panel;
+  applyPanel(state.panel);
+  updateOrientation();
+  renderControllerChrome();
+  updateCameraButton();
+}
+
+function applyPanel(panel) {
+  if (!elements.panel) return;
+  if (!panel) {
+    elements.panel.hidden = true;
+    return;
+  }
+  state.panel = panel;
+  elements.panel.hidden = state.mode === "launcher";
+  elements.panel.dataset.fit = panel.fit;
+  elements.panelTitle.textContent = panel.title || "PANEL";
+  if (elements.panelImage.getAttribute("src") !== panel.url) {
+    elements.panelImage.src = panel.url;
+  }
+  elements.panel.classList.remove("expanded");
+  elements.panelToggle.setAttribute("aria-expanded", "false");
+}
+
+function updatePanelVisibility() {
+  if (!elements.panel) return;
+  elements.panel.hidden = state.mode === "launcher" || !state.panel;
+}
+
+function updateCameraButton() {
+  if (!elements.cameraButton) return;
+  elements.cameraButton.hidden =
+    !state.controller.camera || state.mode !== "game" || !state.connected;
+}
+
+function layoutHint(layout) {
+  if (layout === "motion") return "Incliná el teléfono o usá el stick";
+  if (layout === "touch") return "Arrastrá para apuntar";
+  return "Stick para mover · arrastrá para apuntar";
+}
+
+function layoutFoot(layout) {
+  if (layout === "motion") return "MOVIMIENTO · STICK OPCIONAL";
+  if (layout === "touch") return "TOUCH · × ACCIÓN";
+  return "STICK · × ACCIÓN";
+}
+
+function renderControllerChrome() {
+  const launcher = state.mode === "launcher";
+  const controller = state.controller;
+  if (elements.brandSubtitle) {
+    elements.brandSubtitle.textContent = launcher
+      ? "MANDO · TOXINATOR"
+      : controller.game
+        ? controller.game.toUpperCase()
+        : "MANDO · JUEGO";
+  }
+  const activeLabels = launcher
+    ? { cross: "Elegir", circle: "Atrás", square: "", triangle: "", options: "" }
+    : controller.labels;
+  for (const name of BUTTON_NAMES) {
+    if (!labels[name]) continue;
+    labels[name].textContent = activeLabels[name] || "";
+  }
+  if (elements.footHint) {
+    elements.footHint.textContent = launcher
+      ? "STICK O MOUSE · × ELEGIR"
+      : controller.hint || layoutFoot(controller.layout);
+  }
+  if (elements.touchHint) {
+    elements.touchHint.textContent = launcher
+      ? "Arrastrá o usá el stick"
+      : layoutHint(controller.layout);
+  }
+}
+
+/* ---------- orientation ---------- */
+
+const portraitQuery = window.matchMedia("(orientation: portrait)");
+
+function deviceOrientation() {
+  return portraitQuery.matches ? "portrait" : "landscape";
+}
+
+function updateOrientation() {
+  const device = deviceOrientation();
+  const required = state.controller.orientation;
+  const layout = state.orientationLock
+    ? state.orientationLock
+    : required === "auto"
+      ? device
+      : required;
+  document.body.dataset.orientation = layout;
+  const mismatch =
+    !state.orientationLock && required !== "auto" && required !== device;
+  if (elements.rotateHint) elements.rotateHint.hidden = !mismatch;
+  if (elements.rotateCopy) {
+    elements.rotateCopy.textContent =
+      required === "landscape" ? "Este juego pide horizontal." : "Este juego pide vertical.";
+  }
+  if (elements.orientationStatus) {
+    elements.orientationStatus.textContent = state.orientationLock
+      ? `BLOQUEADA · ${layout === "portrait" ? "VERTICAL" : "HORIZONTAL"}`
+      : `AUTO · ${device === "portrait" ? "VERTICAL" : "HORIZONTAL"}`;
+  }
+  if (elements.orientationLock) {
+    elements.orientationLock.textContent = state.orientationLock ? "LIBERAR" : "BLOQUEAR";
+    elements.orientationLock.classList.toggle("active", Boolean(state.orientationLock));
+  }
+}
+
+function toggleOrientationLock() {
+  if (state.orientationLock) {
+    state.orientationLock = null;
+    saveOrientationLock(null);
+    showToast("Orientación automática");
+  } else {
+    state.orientationLock = document.body.dataset.orientation || deviceOrientation();
+    saveOrientationLock(state.orientationLock);
+    showToast(`Orientación ${state.orientationLock === "portrait" ? "vertical" : "horizontal"} fija`);
+  }
+  updateOrientation();
+}
+
+function loadOrientationLock() {
+  try {
+    const stored = window.localStorage.getItem(ORIENTATION_KEY);
+    return stored === "portrait" || stored === "landscape" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveOrientationLock(value) {
+  try {
+    if (value) window.localStorage.setItem(ORIENTATION_KEY, value);
+    else window.localStorage.removeItem(ORIENTATION_KEY);
+  } catch {
+    // private mode: the lock still applies for this session
+  }
+}
+
+/* ---------- advanced ---------- */
+
+function loadAdvanced() {
+  try {
+    return window.localStorage.getItem(ADVANCED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveAdvanced(enabled) {
+  try {
+    window.localStorage.setItem(ADVANCED_KEY, enabled ? "1" : "0");
+  } catch {
+    // private mode
+  }
+}
+
+function applyAdvanced(enabled, { persist = false } = {}) {
+  state.advanced = Boolean(enabled);
+  document.body.classList.toggle("advanced", state.advanced);
+  if (elements.advancedButton) {
+    elements.advancedButton.textContent = state.advanced ? "OCULTAR" : "MOSTRAR";
+    elements.advancedButton.classList.toggle("active", state.advanced);
+  }
+  setSlot(state.slotText);
+  if (persist) saveAdvanced(state.advanced);
+}
+
+/* ---------- pairing storage ---------- */
 
 function loadPairing() {
   try {
@@ -597,7 +650,7 @@ function savePairing(pairing) {
       })
     );
   } catch {
-    // private mode or quota; pairing still works for this session
+    // private mode or quota
   }
 }
 
@@ -655,6 +708,8 @@ function fillManual() {
 
 function showPairing(message, kind = "") {
   stopAudio();
+  closeSettings();
+  stopCamera();
   state.screen = "pairing";
   updateFeedbackBanner();
   document.body.classList.remove("mode-launcher", "mode-game");
@@ -675,6 +730,7 @@ function showController() {
   elements.controller.hidden = false;
   document.body.classList.remove("mode-pairing");
   applyMode(state.mode);
+  updateReadout();
 }
 
 function secureContext() {
@@ -752,16 +808,22 @@ async function diagnosePairing(target) {
   }
 }
 
+/* ---------- readout / send ---------- */
+
 function updateReadout() {
   const beta = (state.orientation[1] || 0) - (state.neutral[1] || 0);
   const gamma = (state.orientation[2] || 0) - (state.neutral[2] || 0);
   const magnitude = Math.hypot(state.accel[0], state.accel[1], state.accel[2]);
-  elements.beta.textContent = `${beta.toFixed(0)}°`;
-  elements.gamma.textContent = `${gamma.toFixed(0)}°`;
-  elements.accel.textContent = magnitude.toFixed(1);
-  elements.rtt.textContent = state.rtt === null ? "—" : `${Math.round(state.rtt)} ms`;
-  elements.sensors.textContent = state.sensorsOn ? "SENSORES ON" : "SENSORES OFF";
-  elements.sensors.classList.toggle("on", state.sensorsOn);
+  if (elements.beta) elements.beta.textContent = `${beta.toFixed(0)}°`;
+  if (elements.gamma) elements.gamma.textContent = `${gamma.toFixed(0)}°`;
+  if (elements.accel) elements.accel.textContent = magnitude.toFixed(1);
+  if (elements.rtt) {
+    elements.rtt.textContent = state.rtt === null ? "—" : `${Math.round(state.rtt)} ms`;
+  }
+  if (elements.sensors) {
+    elements.sensors.textContent = state.sensorsOn ? "SENSORES ON" : "SENSORES OFF";
+    elements.sensors.classList.toggle("on", state.sensorsOn);
+  }
 }
 
 function send(message) {
@@ -779,22 +841,21 @@ function clearReconnect() {
 
 function resetInputs() {
   state.buttons.clear();
-  if (state.bReleaseTimer !== null) {
-    window.clearTimeout(state.bReleaseTimer);
-    state.bReleaseTimer = null;
-  }
+  state.move = [0, 0];
   state.touch = [];
+  stickPointer = null;
   touchPointer = null;
-  touchOrigin = null;
-  elements.aButton.classList.remove("pressed");
-  elements.bButton.classList.remove("pressed");
-  elements.stick.style.left = "50%";
-  elements.stick.style.top = "50%";
+  for (const element of buttonElements) element.classList.remove("pressed");
+  if (elements.stickKnob) {
+    elements.stickKnob.style.transform = "translate(-50%, -50%)";
+  }
+  if (elements.touchDot) elements.touchDot.hidden = true;
 }
 
 function closeSocket() {
   clearReconnect();
   stopAudio();
+  stopCamera();
   if (state.welcomeTimer !== null) {
     window.clearTimeout(state.welcomeTimer);
     state.welcomeTimer = null;
@@ -866,6 +927,7 @@ function connect() {
         type: "hello",
         token: state.pairing ? state.pairing.token : "",
         name: (navigator.userAgent || "phone").slice(0, 80),
+        protocol: PROTOCOL,
       })
     );
   });
@@ -892,11 +954,14 @@ function connect() {
       setSlot(`P${message.slot + 1} · ${state.controllerId}`);
       stopScanner();
       showController();
+      updateCameraButton();
       buzz(18);
     } else if (message.type === "mode") {
       applyMode(message.mode);
     } else if (message.type === "controller") {
       applyController(message.profile);
+    } else if (message.type === "panel") {
+      applyPanel(normalizePanel(message.panel));
     } else if (message.type === "haptic" || message.type === "audio") {
       applyFeedback(message);
     } else if (message.type === "error") {
@@ -906,6 +971,8 @@ function connect() {
         text = "La consola ya tiene 4 mandos conectados.";
       } else if (message.code === "bad-token") {
         text = "Token inválido. Escaneá el QR de la consola otra vez.";
+      } else if (message.code === "bad-protocol") {
+        text = "El mando y la consola hablan versiones distintas. Recargá la página.";
       }
       showPairing(text, "error");
       if (message.code === "bad-token") {
@@ -936,6 +1003,7 @@ function connect() {
     state.ws = null;
     state.connected = false;
     resetInputs();
+    updateCameraButton();
     if (state.welcomeTimer !== null) {
       window.clearTimeout(state.welcomeTimer);
       state.welcomeTimer = null;
@@ -959,6 +1027,8 @@ function connect() {
     ws.close();
   });
 }
+
+/* ---------- sensors ---------- */
 
 function startSensors() {
   if (state.sensorsOn) return;
@@ -999,7 +1069,7 @@ function startSensorsIfPossible() {
   if (state.sensorsOn) return;
   if (!needsPermission()) {
     startSensors();
-  } else {
+  } else if (elements.enableSensors) {
     elements.enableSensors.classList.remove("hidden");
   }
 }
@@ -1015,11 +1085,14 @@ async function enableSensors() {
       }
     }
     startSensors();
+    showToast("Sensores activados");
   } catch {
     setStatus("Sensores bloqueados", "warn");
     showToast("No pude activar los sensores", "error");
   }
 }
+
+/* ---------- scanner ---------- */
 
 function stopScanner() {
   const scanner = state.scanner;
@@ -1199,178 +1272,324 @@ function registerServiceWorker() {
   });
 }
 
-elements.touchpad.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
-  touchPointer = event.pointerId;
-  touchOrigin = { x: event.clientX, y: event.clientY };
-  elements.touchpad.setPointerCapture(event.pointerId);
-  elements.touchHint.classList.add("hidden");
-  if (state.mode === "launcher") {
-    state.touch = [{ id: 0, x: 0.5, y: 0.5, pressure: 1 }];
-    elements.stick.style.left = "50%";
-    elements.stick.style.top = "50%";
-    return;
+/* ---------- input: buttons ---------- */
+
+const buttonElements = Array.from(document.querySelectorAll("[data-button]"));
+
+function pressButton(name) {
+  if (!name) return;
+  if (state.buttons.has(name)) return;
+  state.buttons.add(name);
+  for (const element of buttonElements) {
+    if (element.dataset.button === name) element.classList.add("pressed");
   }
-  updateTouch(event);
-});
-
-elements.touchpad.addEventListener("pointermove", (event) => {
-  if (event.pointerId !== touchPointer) return;
-  event.preventDefault();
-  if (state.mode === "launcher") updateLauncherStick(event);
-  else updateTouch(event);
-});
-
-function updateTouch(event) {
-  const rect = elements.touchpad.getBoundingClientRect();
-  const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-  const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
-  state.touch = [{ id: 0, x, y, pressure: 1 }];
-  elements.stick.style.left = `${x * 100}%`;
-  elements.stick.style.top = `${y * 100}%`;
-  elements.touchHint.classList.add("hidden");
+  buzz(10);
 }
 
-const LAUNCHER_STICK_RADIUS = 0.36;
-const LAUNCHER_STICK_GAIN = 2.1;
-
-function updateLauncherStick(event) {
-  if (!touchOrigin) return;
-  const rect = elements.touchpad.getBoundingClientRect();
-  let dx = ((event.clientX - touchOrigin.x) / rect.width) * LAUNCHER_STICK_GAIN;
-  let dy = ((event.clientY - touchOrigin.y) / rect.height) * LAUNCHER_STICK_GAIN;
-  const distance = Math.hypot(dx, dy);
-  if (distance > LAUNCHER_STICK_RADIUS) {
-    const scale = LAUNCHER_STICK_RADIUS / distance;
-    dx *= scale;
-    dy *= scale;
+function releaseButton(name) {
+  state.buttons.delete(name);
+  for (const element of buttonElements) {
+    if (element.dataset.button === name) element.classList.remove("pressed");
   }
-  const x = 0.5 + dx;
-  const y = 0.5 + dy;
-  state.touch = [{ id: 0, x, y, pressure: 1 }];
-  elements.stick.style.left = `${x * 100}%`;
-  elements.stick.style.top = `${y * 100}%`;
 }
+
+for (const element of buttonElements) {
+  const name = element.dataset.button;
+  element.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    try {
+      element.setPointerCapture(event.pointerId);
+    } catch {
+      // some browsers reject capture for synthetic events
+    }
+    pressButton(name);
+  });
+  const release = (event) => {
+    event.preventDefault();
+    releaseButton(name);
+  };
+  element.addEventListener("pointerup", release);
+  element.addEventListener("pointercancel", release);
+  element.addEventListener("lostpointercapture", release);
+  element.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
+/* ---------- input: stick ---------- */
+
+const STICK_DEADZONE = 0.18;
+let stickPointer = null;
+
+function stickRadius(rect) {
+  return Math.min(rect.width, rect.height) * 0.5 * 0.78;
+}
+
+function setStick(event) {
+  if (!elements.stickZone) return;
+  const rect = elements.stickZone.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const radius = Math.max(1, stickRadius(rect));
+  let dx = (event.clientX - centerX) / radius;
+  let dy = (centerY - event.clientY) / radius;
+  const length = Math.hypot(dx, dy);
+  if (length > 1) {
+    dx /= length;
+    dy /= length;
+  }
+  if (Math.hypot(dx, dy) < STICK_DEADZONE) {
+    state.move = [0, 0];
+  } else {
+    state.move = [round(dx, 3), round(dy, 3)];
+  }
+  const knob = elements.stickKnob;
+  if (knob) {
+    const limit = Math.max(0, Math.min(rect.width, rect.height) / 2 - knob.offsetWidth / 2);
+    knob.style.transform = `translate(calc(-50% + ${dx * limit}px), calc(-50% + ${-dy * limit}px))`;
+  }
+}
+
+function endStick(event) {
+  if (event && event.pointerId !== stickPointer) return;
+  stickPointer = null;
+  state.move = [0, 0];
+  if (elements.stickKnob) {
+    elements.stickKnob.style.transform = "translate(-50%, -50%)";
+  }
+}
+
+if (elements.stickZone) {
+  elements.stickZone.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    stickPointer = event.pointerId;
+    try {
+      elements.stickZone.setPointerCapture(event.pointerId);
+    } catch {
+      // ignore
+    }
+    if (elements.touchHint) elements.touchHint.classList.add("hidden");
+    setStick(event);
+  });
+  elements.stickZone.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== stickPointer) return;
+    event.preventDefault();
+    setStick(event);
+  });
+  elements.stickZone.addEventListener("pointerup", endStick);
+  elements.stickZone.addEventListener("pointercancel", endStick);
+  elements.stickZone.addEventListener("lostpointercapture", endStick);
+  elements.stickZone.addEventListener("contextmenu", (event) => event.preventDefault());
+}
+
+/* ---------- input: touch zone ---------- */
 
 let touchPointer = null;
-let touchOrigin = null;
+
+function setTouch(event) {
+  if (!elements.touchZone) return;
+  const rect = elements.touchZone.getBoundingClientRect();
+  const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+  const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+  state.touch = [{ id: 0, x: round(x, 3), y: round(y, 3), pressure: 1 }];
+  if (elements.touchDot) {
+    elements.touchDot.hidden = false;
+    elements.touchDot.style.left = `${x * 100}%`;
+    elements.touchDot.style.top = `${y * 100}%`;
+  }
+  if (elements.touchHint) elements.touchHint.classList.add("hidden");
+}
 
 function endTouch(event) {
-  if (event.pointerId !== touchPointer) return;
+  if (event && event.pointerId !== touchPointer) return;
   touchPointer = null;
-  touchOrigin = null;
   state.touch = [];
-  elements.stick.style.left = "50%";
-  elements.stick.style.top = "50%";
+  if (elements.touchDot) elements.touchDot.hidden = true;
 }
 
-elements.touchpad.addEventListener("pointerup", endTouch);
-elements.touchpad.addEventListener("pointercancel", endTouch);
-
-elements.aButton.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
-  state.buttons.add("A");
-  elements.aButton.classList.add("pressed");
-  buzz(12);
-});
-
-function releaseA(event) {
-  event.preventDefault();
-  state.buttons.delete("A");
-  elements.aButton.classList.remove("pressed");
-}
-
-elements.aButton.addEventListener("pointerup", releaseA);
-elements.aButton.addEventListener("pointercancel", releaseA);
-elements.aButton.addEventListener("pointerleave", releaseA);
-elements.aButton.addEventListener("contextmenu", (event) => event.preventDefault());
-
-elements.bButton.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
-  if (state.bReleaseTimer !== null) {
-    window.clearTimeout(state.bReleaseTimer);
-    state.bReleaseTimer = null;
-  }
-  state.buttons.add("B");
-  elements.bButton.classList.add("pressed");
-  buzz(12);
-});
-
-function releaseB(event) {
-  event.preventDefault();
-  elements.bButton.classList.remove("pressed");
-  if (state.bReleaseTimer !== null) window.clearTimeout(state.bReleaseTimer);
-  state.bReleaseTimer = window.setTimeout(() => {
-    state.bReleaseTimer = null;
-    state.buttons.delete("B");
-  }, 150);
-}
-
-elements.bButton.addEventListener("pointerup", releaseB);
-elements.bButton.addEventListener("pointercancel", releaseB);
-elements.bButton.addEventListener("pointerleave", releaseB);
-elements.bButton.addEventListener("contextmenu", (event) => event.preventDefault());
-
-elements.calibrate.addEventListener("click", () => {
-  if (!state.connected) {
-    setStatus("Conectá primero", "warn");
-    showToast("Conectá primero", "warn");
-    return;
-  }
-  if (!state.sensorsOn) {
-    setStatus("Activá los sensores", "warn");
-    showToast("Activá los sensores", "warn");
-    enableSensors();
-    return;
-  }
-
-  state.neutral = [...state.orientation];
-  updateReadout();
-  send({ type: "calibrate" });
-  setStatus("Calibrando…", "warn");
-  showToast("Calibrando… mantené quieto");
-
-  if (state.calibrationTimer !== null) window.clearTimeout(state.calibrationTimer);
-  state.calibrationTimer = window.setTimeout(() => {
-    state.calibrationTimer = null;
-    if (state.connected) {
-      setStatus("Sin respuesta", "warn");
-      showToast("Sin respuesta de la consola", "error");
+if (elements.touchZone) {
+  elements.touchZone.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    touchPointer = event.pointerId;
+    try {
+      elements.touchZone.setPointerCapture(event.pointerId);
+    } catch {
+      // ignore
     }
-  }, 2000);
-});
+    setTouch(event);
+  });
+  elements.touchZone.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== touchPointer) return;
+    event.preventDefault();
+    setTouch(event);
+  });
+  elements.touchZone.addEventListener("pointerup", endTouch);
+  elements.touchZone.addEventListener("pointercancel", endTouch);
+  elements.touchZone.addEventListener("lostpointercapture", endTouch);
+  elements.touchZone.addEventListener("contextmenu", (event) => event.preventDefault());
+}
 
-elements.enableSensors.addEventListener("click", () => {
-  enableSensors();
-});
+/* ---------- camera ---------- */
 
-if (elements.skinButton) {
-  elements.skinButton.addEventListener("click", () => {
-    openSkinSheet();
-    buzz(10);
+async function openCamera() {
+  if (!secureContext()) {
+    showToast("La cámara necesita HTTPS con certificado aceptado", "error", 4200);
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast("Este navegador no da acceso a la cámara", "error");
+    return;
+  }
+  elements.cameraSheet.hidden = false;
+  elements.cameraStatus.textContent = "Abriendo cámara…";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: { ideal: "user" },
+        width: { ideal: 1280 },
+        height: { ideal: 1280 },
+      },
+    });
+    state.camera.stream = stream;
+    state.camera.active = true;
+    elements.cameraVideo.srcObject = stream;
+    await elements.cameraVideo.play();
+    elements.cameraStatus.textContent = "Encuadrá la cara dentro del círculo.";
+  } catch (error) {
+    const denied =
+      error &&
+      (error.name === "NotAllowedError" ||
+        error.name === "SecurityError" ||
+        error.name === "NotFoundError");
+    elements.cameraStatus.textContent = denied
+      ? "No pude usar la cámara. Revisá el permiso del navegador."
+      : "No pude abrir la cámara.";
+  }
+}
+
+function stopCamera() {
+  state.camera.active = false;
+  if (state.camera.stream) {
+    for (const track of state.camera.stream.getTracks()) track.stop();
+    state.camera.stream = null;
+  }
+  if (elements.cameraVideo) {
+    try {
+      elements.cameraVideo.pause();
+    } catch {
+      // ignore
+    }
+    elements.cameraVideo.srcObject = null;
+  }
+  if (elements.cameraSheet) elements.cameraSheet.hidden = true;
+  if (elements.cameraCanvas) elements.cameraCanvas.hidden = true;
+}
+
+async function capturePhoto() {
+  const video = elements.cameraVideo;
+  if (!state.camera.active || !video || !video.videoWidth) {
+    elements.cameraStatus.textContent = "La cámara todavía no está lista.";
+    return;
+  }
+  const longest = Math.max(video.videoWidth, video.videoHeight);
+  const scale = Math.min(1, 1280 / longest);
+  const width = Math.round(video.videoWidth * scale);
+  const height = Math.round(video.videoHeight * scale);
+  const canvas = elements.cameraCanvas;
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.drawImage(video, 0, 0, width, height);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+  if (!blob) {
+    elements.cameraStatus.textContent = "No pude generar la foto.";
+    return;
+  }
+  if (blob.size > 2 * 1024 * 1024) {
+    elements.cameraStatus.textContent = "La foto pesa demasiado. Probá otra vez.";
+    return;
+  }
+  const token = state.pairing ? state.pairing.token : "";
+  elements.cameraCapture.disabled = true;
+  elements.cameraStatus.textContent = "Enviando foto…";
+  try {
+    const response = await fetch(`/api/photo?slot=${state.slot ?? 0}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "image/jpeg",
+        "X-Toxinator-Token": token,
+      },
+      body: blob,
+    });
+    if (!response.ok) {
+      elements.cameraStatus.textContent =
+        response.status === 401
+          ? "Token inválido. Volvé a vincular el mando."
+          : "La consola rechazó la foto.";
+      return;
+    }
+    showToast("Foto enviada a la consola");
+    haptic([18, 40, 18]);
+    stopCamera();
+  } catch {
+    elements.cameraStatus.textContent = "No pude llegar a la consola.";
+  } finally {
+    elements.cameraCapture.disabled = false;
+  }
+}
+
+function closeCamera() {
+  stopCamera();
+}
+
+/* ---------- sheets ---------- */
+
+function openSettings() {
+  elements.settingsSheet.hidden = false;
+  elements.settingsButton.classList.add("active");
+  updateOrientation();
+}
+
+function closeSettings() {
+  elements.settingsSheet.hidden = true;
+  elements.settingsButton.classList.remove("active");
+}
+
+function updateCalibration(neutral) {
+  state.neutral = [...neutral];
+  updateReadout();
+}
+
+/* ---------- events ---------- */
+
+if (elements.feedbackBanner) {
+  elements.feedbackBanner.addEventListener("click", activateFeedback);
+}
+if (elements.settingsButton) {
+  elements.settingsButton.addEventListener("click", openSettings);
+}
+if (elements.settingsClose) {
+  elements.settingsClose.addEventListener("click", closeSettings);
+}
+if (elements.settingsSheet) {
+  elements.settingsSheet.addEventListener("click", (event) => {
+    if (event.target === elements.settingsSheet) closeSettings();
   });
 }
-
+if (elements.orientationLock) {
+  elements.orientationLock.addEventListener("click", toggleOrientationLock);
+}
 if (elements.advancedButton) {
   elements.advancedButton.addEventListener("click", () => {
     applyAdvanced(!state.advanced, { persist: true });
     buzz(10);
-    showToast(state.advanced ? "Modo avanzado" : "Mando simple");
   });
 }
-
-if (elements.skinClose) {
-  elements.skinClose.addEventListener("click", closeSkinSheet);
-}
-
-if (elements.skinSheet) {
-  elements.skinSheet.addEventListener("click", (event) => {
-    if (event.target === elements.skinSheet) closeSkinSheet();
+if (elements.panelToggle) {
+  elements.panelToggle.addEventListener("click", () => {
+    const expanded = elements.panel.classList.toggle("expanded");
+    elements.panelToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
   });
-}
-
-if (elements.feedbackBanner) {
-  elements.feedbackBanner.addEventListener("click", activateFeedback);
 }
 
 elements.scanButton.addEventListener("click", () => {
@@ -1458,41 +1677,66 @@ elements.pairButton.addEventListener("click", () => {
   showPairing(`Vinculado a ${target}. Escaneá otro QR o reconectá.`);
 });
 
+elements.calibrate.addEventListener("click", () => {
+  if (!state.connected) {
+    setStatus("Conectá primero", "warn");
+    showToast("Conectá primero", "warn");
+    return;
+  }
+  if (!state.sensorsOn) {
+    setStatus("Activá los sensores", "warn");
+    showToast("Activá los sensores", "warn");
+    enableSensors();
+    return;
+  }
+  updateCalibration(state.orientation);
+  send({ type: "calibrate" });
+  setStatus("Calibrando…", "warn");
+  showToast("Calibrando… mantené quieto");
+
+  if (state.calibrationTimer !== null) window.clearTimeout(state.calibrationTimer);
+  state.calibrationTimer = window.setTimeout(() => {
+    state.calibrationTimer = null;
+    if (state.connected) {
+      setStatus("Sin respuesta", "warn");
+      showToast("Sin respuesta de la consola", "error");
+    }
+  }, 2000);
+});
+
+elements.enableSensors.addEventListener("click", () => {
+  enableSensors();
+});
+
+if (elements.cameraButton) {
+  elements.cameraButton.addEventListener("click", openCamera);
+}
+if (elements.cameraCapture) {
+  elements.cameraCapture.addEventListener("click", capturePhoto);
+}
+if (elements.cameraCancel) {
+  elements.cameraCancel.addEventListener("click", closeCamera);
+}
+if (elements.cameraSheet) {
+  elements.cameraSheet.addEventListener("click", (event) => {
+    if (event.target === elements.cameraSheet) closeCamera();
+  });
+}
+
+portraitQuery.addEventListener("change", updateOrientation);
+
 for (const button of elements.installButtons) {
   button.addEventListener("click", promptInstall);
 }
 
-function sendLoop(now) {
-  if (
-    state.ws &&
-    state.ws.readyState === WebSocket.OPEN &&
-    state.connected &&
-    now - state.lastSent >= 1000 / 60
-  ) {
-    state.lastSent = now;
-    send({
-      type: "state",
-      t: now / 1000,
-      accel: state.accel.map((value) => round(value, 2)),
-      gyro: state.gyro.map((value) => round(value, 2)),
-      orientation: state.orientation.map((value) => round(value, 1)),
-      buttons: Array.from(state.buttons),
-      touch: state.touch,
-    });
-  }
-  window.requestAnimationFrame(sendLoop);
-}
-
-window.setInterval(() => {
-  if (state.connected) send({ type: "ping", t: performance.now() });
-}, 3000);
-
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) return;
   stopAudio();
-  if (!state.scanner.active) return;
-  stopScanner();
-  setPairingStatus("Escaneo en pausa. Tocá ESCANEAR QR para volver.");
+  if (state.scanner.active) {
+    stopScanner();
+    setPairingStatus("Escaneo en pausa. Tocá ESCANEAR QR para volver.");
+  }
+  if (state.camera.active) stopCamera();
 });
 
 document.addEventListener("pointerdown", unlockAudio, { once: true });
@@ -1512,14 +1756,42 @@ window.addEventListener("appinstalled", () => {
 
 window.addEventListener("load", registerServiceWorker);
 
+function sendLoop(now) {
+  if (
+    state.ws &&
+    state.ws.readyState === WebSocket.OPEN &&
+    state.connected &&
+    now - state.lastSent >= 1000 / 60
+  ) {
+    state.lastSent = now;
+    send({
+      type: "state",
+      t: now / 1000,
+      accel: state.accel.map((value) => round(value, 2)),
+      gyro: state.gyro.map((value) => round(value, 2)),
+      orientation: state.orientation.map((value) => round(value, 1)),
+      buttons: Array.from(state.buttons),
+      move: state.move,
+      touch: state.touch,
+    });
+  }
+  window.requestAnimationFrame(sendLoop);
+}
+
+window.setInterval(() => {
+  if (state.connected) send({ type: "ping", t: performance.now() });
+}, 3000);
+
 function init() {
-  state.skinOverride = loadSkinOverride();
-  applyController({});
-  applyAdvanced(loadAdvanced());
+  state.advanced = loadAdvanced();
+  state.orientationLock = loadOrientationLock();
+  applyAdvanced(state.advanced);
+  applyController(null);
   updateFeedbackBanner();
   updateReadout();
   updateInstallButtons();
   updatePairingMode();
+  updateOrientation();
   let stored = loadPairing();
   let initialError = "";
 
