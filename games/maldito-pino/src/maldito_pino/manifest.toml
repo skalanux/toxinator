@@ -14,11 +14,16 @@ skin = "toxinator"
 orientation = "auto"
 action = "Tirar"
 back = "Volver"
-hint = "Mantené × para cargar · incliná para efecto"
+hint = "Swing para tirar · incliná para efecto · × respaldo"
+gestures = ["tilt", "swing"]
 
 [controller.labels]
 cross = "Tirar"
 circle = "Volver"
+
+[controller.gesture_labels]
+tilt = "Inclinar"
+swing = "Lanzar"
 
 [art]
 motif = "pin"

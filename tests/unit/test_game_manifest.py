@@ -32,6 +32,8 @@ def test_maldito_manifest_is_loadable() -> None:
     assert manifest.players == (1, 1)
     assert manifest.default_locale == "es"
     assert manifest.art_motif == "pin"
+    assert manifest.controller_gestures == ("tilt", "swing")
+    assert manifest.controller_gesture_labels == {"tilt": "Inclinar", "swing": "Lanzar"}
 
 
 def test_controller_profile_is_parsed() -> None:
