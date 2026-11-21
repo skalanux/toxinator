@@ -1,0 +1,12 @@
+{
+  "type": "expected",
+  "trace_version": 1,
+  "events": [
+    {
+      "t": 0.016666666666666666,
+      "name": "swing",
+      "direction": "right",
+      "intensity": 0.25
+    }
+  ]
+}

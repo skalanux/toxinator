@@ -1,0 +1,12 @@
+{
+  "type": "expected",
+  "trace_version": 1,
+  "events": [
+    {
+      "t": 0.35,
+      "name": "flip",
+      "direction": "down",
+      "intensity": 0.75
+    }
+  ]
+}

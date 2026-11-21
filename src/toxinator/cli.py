@@ -122,6 +122,55 @@ def build_parser() -> argparse.ArgumentParser:
         default=2.0,
         help="seconds before the screenshot",
     )
+    phone.add_argument(
+        "--gestures",
+        action="store_true",
+        help="ejecutar el laboratorio de gestos en vez de la escena mínima",
+    )
+
+    gestures = dev_sub.add_parser(
+        "gestures", help="laboratorio de gestos: crudo/filtrado, trazas y suite negativa"
+    )
+    gestures.add_argument("--host", default=None, help="LAN IP or hostname for the QR")
+    gestures.add_argument("--port", type=int, default=8443, help="HTTPS/WSS port")
+    gestures.add_argument("--token", default=None, help="fixed session token (dev)")
+    _add_cert_arguments(gestures)
+    _add_cloudflare_argument(gestures)
+    _add_keyboard_arguments(gestures)
+    gestures.add_argument(
+        "--demo",
+        action="store_true",
+        help="add a synthetic phone on P1 (no real phone needed)",
+    )
+    gestures.add_argument("--seconds", type=float, default=None, help="stop after N seconds")
+    gestures.add_argument(
+        "--record",
+        type=Path,
+        default=None,
+        help="grabar traza normalizada + sidecar de eventos en <ruta>",
+    )
+    gestures.add_argument(
+        "--replay",
+        type=Path,
+        default=None,
+        help="reproducir una traza sin teléfono",
+    )
+    gestures.add_argument(
+        "--loop",
+        action="store_true",
+        help="con --replay, repetir la traza",
+    )
+    gestures.add_argument(
+        "--speed",
+        type=float,
+        default=1.0,
+        help="con --replay, factor de velocidad (default: 1.0)",
+    )
+    gestures.add_argument(
+        "--trace",
+        action="store_true",
+        help="imprimir una línea por evento",
+    )
 
     launcher = subparsers.add_parser("launcher", help="open the Toxinator launcher")
     launcher.add_argument("--host", default=None, help="LAN IP or hostname for the QR")
@@ -243,6 +292,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (OSError, RuntimeError) as error:
             parser.exit(1, f"toxinator: {error}\n")
     elif args.command == "dev" and args.dev_command == "phone":
+        if args.gestures:
+            from toxinator.dev.gestures import run_gestures_lab
+
+            try:
+                run_gestures_lab(
+                    host=args.host,
+                    port=args.port,
+                    token=args.token,
+                    demo=args.demo,
+                    seconds=args.seconds,
+                    https=args.https,
+                    keyboard=not args.no_keyboard,
+                    keyboard_slot=args.keyboard_slot,
+                    cert=args.cert,
+                    key=args.key,
+                    cloudflare=args.cloudflare,
+                )
+            except KeyboardInterrupt:
+                return 130
+            except (OSError, RuntimeError) as error:
+                parser.exit(1, f"toxinator: {error}\n")
+            return 0
+
         from toxinator.dev.phone import run_phone_dev
 
         try:
@@ -263,6 +335,32 @@ def main(argv: Sequence[str] | None = None) -> int:
                 key=args.key,
                 cloudflare=args.cloudflare,
                 show_fps=args.fps,
+            )
+        except KeyboardInterrupt:
+            return 130
+        except (OSError, RuntimeError) as error:
+            parser.exit(1, f"toxinator: {error}\n")
+    elif args.command == "dev" and args.dev_command == "gestures":
+        from toxinator.dev.gestures import run_gestures_lab
+
+        try:
+            run_gestures_lab(
+                record=args.record,
+                replay=args.replay,
+                loop=args.loop,
+                speed=args.speed,
+                trace_events=args.trace,
+                host=args.host,
+                port=args.port,
+                token=args.token,
+                demo=args.demo,
+                seconds=args.seconds,
+                https=args.https,
+                keyboard=not args.no_keyboard,
+                keyboard_slot=args.keyboard_slot,
+                cert=args.cert,
+                key=args.key,
+                cloudflare=args.cloudflare,
             )
         except KeyboardInterrupt:
             return 130

@@ -107,3 +107,37 @@ def test_fps_overlay_flag_is_available_for_launcher_play_and_phone() -> None:
 
         args = parser.parse_args([*command, "--fps"])
         assert args.fps is True
+
+
+def test_dev_gestures_lab_flags() -> None:
+    parser = build_parser()
+
+    args = parser.parse_args(["dev", "gestures"])
+    assert args.record is None
+    assert args.replay is None
+    assert args.loop is False
+    assert args.speed == 1.0
+    assert args.trace is False
+
+    args = parser.parse_args(
+        [
+            "dev",
+            "gestures",
+            "--replay",
+            "traza.jsonl",
+            "--loop",
+            "--speed",
+            "2.5",
+            "--trace",
+        ]
+    )
+    assert str(args.replay) == "traza.jsonl"
+    assert args.loop is True
+    assert args.speed == 2.5
+    assert args.trace is True
+
+
+def test_dev_phone_gestures_alias_routes_to_lab() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["dev", "phone", "--gestures"])
+    assert args.gestures is True

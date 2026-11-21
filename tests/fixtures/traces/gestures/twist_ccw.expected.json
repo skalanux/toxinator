@@ -1,0 +1,12 @@
+{
+  "type": "expected",
+  "trace_version": 1,
+  "events": [
+    {
+      "t": 0.4,
+      "name": "twist",
+      "direction": "ccw",
+      "intensity": 0.25
+    }
+  ]
+}

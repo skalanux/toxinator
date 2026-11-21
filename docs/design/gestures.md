@@ -4,8 +4,8 @@ Spec de implementación de los gestos de plataforma. La decisión está en
 [ADR-0010](../adr/0010-gesture-recognizer.md). Este documento fija el contrato
 que comparten la PWA, el reconocedor, el `InputHub`, la API y los juegos.
 
-> **Estado**: milestones 1 (núcleo) y 2 (completo) implementados; quedan 3
-> (laboratorio/trazas) y 4 (migración de Maldito Pino).
+> **Estado**: milestones 1 (núcleo), 2 (completo) y 3 (laboratorio/trazas)
+> implementados; queda 4 (migración de Maldito Pino).
 
 ## Alcance
 
