@@ -14,7 +14,7 @@ skin = "toxinator"
 orientation = "auto"
 action = "Tirar"
 back = "Volver"
-hint = "Swing para tirar · incliná para efecto · × respaldo"
+hint = "Mantené × y soltá para tirar · incliná para efecto"
 gestures = ["tilt", "swing"]
 
 [controller.labels]

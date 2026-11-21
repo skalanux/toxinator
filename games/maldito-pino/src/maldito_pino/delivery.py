@@ -1,10 +1,10 @@
 """Pure delivery math: map gestures and buttons to ball speed and spin.
 
-Maldito Pino now reads the ``tilt`` posture and the ``swing`` event from the
-console instead of raw phone orientation, so the mapping lives here free of
-Panda3D and is unit-testable. The button fallback (hold/release) reuses the
-same helpers with the charge accumulated while the action is held, keeping the
-behaviour of the pre-migration game.
+The throw is triggered by the button (hold × and release). While holding, the
+``tilt`` posture feeds spin and pitch power and a ``swing`` event adds arc
+power; the charge accumulated during the hold is the fallback when no swing
+fires (keyboard or no sensors). The mapping lives here free of Panda3D so it
+can be unit-tested.
 """
 
 from __future__ import annotations

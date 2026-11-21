@@ -46,6 +46,7 @@ class MalditoPinoGame:
         self.standing: set[int] = set(range(10))
         self.aim_x = POCKET_X
         self.charge = 0.0
+        self.swing_power = 0.0
         self.accumulator = 0.0
         self.roll_elapsed = 0.0
         self.settle_elapsed = 0.0
@@ -73,6 +74,7 @@ class MalditoPinoGame:
         self.standing = set(range(10))
         self.state = "aim"
         self.charge = 0.0
+        self.swing_power = 0.0
         self.accumulator = 0.0
         self.roll_elapsed = 0.0
         self.settle_elapsed = 0.0
@@ -120,9 +122,9 @@ class MalditoPinoGame:
             return
 
         if self.state == "aim":
-            self._update_aim(frame, state)
+            self._update_aim(frame)
         elif self.state == "charge":
-            self._update_charge(dt, frame)
+            self._update_charge(dt, frame, state)
         elif self.state == "rolling":
             self._update_rolling(dt, frame)
         elif self.state == "settle":
@@ -132,39 +134,46 @@ class MalditoPinoGame:
 
     # -- states -------------------------------------------------------------
 
-    def _update_aim(self, frame: ControllerFrame | None, state: InputState) -> None:
+    def _update_aim(self, frame: ControllerFrame | None) -> None:
         assert self.lane is not None
         if frame is None:
             self._pose_hand(charging=False)
             return
-        spin = spin_from_tilt(frame.axis("tilt_x"))
-        self.last_spin = spin
+        self.last_spin = spin_from_tilt(frame.axis("tilt_x"))
         self._pose_hand(charging=False)
         self.lane.hide_power()
         if frame.pointer is not None:
             self.aim_x = max(-0.45, min(0.45, -0.2 + 0.55 * frame.pointer[0]))
             self.lane.show_aim(self.aim_x)
-        swing = state.gesture("swing")
-        if swing is not None:
-            self._throw(power_from_swing(swing.intensity, frame.axis("tilt_y")), spin)
-        elif frame.button("cross"):
+        if frame.button("cross"):
             self.state = "charge"
             self.charge = 0.0
+            self.swing_power = 0.0
             self.message = ""
             self.message_timer = 0.0
 
-    def _update_charge(self, dt: float, frame: ControllerFrame | None) -> None:
+    def _update_charge(self, dt: float, frame: ControllerFrame | None, state: InputState) -> None:
         self.charge = min(1.0, self.charge + dt * 0.85)
         if frame is None:
             return
-        spin = spin_from_tilt(frame.axis("tilt_x"))
-        self.last_spin = spin
+        self.last_spin = spin_from_tilt(frame.axis("tilt_x"))
+        # A swing while holding × adds arc power, but never fires by itself: the
+        # throw only happens on release. Small movements outside the hold are
+        # ignored, so the ball can't go off on its own.
+        swing = state.gesture("swing")
+        if swing is not None:
+            self.swing_power = max(self.swing_power, swing.intensity)
         self._pose_hand(charging=True)
         assert self.lane is not None
-        power = power_from_button(self.charge, frame.axis("tilt_y"))
+        charge_power = power_from_button(self.charge, frame.axis("tilt_y"))
+        if self.swing_power > 0.0:
+            swing_power = power_from_swing(self.swing_power, frame.axis("tilt_y"))
+            power = max(charge_power, swing_power)
+        else:
+            power = charge_power
         self.lane.show_power(power)
         if not frame.button("cross"):
-            self._throw(power, spin)
+            self._throw(power, self.last_spin)
 
     def _throw(self, power: float, spin: float) -> None:
         assert self.lane is not None
@@ -491,7 +500,7 @@ class MalditoPinoGame:
             self._hud["power"].setText("")
         elif self.state == "aim":
             self._hud["prompt"].setText(
-                "Apuntá | incliná para efecto | swing para tirar (× respaldo)"
+                "Tocá para apuntar | incliná para efecto | mantené × y soltá"
             )
             self._hud["power"].setText(
                 f"OBJETIVO {self.aim_x:+.2f} m  |  EFECTO {self.last_spin:+.0f}"
