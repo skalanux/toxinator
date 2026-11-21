@@ -114,6 +114,9 @@ class PhoneRegistry:
                 neutral=connection.neutral,
             )
             if connection.recognizer is not None:
+                sensitivity = payload.get("aim_sensitivity")
+                if isinstance(sensitivity, (int, float)):
+                    connection.recognizer.set_sensitivity(float(sensitivity))
                 postures, events = connection.recognizer.update(frame)
                 if postures:
                     frame = replace(frame, axes={**frame.axes, **postures})

@@ -125,11 +125,22 @@ class InputHub:
         if frame is not None:
             if not info.connected:
                 info = replace(info, connected=True)
+            frame = self._map_aim_pointer(frame)
             self._frames[slot] = frame
             self._last_seen[slot] = now
             if previous is None or not previous.connected:
                 self._emit("join", info, now)
         self._infos[slot] = info
+
+    def _map_aim_pointer(self, frame: ControllerFrame) -> ControllerFrame:
+        """Drive ``pointer`` from the aim posture when declared and no touch."""
+        if self._enabled_gestures is None or "aim" not in self._enabled_gestures:
+            return frame
+        aim_x = frame.axes.get("aim_x")
+        aim_y = frame.axes.get("aim_y")
+        if frame.pointer is None and aim_x is not None and aim_y is not None:
+            return replace(frame, pointer=(aim_x, aim_y))
+        return frame
 
     def _expire(self, now: float) -> None:
         for slot in list(self._infos):

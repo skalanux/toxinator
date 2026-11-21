@@ -136,3 +136,40 @@ motif = "unknown"
 """
     )
     assert manifest.art_motif == "auto"
+
+
+def test_gestures_are_parsed_with_labels() -> None:
+    manifest = load_manifest(
+        """
+id = "demo"
+name = "Demo Game"
+version = "0.1.0"
+
+[controller]
+gestures = ["tilt", "aim", "flick", "unknown"]
+
+[controller.gesture_labels]
+flick = "Sacudir"
+aim = "Apuntar"
+"""
+    )
+    assert manifest.controller_gestures == ("tilt", "aim", "flick")
+    assert manifest.controller_gesture_labels == {"flick": "Sacudir", "aim": "Apuntar"}
+
+
+def test_gestures_default_to_empty_and_ignore_invalid() -> None:
+    manifest = load_manifest(
+        """
+id = "demo"
+name = "Demo Game"
+version = "0.1.0"
+
+[controller]
+gestures = ["nope"]
+
+[controller.gesture_labels]
+unknown = "X"
+"""
+    )
+    assert manifest.controller_gestures == ()
+    assert manifest.controller_gesture_labels == {}

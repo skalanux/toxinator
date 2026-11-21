@@ -9,7 +9,7 @@ from typing import Any
 
 from panda3d.core import loadPrcFileData
 
-from toxinator.api.game import Game, GameManifest
+from toxinator.api.game import Game, GameManifest, gesture_entries
 from toxinator.core.external_games import find_external_game
 from toxinator.core.games import find_game
 from toxinator.dev.announce import announce_phone
@@ -65,6 +65,9 @@ def controller_profile(
         "hint": manifest.controller_hint,
         "camera": manifest.controller_camera,
         "panel": panel,
+        "gestures": gesture_entries(
+            manifest.controller_gestures, manifest.controller_gesture_labels
+        ),
         "game": game if game is not None else manifest.name,
     }
 

@@ -159,6 +159,13 @@ class DevServer:
     def send_audio_stop(self, slot: int | None = None) -> None:
         self._broadcast({"type": "audio", "action": "stop"}, slot=slot)
 
+    def recenter(self, slot: int | None = None) -> None:
+        """Recalibrate the neutral pose and reset aim on one phone or all."""
+        slots = [slot] if slot is not None else list(range(self._registry.max_slots))
+        for target in slots:
+            self._registry.calibrate(target)
+        self._broadcast({"type": "calibrated"}, slot=slot)
+
     def last_photo(self, slot: int) -> tuple[str, bytes] | None:
         """Return the last uploaded photo for a slot, if any."""
         with self._lock:

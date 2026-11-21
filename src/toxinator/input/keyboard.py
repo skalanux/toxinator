@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import Any
 
-from toxinator.api.input import ControllerFrame, ControllerInfo, TouchPoint
+from toxinator.api.input import ControllerFrame, ControllerInfo, Gesture, TouchPoint
 from toxinator.input.source import SourceUpdate
 
 KEY_BUTTONS: Mapping[str, str] = MappingProxyType(
@@ -44,7 +44,20 @@ WASD_STICK: Mapping[str, tuple[float, float]] = MappingProxyType(
 
 MOUSE_BUTTONS: Mapping[str, str] = MappingProxyType({"mouse1": "cross", "mouse3": "circle"})
 
-KEYBOARD_CAPABILITIES: frozenset[str] = frozenset({"buttons", "axes", "pointer", "touch"})
+GESTURE_KEYS: Mapping[str, tuple[str, str]] = MappingProxyType(
+    {
+        "f": ("flick", "up"),
+        "g": ("swing", "right"),
+        "t": ("twist", "cw"),
+        "h": ("shake", "none"),
+        "v": ("flip", "down"),
+    }
+)
+GESTURE_INTENSITY = 0.8
+
+KEYBOARD_CAPABILITIES: frozenset[str] = frozenset(
+    {"buttons", "axes", "pointer", "touch", "gestures"}
+)
 
 
 class KeyboardMouseState:
@@ -90,6 +103,10 @@ class KeyboardMouseState:
             self._keys.clear()
             self._mouse_buttons.clear()
 
+    def held_keys(self) -> frozenset[str]:
+        with self._lock:
+            return frozenset(self._keys)
+
     def snapshot(self) -> tuple[frozenset[str], tuple[float, float], tuple[float, float] | None]:
         with self._lock:
             buttons = {KEY_BUTTONS[key] for key in self._keys if key in KEY_BUTTONS}
@@ -123,6 +140,7 @@ class KeyboardMouseSource:
         self.state = KeyboardMouseState(wasd=wasd)
         self._base: Any | None = None
         self._bindings: list[str] = []
+        self._prev_gesture_keys: frozenset[str] = frozenset()
         self._started = False
 
     def start(self) -> None:
@@ -136,7 +154,7 @@ class KeyboardMouseSource:
         if self._base is not None:
             return
         self._base = base
-        for key in (*KEY_BUTTONS, *ARROW_STICK, *WASD_STICK):
+        for key in (*KEY_BUTTONS, *ARROW_STICK, *WASD_STICK, *GESTURE_KEYS):
             self._bind(base, key, self.state.press, [key])
             self._bind(base, f"{key}-up", self.state.release, [key])
         for button in MOUSE_BUTTONS:
@@ -154,6 +172,7 @@ class KeyboardMouseSource:
                 continue
         self._bindings.clear()
         self._base = None
+        self._prev_gesture_keys = frozenset()
         self.state.clear()
 
     def _bind(self, base: Any, event: str, func: Any, args: list[Any]) -> None:
@@ -179,6 +198,7 @@ class KeyboardMouseSource:
             pointer=pointer,
             touch=touches,
         )
+        gestures = self._gesture_events(now)
         info = ControllerInfo(
             id="keyboard-1",
             source="sim",
@@ -187,7 +207,29 @@ class KeyboardMouseSource:
             connected=True,
             display_name="Teclado",
         )
-        return [SourceUpdate(info, frame)]
+        return [SourceUpdate(info, frame, gestures)]
+
+    def _gesture_events(self, now: float) -> tuple[Gesture, ...]:
+        held = self.state.held_keys()
+        pressed = held - self._prev_gesture_keys
+        self._prev_gesture_keys = held
+        events: list[Gesture] = []
+        for key in sorted(pressed):
+            gesture = GESTURE_KEYS.get(key)
+            if gesture is None:
+                continue
+            name, direction = gesture
+            events.append(
+                Gesture(
+                    slot=self.slot,
+                    controller_id="keyboard-1",
+                    name=name,
+                    direction=direction,
+                    intensity=GESTURE_INTENSITY,
+                    timestamp=now,
+                )
+            )
+        return tuple(events)
 
     def _read_mouse(self) -> None:
         base = self._base

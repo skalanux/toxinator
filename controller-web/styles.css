@@ -1101,3 +1101,62 @@ body.advanced .readout {
     animation: none !important;
   }
 }
+
+/* ---------- gesture strip + recenter ---------- */
+
+.gesture-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 14px 0;
+}
+
+.gesture-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--steel);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.gesture-chip[data-kind="event"] {
+  color: var(--amber);
+  border-color: rgba(255, 180, 84, 0.35);
+}
+
+.gesture-chip[data-kind="pointer"] {
+  color: var(--cyan);
+  border-color: rgba(111, 227, 255, 0.35);
+}
+
+.recenter {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(20, 24, 29, 0.82);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  pointer-events: auto;
+}
+
+.recenter:active {
+  background: var(--steel-2);
+}
+
+input[type="range"]#aim-sensitivity {
+  width: 120px;
+  accent-color: var(--cyan);
+}

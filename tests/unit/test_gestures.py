@@ -20,6 +20,7 @@ def frame(
     t: float,
     gyro: tuple[float, float, float] = (0.0, 0.0, 0.0),
     linear: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    accel: tuple[float, float, float] = (0.0, 0.0, 0.0),
     orientation: tuple[float, float, float] = (0.0, 0.0, 0.0),
     screen: int = 0,
 ) -> ControllerFrame:
@@ -28,6 +29,7 @@ def frame(
         timestamp=t,
         gyro=gyro,
         linear_accel=linear,
+        accel=accel,
         orientation=orientation,
         screen_angle=screen,
     )
@@ -196,3 +198,90 @@ def test_hub_filters_gestures_by_declared_set() -> None:
     hub.set_enabled_gestures(None)
     state = hub.poll(now=2.0)
     assert [g.name for g in state.gestures] == ["swing"]
+
+
+def test_aim_integrates_yaw_with_deadzone_sensitivity_and_recenter() -> None:
+    recognizer = GestureRecognizer(0, "phone-1")
+    recognizer.update(frame(t=0.00))
+    postures, _ = recognizer.update(frame(t=0.05, gyro=(0, 0, math.radians(60))))
+    assert postures["aim_x"] == pytest.approx(0.55)
+    assert postures["aim_y"] == pytest.approx(0.5)
+
+    # Below the deadzone the pointer doesn't move.
+    recognizer.update(frame(t=0.10, gyro=(0, 0, math.radians(3))))
+    postures, _ = recognizer.update(frame(t=0.15, gyro=(0, 0, math.radians(3))))
+    assert postures["aim_x"] == pytest.approx(0.55)
+
+    # Higher sensitivity moves further.
+    recognizer.set_sensitivity(2.0)
+    postures, _ = recognizer.update(frame(t=0.20, gyro=(0, 0, math.radians(60))))
+    assert postures["aim_x"] == pytest.approx(0.55 + 0.05 * 2.0)
+
+    recognizer.reset()
+    postures, _ = recognizer.update(frame(t=0.30))
+    assert postures["aim_x"] == pytest.approx(0.5)
+
+
+def test_twist_fires_on_accumulated_roll() -> None:
+    recognizer = GestureRecognizer(0, "phone-1")
+    recognizer.update(frame(t=0.00))
+    events: list[Gesture] = []
+    for i in range(1, 9):
+        _, fired = recognizer.update(
+            frame(t=0.05 * i, gyro=(math.radians(100), 0, 0))
+        )
+        events.extend(fired)
+
+    assert len(events) == 1
+    assert events[0].name == "twist"
+    assert events[0].direction == "cw"
+    assert events[0].intensity == pytest.approx(40.0 / config.TWIST_INTENSITY)
+
+
+def test_shake_fires_after_three_reversals() -> None:
+    recognizer = GestureRecognizer(0, "phone-1")
+    recognizer.update(frame(t=0.00))
+    recognizer.update(frame(t=0.05, gyro=(0, 0, math.radians(200))))
+    recognizer.update(frame(t=0.10, gyro=(0, 0, math.radians(-200))))
+    recognizer.update(frame(t=0.15, gyro=(0, 0, math.radians(200))))
+    _, events = recognizer.update(frame(t=0.20, gyro=(0, 0, math.radians(-200))))
+
+    assert len(events) == 1
+    assert events[0].name == "shake"
+    assert events[0].direction == "none"
+    assert events[0].intensity == pytest.approx(0.5)
+
+
+def test_flip_fires_when_face_changes() -> None:
+    recognizer = GestureRecognizer(0, "phone-1")
+    recognizer.update(frame(t=0.00, accel=(0, 0, 9.8)))
+    events: list[Gesture] = []
+    for i in range(1, 8):
+        accel = (0, 0, 9.8 if i < 7 else -9.8)
+        _, fired = recognizer.update(
+            frame(t=0.05 * i, gyro=(0, math.radians(400), 0), accel=accel)
+        )
+        events.extend(fired)
+
+    assert len(events) == 1
+    assert events[0].name == "flip"
+    assert events[0].direction == "down"
+
+
+def test_hub_maps_aim_to_pointer_when_declared() -> None:
+    aimed = ControllerFrame(
+        controller_id="phone-1", timestamp=1.0, axes={"aim_x": 0.25, "aim_y": 0.75}
+    )
+    hub = InputHub([FakeGestureSource([SourceUpdate(_info(), aimed)])])
+    hub.set_enabled_gestures(["aim"])
+    state = hub.poll(now=1.0)
+    aimed_frame = state.frame(0)
+    assert aimed_frame is not None
+    assert aimed_frame.pointer == (0.25, 0.75)
+
+    # Without aim declared, the pointer is left untouched (None).
+    plain = InputHub([FakeGestureSource([SourceUpdate(_info(), aimed)])])
+    state = plain.poll(now=1.0)
+    plain_frame = state.frame(0)
+    assert plain_frame is not None
+    assert plain_frame.pointer is None

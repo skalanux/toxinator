@@ -32,6 +32,8 @@ class GameEntry:
     controller_labels: Mapping[str, str] = field(default_factory=dict)
     controller_panel: ControllerPanel | None = None
     controller_camera: bool = False
+    controller_gestures: tuple[str, ...] = ()
+    controller_gesture_labels: Mapping[str, str] = field(default_factory=dict)
     assets_root: Path | None = None
     art_motif: str = "auto"
     manifest: GameManifest | None = None
@@ -84,6 +86,8 @@ def _maldito_pino() -> GameEntry | None:
         controller_labels=manifest.controller_labels,
         controller_panel=manifest.controller_panel,
         controller_camera=manifest.controller_camera,
+        controller_gestures=manifest.controller_gestures,
+        controller_gesture_labels=manifest.controller_gesture_labels,
         assets_root=Path(str(files("maldito_pino"))).resolve(),
         art_motif=manifest.art_motif,
         manifest=manifest,

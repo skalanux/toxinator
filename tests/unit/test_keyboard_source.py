@@ -54,6 +54,30 @@ def test_keyboard_mouse_pointer_and_touch() -> None:
     source.stop()
 
 
+def test_keyboard_emits_gestures_on_key_press() -> None:
+    source = KeyboardMouseSource(slot=4)
+    source.start()
+
+    source.state.press("f")
+    updates = source.poll(1.0)
+    assert updates[0].gestures
+    gesture = updates[0].gestures[0]
+    assert gesture.name == "flick"
+    assert gesture.direction == "up"
+    assert gesture.slot == 4
+    assert gesture.intensity == 0.8
+
+    # Held key does not repeat the gesture.
+    assert source.poll(2.0)[0].gestures == ()
+
+    # A new press after release fires again.
+    source.state.release("f")
+    source.poll(3.0)
+    source.state.press("f")
+    assert source.poll(4.0)[0].gestures[0].name == "flick"
+    source.stop()
+
+
 def test_primary_frame_prefers_phone() -> None:
     phone = ControllerFrame("phone-1", 1.0)
     keyboard = ControllerFrame("keyboard-1", 1.0)

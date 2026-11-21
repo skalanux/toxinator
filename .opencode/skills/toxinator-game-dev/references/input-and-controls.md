@@ -64,7 +64,7 @@ class ControllerFrame:
 - Botones canónicos: `cross`, `circle`, `square`, `triangle`, `options`, `l1`,
   `r1`. `button("cross")` es la acción; `button("circle")` vuelve.
 - Compatibilidad: apretar × también emite `A`, y ○ emite `B`; los alias se
-  retiran en API `0.4`. Código nuevo usa los nombres canónicos.
+  retiran en API `0.5`. Código nuevo usa los nombres canónicos.
 - `pointer`: apuntado normalizado `0..1`, disponible con dedo, mouse o teclado.
   Es la forma recomendada de apuntar; no dependas de `touch[0]`.
 - `touch`: `TouchPoint(id, x, y, pressure)` normalizado `0..1`; puede haber
@@ -134,6 +134,42 @@ ctx.phone.clear_panel()
 
 - Sin `[controller]`, se usan `default`, `toxinator`, `auto`, `Acción` y
   `Volver`.
+
+### Gestos de plataforma
+
+La consola reconoce gestos y los entrega por nombre; el juego los declara y los
+lee, sin tocar sensores crudos. Catálogo completo en
+`docs/design/gestures.md`.
+
+```toml
+[controller]
+gestures = ["tilt", "aim", "flick"]
+
+[controller.gesture_labels]
+flick = "Sacudir"
+```
+
+```python
+frame = state.primary_frame()
+if frame is not None:
+    tilt = frame.axis("tilt_x")       # postura continua
+    if frame.pointer is not None:     # touch, mouse o aim
+        ...
+
+for gesture in state.gestures_for(state.primary_slot() or 0):
+    if gesture.name == "flick":
+        self.launch(direction=gesture.direction, power=gesture.intensity)
+```
+
+- **Posturas** (`tilt`, `steer`, `aim`) van por `frame.axes`; `aim` también
+  reemplaza a `frame.pointer` cuando no hay touch.
+- **Eventos** (`flick`, `swing`, `twist`, `shake`, `flip`) llegan una sola vez
+  por `InputState.gestures`, con `direction` e `intensity` `0..1`.
+- El `InputHub` filtra los eventos a los gestos declarados; declarar de menos es
+  un bug visible (la banda de gestos de la PWA no lo muestra).
+- Los gestos son best-effort: sin sensores (HTTP sin permiso, iOS) no existen.
+  Ofrecé un camino alternativo por botón o stick.
+- `ctx.phone.recenter()` recalibra el neutro y centra `aim`.
 
 ## Feedback del celular
 

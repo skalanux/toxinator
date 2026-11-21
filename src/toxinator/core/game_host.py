@@ -48,6 +48,9 @@ class GameHost:
                 f"{self.game.manifest.id} requiere API "
                 f"{self.game.manifest.requires_api}, consola {API_VERSION}"
             )
+        self.input.set_enabled_gestures(
+            self.game.manifest.controller_gestures or None
+        )
         self.game.start(self.ctx)
         self.started = True
 
@@ -62,6 +65,7 @@ class GameHost:
             except Exception:
                 logger.exception("game stop failed")
             self.started = False
+        self.input.set_enabled_gestures(None)
         self.ctx.phone.stop()
         self.scene.remove_node()
         self.ui.remove_node()

@@ -33,6 +33,10 @@ class PhoneService(Protocol):
         """Stop tones and vibration on one phone or all phones."""
         ...
 
+    def recenter(self, slot: int | None = None) -> None:
+        """Recalibrate the neutral pose and reset the gyro pointer (aim)."""
+        ...
+
     def panel(
         self,
         *,
@@ -66,6 +70,9 @@ class NullPhoneService:
         return None
 
     def stop(self, slot: int | None = None) -> None:
+        return None
+
+    def recenter(self, slot: int | None = None) -> None:
         return None
 
     def panel(

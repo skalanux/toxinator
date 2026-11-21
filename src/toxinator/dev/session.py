@@ -101,6 +101,9 @@ class PhoneFeedback:
     def clear_panel(self, *, slot: int | None = None) -> None:
         self.server.clear_panel()
 
+    def recenter(self, slot: int | None = None) -> None:
+        self.server.recenter(slot)
+
 
 def _repo_root() -> Path:
     # src/toxinator/dev/session.py -> repo root

@@ -152,6 +152,8 @@ def as_game_entry(game: ExternalGame) -> GameEntry:
         controller_labels=manifest.controller_labels,
         controller_panel=manifest.controller_panel,
         controller_camera=manifest.controller_camera,
+        controller_gestures=manifest.controller_gestures,
+        controller_gesture_labels=manifest.controller_gesture_labels,
         assets_root=game.path.parent,
         art_motif=manifest.art_motif,
         manifest=manifest,

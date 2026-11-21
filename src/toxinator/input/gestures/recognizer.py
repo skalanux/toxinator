@@ -1,8 +1,8 @@
 """Gesture recognition over normalized ``ControllerFrame`` samples.
 
-One recognizer per slot and source; it is stateful and time-aware. Milestone 1
-recognizes the ``tilt`` posture and the ``flick``/``swing`` events;
-``aim``/``twist``/``shake``/``flip`` land in milestone 2.
+One recognizer per slot and source; it is stateful and time-aware. Recognizes
+the ``tilt``, ``steer`` and ``aim`` postures plus the ``flick``, ``swing``,
+``twist``, ``shake`` and ``flip`` events.
 """
 
 from __future__ import annotations
@@ -47,9 +47,13 @@ class GestureRecognizer:
         self._controller_id = controller_id
         self._last_t: float | None = None
         self._calibrated = False
+        self._sensitivity = config.AIM_SENSITIVITY
 
         self._tilt_x = 0.0
         self._tilt_y = 0.0
+
+        self._aim_x = 0.5
+        self._aim_y = 0.5
 
         self._flick_armed = True
         self._flick_open_t: float | None = None
@@ -64,12 +68,37 @@ class GestureRecognizer:
         self._swing_peak_vec = (0.0, 0.0)
         self._swing_last = -math.inf
 
+        self._twist_open = False
+        self._twist_start = 0.0
+        self._twist_angle = 0.0
+        self._twist_last = -math.inf
+
+        self._shake_sign = 0
+        self._shake_reversals: list[float] = []
+        self._shake_last = -math.inf
+
+        self._flip_open = False
+        self._flip_start = 0.0
+        self._flip_angle = 0.0
+        self._flip_face = 0
+        self._flip_last = -math.inf
+
+    def set_sensitivity(self, value: float) -> None:
+        """Clamp and store the player's aim sensitivity (0.4..2.5)."""
+        self._sensitivity = _clamp(
+            float(value),
+            config.AIM_SENSITIVITY_MIN,
+            config.AIM_SENSITIVITY_MAX,
+        )
+
     def reset(self) -> None:
         """Recenter: mark calibrated and clear buffers, windows and cooldowns."""
         self._calibrated = True
         self._last_t = None
         self._tilt_x = 0.0
         self._tilt_y = 0.0
+        self._aim_x = 0.5
+        self._aim_y = 0.5
         self._flick_armed = True
         self._flick_open_t = None
         self._flick_peak = 0.0
@@ -80,6 +109,16 @@ class GestureRecognizer:
         self._swing_peak_rate = 0.0
         self._swing_peak_vec = (0.0, 0.0)
         self._swing_last = -math.inf
+        self._twist_open = False
+        self._twist_angle = 0.0
+        self._twist_last = -math.inf
+        self._shake_sign = 0
+        self._shake_reversals.clear()
+        self._shake_last = -math.inf
+        self._flip_open = False
+        self._flip_angle = 0.0
+        self._flip_face = 0
+        self._flip_last = -math.inf
 
     def update(
         self, frame: ControllerFrame
@@ -94,7 +133,8 @@ class GestureRecognizer:
 
         angle = frame.screen_angle if frame.screen_angle in _SCREEN_ANGLES else 0
 
-        postures = self._postures(frame, angle, dt)
+        postures = self._tilt(frame, angle, dt)
+        postures.update(self._aim(frame, angle, dt))
 
         lx, ly = rotate_screen(frame.linear_accel[0], frame.linear_accel[1], angle)
         events.extend(self._flick(lx, ly, t))
@@ -103,12 +143,15 @@ class GestureRecognizer:
             math.degrees(frame.gyro[1]), math.degrees(frame.gyro[2]), angle
         )
         events.extend(self._swing(gx, gy, t, dt))
+        events.extend(self._twist(frame, t, dt))
+        events.extend(self._shake(gx, gy, t))
+        events.extend(self._flip(gx, gy, frame, t, dt))
 
         return postures, events
 
     # -- postures -----------------------------------------------------------
 
-    def _postures(
+    def _tilt(
         self, frame: ControllerFrame, angle: int, dt: float
     ) -> dict[str, float]:
         if not self._calibrated:
@@ -124,10 +167,33 @@ class GestureRecognizer:
             x = 0.0
         if abs(y) < config.TILT_CUTOFF:
             y = 0.0
-        return {
-            "tilt_x": _clamp(x / config.TILT_SATURATION),
-            "tilt_y": _clamp(y / config.TILT_SATURATION),
-        }
+        tilt_x = _clamp(x / config.TILT_SATURATION)
+        tilt_y = _clamp(y / config.TILT_SATURATION)
+        steer_mag = min(
+            1.0, abs(tilt_x) * (config.TILT_SATURATION / config.STEER_SATURATION)
+        )
+        steer = 0.0 if tilt_x == 0.0 else (1.0 if tilt_x > 0 else -1.0) * (
+            steer_mag ** config.STEER_EXPO
+        )
+        return {"tilt_x": tilt_x, "tilt_y": tilt_y, "steer": steer}
+
+    def _aim(
+        self, frame: ControllerFrame, angle: int, dt: float
+    ) -> dict[str, float]:
+        # gyro[1] is beta (pitch), gyro[2] is gamma (yaw); rotate to screen axes.
+        gx, gy = rotate_screen(
+            math.degrees(frame.gyro[1]), math.degrees(frame.gyro[2]), angle
+        )
+        yaw = _deadzone(gy, config.AIM_DEADZONE)
+        pitch = _deadzone(gx, config.AIM_DEADZONE)
+        self._aim_x += (yaw / config.AIM_FOV) * dt * self._sensitivity
+        self._aim_y -= (pitch / config.AIM_FOV) * dt * self._sensitivity
+        self._aim_x = _clamp(self._aim_x, 0.0, 1.0)
+        self._aim_y = _clamp(self._aim_y, 0.0, 1.0)
+        return {"aim_x": self._aim_x, "aim_y": self._aim_y}
+
+    def _tilt_degrees(self) -> float:
+        return math.hypot(self._tilt_x, self._tilt_y)
 
     # -- flick --------------------------------------------------------------
 
@@ -227,6 +293,112 @@ class GestureRecognizer:
             else ("right" if py > 0 else "left")
         )
         return self._make("swing", direction, travel / config.SWING_INTENSITY, t)
+
+    # -- twist --------------------------------------------------------------
+
+    def _twist(self, frame: ControllerFrame, t: float, dt: float) -> list[Gesture]:
+        events: list[Gesture] = []
+        roll = math.degrees(frame.gyro[0])
+
+        if self._twist_open:
+            self._twist_angle += roll * dt
+            if self._tilt_degrees() > 35.0:
+                self._twist_open = False
+                self._twist_angle = 0.0
+                return events
+            if t - self._twist_start > config.TWIST_WINDOW:
+                self._twist_open = False
+                self._twist_angle = 0.0
+                return events
+            if abs(self._twist_angle) >= config.TWIST_ANGLE:
+                self._twist_open = False
+                angle = self._twist_angle
+                self._twist_angle = 0.0
+                self._twist_last = t
+                direction = "cw" if angle > 0 else "ccw"
+                events.append(
+                    self._make("twist", direction, abs(angle) / config.TWIST_INTENSITY, t)
+                )
+            return events
+
+        if t - self._twist_last < config.TWIST_COOLDOWN:
+            return events
+        if abs(roll) > config.TWIST_START:
+            self._twist_open = True
+            self._twist_start = t
+            self._twist_angle = roll * dt
+        return events
+
+    # -- shake --------------------------------------------------------------
+
+    def _shake(self, gx: float, gy: float, t: float) -> list[Gesture]:
+        events: list[Gesture] = []
+        dom = gx if abs(gx) >= abs(gy) else gy
+        sign = 0 if abs(dom) < config.SHAKE_RATE else (1 if dom > 0 else -1)
+
+        if sign != 0 and sign != self._shake_sign:
+            if self._shake_sign != 0:
+                self._shake_reversals.append(t)
+                self._shake_reversals = [
+                    x for x in self._shake_reversals if t - x <= config.SHAKE_WINDOW
+                ]
+            self._shake_sign = sign
+
+        if t - self._shake_last >= config.SHAKE_COOLDOWN and len(
+            self._shake_reversals
+        ) >= config.SHAKE_REVERSALS:
+            count = len(self._shake_reversals)
+            self._shake_reversals.clear()
+            self._shake_last = t
+            events.append(self._make("shake", "none", count / 6.0, t))
+        return events
+
+    # -- flip ---------------------------------------------------------------
+
+    def _flip(
+        self, gx: float, gy: float, frame: ControllerFrame, t: float, dt: float
+    ) -> list[Gesture]:
+        events: list[Gesture] = []
+        # A flip turns the phone over, so it is rotation about a horizontal
+        # (pitch/yaw) axis, not about the screen normal (roll, which is twist).
+        rate = math.hypot(gx, gy)
+
+        if self._flip_open:
+            self._flip_angle += rate * dt
+            if self._tilt_degrees() > 35.0 or t - self._flip_start > config.FLIP_WINDOW:
+                self._flip_open = False
+                self._flip_angle = 0.0
+                self._flip_face = 0
+                return events
+            face = self._face_sign(frame.accel[2])
+            if self._flip_angle >= config.FLIP_ANGLE and face != 0 and face != self._flip_face:
+                self._flip_open = False
+                angle = self._flip_angle
+                self._flip_angle = 0.0
+                self._flip_last = t
+                direction = "up" if face > 0 else "down"
+                events.append(
+                    self._make("flip", direction, angle / config.FLIP_INTENSITY, t)
+                )
+            return events
+
+        if t - self._flip_last < config.FLIP_COOLDOWN:
+            return events
+        if rate > config.TWIST_START:
+            self._flip_open = True
+            self._flip_start = t
+            self._flip_angle = rate * dt
+            self._flip_face = self._face_sign(frame.accel[2])
+        return events
+
+    @staticmethod
+    def _face_sign(accel_z: float) -> int:
+        # Gravity along the screen normal: face up is positive, face down negative.
+        if accel_z > 3.0:
+            return 1
+        if accel_z < -3.0:
+            return -1
+        return 0
 
     # -- shared -------------------------------------------------------------
 

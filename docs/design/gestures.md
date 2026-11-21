@@ -4,7 +4,8 @@ Spec de implementación de los gestos de plataforma. La decisión está en
 [ADR-0010](../adr/0010-gesture-recognizer.md). Este documento fija el contrato
 que comparten la PWA, el reconocedor, el `InputHub`, la API y los juegos.
 
-> **Estado**: milestone 1 (núcleo) implementado; milestones 2–4 pendientes.
+> **Estado**: milestones 1 (núcleo) y 2 (completo) implementados; quedan 3
+> (laboratorio/trazas) y 4 (migración de Maldito Pino).
 
 ## Alcance
 
@@ -314,7 +315,7 @@ y los eventos funcionan, porque no dependen del neutro.
 gestures = ["tilt", "aim", "flick"]
 hint = "Apuntá y sacudí para tirar"
 
-[controller.gestures]
+[controller.gesture_labels]
 tilt = "Inclinar"
 aim = "Apuntar"
 flick = "Sacudir"
@@ -322,8 +323,8 @@ flick = "Sacudir"
 
 - `gestures`: nombres canónicos, máximo 8. Un nombre desconocido se ignora con
   warning; el resto del manifest se carga igual.
-- `[controller.gestures]`: label visible ≤ 24 caracteres por gesto declarado.
-  Sin label se usa un texto por defecto del catálogo.
+- `[controller.gesture_labels]`: label visible ≤ 24 caracteres por gesto
+  declarado. Sin label se usa un texto por defecto del catálogo.
 - Los gestos declarados son el contrato: el hub filtra los eventos a ese
   conjunto. Declarar de menos es un bug visible, no silencioso, porque la banda
   de la PWA no muestra el gesto.
@@ -385,12 +386,12 @@ desde teclas canónicas, con intensidad fija `0.8`:
 | `T` | `twist` | `cw` |
 | `H` | `shake` | — |
 | `V` | `flip` | `down` |
-| `R` | recentrar | — |
 | mouse | `aim` / `pointer` | absoluto |
 
 Un juego que declara un gesto se puede jugar entero con teclado/mouse: la tecla
 reemplaza la intención y el mouse apunta. `KeyboardMouseSource` suma
-`gestures: true` a sus capacidades.
+`gestures: true` a sus capacidades. No hay tecla de recentrar en el simulador:
+el mouse ya es un puntero absoluto y no tiene drift que corregir.
 
 ## Métricas y criterios de aceptación
 

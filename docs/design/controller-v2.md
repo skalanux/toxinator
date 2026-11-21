@@ -143,7 +143,7 @@ options = ""
 l1 = ""
 r1 = ""
 
-[controller.gestures]     # opcional: labels de la banda de gestos
+[controller.gesture_labels]     # opcional: labels de la banda de gestos
 tilt = "Inclinar"
 flick = "Sacudir"
 

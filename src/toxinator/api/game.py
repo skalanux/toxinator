@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import tomllib
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -17,6 +17,39 @@ CONTROLLER_LAYOUTS = ("default", "motion", "touch")
 CONTROLLER_SKINS = ("toxinator",)
 CONTROLLER_ORIENTATIONS = ("auto", "portrait", "landscape")
 PANEL_FITS = ("contain", "cover", "stretch")
+
+GESTURES: tuple[str, ...] = (
+    "tilt",
+    "steer",
+    "aim",
+    "flick",
+    "swing",
+    "twist",
+    "shake",
+    "flip",
+)
+
+GESTURE_KINDS: dict[str, str] = {
+    "tilt": "posture",
+    "steer": "posture",
+    "aim": "pointer",
+    "flick": "event",
+    "swing": "event",
+    "twist": "event",
+    "shake": "event",
+    "flip": "event",
+}
+
+GESTURE_DEFAULT_LABELS: dict[str, str] = {
+    "tilt": "Inclinar",
+    "steer": "Doblar",
+    "aim": "Apuntar",
+    "flick": "Sacudir",
+    "swing": "Golpear",
+    "twist": "Girar",
+    "shake": "Agitar",
+    "flip": "Voltear",
+}
 DEFAULT_CONTROLLER_LAYOUT = "default"
 DEFAULT_CONTROLLER_SKIN = "toxinator"
 DEFAULT_CONTROLLER_ORIENTATION = "auto"
@@ -59,6 +92,8 @@ class GameManifest:
     controller_labels: Mapping[str, str] = field(default_factory=dict)
     controller_panel: ControllerPanel | None = None
     controller_camera: bool = False
+    controller_gestures: tuple[str, ...] = ()
+    controller_gesture_labels: Mapping[str, str] = field(default_factory=dict)
     art_motif: str = DEFAULT_ART_MOTIF
 
 
@@ -134,6 +169,44 @@ def _parse_panel(controller: Mapping[str, Any]) -> ControllerPanel | None:
     return ControllerPanel(title=title, image=image, fit=fit)
 
 
+def _parse_gestures(controller: Mapping[str, Any]) -> tuple[str, ...]:
+    raw = controller.get("gestures", [])
+    names: list[str] = []
+    if not isinstance(raw, list):
+        return ()
+    for item in raw:
+        name = str(item).strip().lower()
+        if name in GESTURES and name not in names:
+            names.append(name)
+    return tuple(names[:8])
+
+
+def _parse_gesture_labels(controller: Mapping[str, Any]) -> dict[str, str]:
+    raw = controller.get("gesture_labels", {})
+    labels: dict[str, str] = {}
+    if not isinstance(raw, dict):
+        return labels
+    for key, value in raw.items():
+        name = str(key).strip().lower()
+        if name in GESTURES and isinstance(value, str):
+            labels[name] = value.strip()[:24]
+    return labels
+
+
+def gesture_entries(
+    gestures: Sequence[str], labels: Mapping[str, str]
+) -> list[dict[str, str]]:
+    """Shape the declared gestures for the phone profile."""
+    return [
+        {
+            "name": name,
+            "label": labels.get(name, GESTURE_DEFAULT_LABELS.get(name, name)),
+            "kind": GESTURE_KINDS.get(name, "event"),
+        }
+        for name in gestures
+    ]
+
+
 def load_manifest(source: str | Path) -> GameManifest:
     """Parse a TOML manifest from text or a path."""
     if isinstance(source, Path):
@@ -163,6 +236,8 @@ def load_manifest(source: str | Path) -> GameManifest:
     labels = _parse_labels(controller, action, back)
     panel = _parse_panel(controller)
     camera = controller.get("camera", False) is True
+    gestures = _parse_gestures(controller)
+    gesture_labels = _parse_gesture_labels(controller)
 
     art = data.get("art", {})
     if not isinstance(art, dict):
@@ -190,5 +265,7 @@ def load_manifest(source: str | Path) -> GameManifest:
         controller_labels=labels,
         controller_panel=panel,
         controller_camera=camera,
+        controller_gestures=gestures,
+        controller_gesture_labels=gesture_labels,
         art_motif=art_motif,
     )

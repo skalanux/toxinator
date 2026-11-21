@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mando">
   <title>Toxinator · Mando</title>
-  <link rel="stylesheet" href="/static/styles.css?v=12">
+  <link rel="stylesheet" href="/static/styles.css?v=13">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
@@ -112,6 +112,8 @@
       <img id="panel-image" class="panel-image" alt="">
     </section>
 
+    <div id="gesture-strip" class="gesture-strip" hidden></div>
+
     <div id="rotate-hint" class="rotate-hint" hidden>
       <span>Girá el teléfono</span>
       <small id="rotate-copy">Este juego pide otra orientación.</small>
@@ -131,6 +133,7 @@
         <span class="touch-grid" aria-hidden="true"></span>
         <span id="touch-dot" class="touch-dot" hidden></span>
         <span id="touch-hint" class="zone-hint">Arrastrá para apuntar</span>
+        <button id="recenter" class="recenter" type="button" hidden>CENTRAR</button>
       </div>
 
       <div id="stick-zone" class="stick-zone">
@@ -202,6 +205,14 @@
       <button id="calibrate" class="secondary compact" type="button">CALIBRAR</button>
     </div>
 
+    <div class="setting-row">
+      <span class="setting-copy">
+        <strong>Sensibilidad de apuntado</strong>
+        <small id="aim-sensitivity-label">1.0×</small>
+      </span>
+      <input id="aim-sensitivity" type="range" min="0.4" max="2.5" step="0.1" value="1.0" aria-label="Sensibilidad de apuntado">
+    </div>
+
     <div id="readout" class="readout" aria-label="Sensores">
       <div class="cell"><span>β</span><strong id="beta">0°</strong></div>
       <div class="cell"><span>γ</span><strong id="gamma">0°</strong></div>
@@ -255,6 +266,6 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="/static/vendor/jsqr.js" defer></script>
-<script src="/static/app.js?v=12" defer></script>
+<script src="/static/app.js?v=13" defer></script>
 </body>
 </html>

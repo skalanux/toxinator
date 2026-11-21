@@ -3,6 +3,7 @@
 const STORAGE_KEY = "toxinator.pairing.v1";
 const ADVANCED_KEY = "toxinator.advanced.v1";
 const ORIENTATION_KEY = "toxinator.orientation.v1";
+const AIM_SENS_KEY = "toxinator.aim_sensitivity.v1";
 const PROTOCOL = 2;
 const params = new URLSearchParams(window.location.search);
 const queryToken = (params.get("token") || "").trim();
@@ -29,6 +30,7 @@ const DEFAULT_CONTROLLER = {
   game: "",
   camera: false,
   panel: null,
+  gestures: [],
 };
 
 const elements = {
@@ -78,6 +80,10 @@ const elements = {
   touchZone: document.getElementById("touch-zone"),
   touchHint: document.getElementById("touch-hint"),
   touchDot: document.getElementById("touch-dot"),
+  gestureStrip: document.getElementById("gesture-strip"),
+  recenter: document.getElementById("recenter"),
+  aimSensitivity: document.getElementById("aim-sensitivity"),
+  aimSensitivityLabel: document.getElementById("aim-sensitivity-label"),
   stickZone: document.getElementById("stick-zone"),
   stickKnob: document.getElementById("stick-knob"),
   panel: document.getElementById("panel"),
@@ -121,6 +127,7 @@ const state = {
   accel: [0, 0, 0],
   linear: [0, 0, 0],
   gyro: [0, 0, 0],
+  aimSensitivity: 1.0,
   buttons: new Set(),
   move: [0, 0],
   touch: [],
@@ -395,6 +402,7 @@ function applyMode(mode) {
     document.body.classList.toggle("mode-game", !launcher);
     if (elements.mode) elements.mode.textContent = launcher ? "LAUNCHER" : "JUEGO";
     renderControllerChrome();
+    renderGestures();
     updatePanelVisibility();
     updateCameraButton();
     if (!launcher && state.connected) startSensorsIfPossible();
@@ -423,6 +431,44 @@ function normalizePanel(source) {
   };
 }
 
+function normalizeGestures(source) {
+  if (!Array.isArray(source)) return [];
+  return source
+    .filter((item) => item && typeof item.name === "string")
+    .map((item) => ({
+      name: item.name,
+      label:
+        typeof item.label === "string" && item.label.trim()
+          ? item.label.trim().slice(0, 24)
+          : item.name,
+      kind: item.kind === "posture" || item.kind === "pointer" ? item.kind : "event",
+    }))
+    .slice(0, 8);
+}
+
+function renderGestures() {
+  const strip = elements.gestureStrip;
+  if (!strip) return;
+  const gestures = state.mode === "game" ? state.controller.gestures : [];
+  strip.hidden = gestures.length === 0;
+  if (gestures.length === 0) {
+    strip.replaceChildren();
+  } else {
+    const nodes = gestures.map((gesture) => {
+      const chip = document.createElement("span");
+      chip.className = "gesture-chip";
+      chip.dataset.kind = gesture.kind;
+      chip.textContent = gesture.label;
+      return chip;
+    });
+    strip.replaceChildren(...nodes);
+  }
+  const hasAim = gestures.some((gesture) => gesture.name === "aim");
+  if (elements.recenter) {
+    elements.recenter.hidden = !(state.mode === "game" && hasAim);
+  }
+}
+
 function applyController(profile) {
   const source = profile && typeof profile === "object" ? profile : {};
   const layout = LAYOUTS.includes(source.layout)
@@ -444,6 +490,7 @@ function applyController(profile) {
     game: typeof source.game === "string" ? source.game.slice(0, 60) : "",
     camera: source.camera === true,
     panel: normalizePanel(source.panel),
+    gestures: normalizeGestures(source.gestures),
   };
   document.body.dataset.layout = layout;
   document.body.dataset.skin = "toxinator";
@@ -455,6 +502,7 @@ function applyController(profile) {
   applyPanel(state.panel);
   updateOrientation();
   renderControllerChrome();
+  renderGestures();
   updateCameraButton();
 }
 
@@ -590,6 +638,33 @@ function saveOrientationLock(value) {
     else window.localStorage.removeItem(ORIENTATION_KEY);
   } catch {
     // private mode: the lock still applies for this session
+  }
+}
+
+function loadAimSensitivity() {
+  try {
+    const value = parseFloat(window.localStorage.getItem(AIM_SENS_KEY));
+    return Number.isFinite(value) ? Math.max(0.4, Math.min(2.5, value)) : 1.0;
+  } catch {
+    return 1.0;
+  }
+}
+
+function saveAimSensitivity(value) {
+  try {
+    window.localStorage.setItem(AIM_SENS_KEY, String(value));
+  } catch {
+    // private mode
+  }
+}
+
+function applyAimSensitivity(value) {
+  state.aimSensitivity = Math.max(0.4, Math.min(2.5, value));
+  if (elements.aimSensitivity) {
+    elements.aimSensitivity.value = String(state.aimSensitivity);
+  }
+  if (elements.aimSensitivityLabel) {
+    elements.aimSensitivityLabel.textContent = `${state.aimSensitivity.toFixed(1)}×`;
   }
 }
 
@@ -1455,6 +1530,7 @@ function endTouch(event) {
 
 if (elements.touchZone) {
   elements.touchZone.addEventListener("pointerdown", (event) => {
+    if (elements.recenter && elements.recenter.contains(event.target)) return;
     event.preventDefault();
     touchPointer = event.pointerId;
     try {
@@ -1756,6 +1832,28 @@ elements.enableSensors.addEventListener("click", () => {
   enableSensors();
 });
 
+if (elements.recenter) {
+  elements.recenter.addEventListener("click", () => {
+    if (!state.sensorsOn) {
+      enableSensors();
+      return;
+    }
+    updateCalibration(state.orientation);
+    send({ type: "calibrate" });
+    showToast("Apuntado centrado");
+  });
+}
+
+if (elements.aimSensitivity) {
+  elements.aimSensitivity.addEventListener("input", (event) => {
+    const value = parseFloat(event.target.value);
+    if (Number.isFinite(value)) {
+      applyAimSensitivity(value);
+      saveAimSensitivity(state.aimSensitivity);
+    }
+  });
+}
+
 if (elements.sensors) {
   elements.sensors.addEventListener("click", () => {
     if (!state.sensorsOn) enableSensors();
@@ -1823,6 +1921,7 @@ function sendLoop(now) {
       type: "state",
       t: now / 1000,
       screen: screenAngle(),
+      aim_sensitivity: state.aimSensitivity,
       accel: state.accel.map((value) => round(value, 2)),
       linear: state.linear.map((value) => round(value, 2)),
       gyro: state.gyro.map((value) => round(value, 2)),
@@ -1843,6 +1942,7 @@ function init() {
   state.advanced = loadAdvanced();
   state.orientationLock = loadOrientationLock();
   applyAdvanced(state.advanced);
+  applyAimSensitivity(loadAimSensitivity());
   applyController(null);
   updateFeedbackBanner();
   updateReadout();

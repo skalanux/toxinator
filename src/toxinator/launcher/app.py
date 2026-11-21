@@ -20,7 +20,7 @@ from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import Filename, LineSegs, TextNode, Vec4
 
-from toxinator.api.game import Game
+from toxinator.api.game import Game, gesture_entries
 from toxinator.api.input import InputState
 from toxinator.api.phone import PhoneService
 from toxinator.core.game_host import GameHost
@@ -2494,6 +2494,9 @@ class ConsoleApp(ShowBase):
             "hint": entry.controller_hint,
             "camera": entry.controller_camera,
             "panel": panel,
+            "gestures": gesture_entries(
+                entry.controller_gestures, entry.controller_gesture_labels
+            ),
             "game": entry.title,
         }
 
