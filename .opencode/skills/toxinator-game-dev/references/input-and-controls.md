@@ -211,17 +211,19 @@ if frame.button("cross"):
 
 ## Patrones útiles
 
-- **Apuntar**: usá `frame.pointer`; el touch y el mouse lo llenan. El movimiento
-  es el gesto principal; el puntero es el ajuste fino.
+- **Apuntar**: usá `frame.pointer`; el touch, el mouse y `aim` lo llenan.
+- **Inclinar**: postura `tilt` → `tilt_x`/`tilt_y` en `frame.axes` (`-1..1`).
+- **Doblar (volante)**: postura `steer` → `frame.axis("steer")`, con deadzone,
+  saturación y curva que ya aplica la plataforma.
 - **Cargar**: × mantenida; soltar dispara; usar un estado `charge`/`aim`.
-- **Efecto**: `orientation[2]` (gamma) relativa; opcional y con deadzone.
-- **Girar**: `alpha` o `gyro[2]` para rotación; integrá con `dt` si usás gyro.
-- **Balancear**: `accel` + `gyro` para detectar el gesto; × para confirmar.
+- **Gesto discreto**: evento `flick`/`swing`/`twist`/`shake`/`flip` por
+  `InputState.gestures`; llega una sola vez, leé `state.gesture("swing")` o
+  `state.gestures_for(slot)`.
 - **Confirmar**: × en el menú; no ○.
-- **Sin sensores**: un slider/drag horizontal o el stick para el efecto; no
-  bloquees el juego si `orientation` es cero.
-- **Calibración**: la plataforma ya entrega orientación relativa al neutro; no
-  recalibres desde el juego.
+- **Sin sensores**: stick o drag horizontal para el efecto; no bloquees el juego.
+- **Calibrar**: `ctx.phone.recenter()` o el botón CALIBRAR de la PWA. `tilt` y
+  `steer` solo emiten tras calibrar; `aim` arranca centrado y los eventos
+  funcionan siempre. No recalibres desde el juego.
 
 ## Hot-seat
 
