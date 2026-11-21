@@ -119,6 +119,7 @@ const state = {
   orientation: [0, 0, 0],
   neutral: [0, 0, 0],
   accel: [0, 0, 0],
+  linear: [0, 0, 0],
   gyro: [0, 0, 0],
   buttons: new Set(),
   move: [0, 0],
@@ -153,6 +154,11 @@ const state = {
 function round(value, digits) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
+}
+
+function screenAngle() {
+  const orientation = window.screen && window.screen.orientation;
+  return orientation && typeof orientation.angle === "number" ? orientation.angle : 0;
 }
 
 /* ---------- feedback ---------- */
@@ -1055,7 +1061,9 @@ function startSensors() {
     "devicemotion",
     (event) => {
       const acceleration = event.accelerationIncludingGravity || {};
+      const linear = event.acceleration || {};
       state.accel = [acceleration.x || 0, acceleration.y || 0, acceleration.z || 0];
+      state.linear = [linear.x || 0, linear.y || 0, linear.z || 0];
       const rotation = event.rotationRate || {};
       state.gyro = [rotation.alpha || 0, rotation.beta || 0, rotation.gamma || 0];
       updateReadout();
@@ -1814,7 +1822,9 @@ function sendLoop(now) {
     send({
       type: "state",
       t: now / 1000,
+      screen: screenAngle(),
       accel: state.accel.map((value) => round(value, 2)),
+      linear: state.linear.map((value) => round(value, 2)),
       gyro: state.gyro.map((value) => round(value, 2)),
       orientation: state.orientation.map((value) => round(value, 1)),
       buttons: Array.from(state.buttons),

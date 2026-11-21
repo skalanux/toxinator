@@ -11,6 +11,7 @@ from toxinator.api.game import (
 from toxinator.api.input import (
     ControllerFrame,
     ControllerInfo,
+    Gesture,
     InputEvent,
     InputState,
     TouchPoint,
@@ -25,6 +26,7 @@ __all__ = [
     "Game",
     "GameContext",
     "GameManifest",
+    "Gesture",
     "InputEvent",
     "InputState",
     "PhoneService",

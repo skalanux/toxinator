@@ -219,7 +219,7 @@ Un cambio de ciclo de vida (join, leave, asignación, desconexión o calibració
 _Avoid_: callback, signal
 
 **Capacidad (Capability)**:
-Una característica que un mando o un juego declara: `buttons`, `axes`, `motion`, `gyro`, `pointer`, `touch`, `haptics`, `screen`, `camera`, `panel` o `battery`; el launcher negocia las requeridas y opcionales.
+Una característica que un mando o un juego declara: `buttons`, `axes`, `motion`, `gyro`, `gestures`, `pointer`, `touch`, `haptics`, `screen`, `camera`, `panel` o `battery`; el launcher negocia las requeridas y opcionales.
 _Avoid_: feature, flag
 
 **Acción (Action)**:
@@ -231,8 +231,28 @@ La configuración por juego y jugador que traduce botones y ejes a acciones, con
 _Avoid_: keybinding, controls
 
 **Gesto (Gesture)**:
-Un patrón de movimiento reconocido a partir de `ControllerFrame`s, como swing, throw, tilt o aim; se emite como evento con fase, dirección y confianza.
-_Avoid_: acción, movimiento
+Una intención de movimiento reconocida por la plataforma sobre los `ControllerFrame`s y declarada por el juego; puede ser postura o evento. Ver [docs/design/gestures.md](docs/design/gestures.md).
+_Avoid_: acción, movimiento, atajo
+
+**Reconocedor de gestos (Gesture recognizer)**:
+El módulo de la consola que corre sobre frames normalizados, por slot y fuente, y produce posturas y eventos de gesto; es el mismo para celular, teclado/mouse y replay.
+_Avoid_: detector, clasificador
+
+**Catálogo de gestos (Gesture catalog)**:
+El conjunto cerrado y versionado de gestos de plataforma: `tilt`, `steer`, `aim`, `flick`, `swing`, `twist`, `shake` y `flip`.
+_Avoid_: librería, set
+
+**Postura (Posture)**:
+Un gesto continuo que se lee cada frame en `frame.axes`, como `tilt`, `steer` o `aim`; no se consume.
+_Avoid_: estado, pose
+
+**Evento de gesto (Gesture event)**:
+Un gesto discreto con nombre, dirección e intensidad que el hub entrega una sola vez en `InputState.gestures`; lo consume el juego.
+_Avoid_: trigger, señal
+
+**Gesto declarado (Declared gesture)**:
+Un gesto que el juego lista en `[controller] gestures`; el hub filtra los eventos a ese conjunto y la PWA muestra su hint.
+_Avoid_: gesto activo
 
 **Pose neutra (Neutral pose)**:
 La orientación de referencia que el jugador adopta al empezar; base de la calibración y de los gestos relativos.
@@ -241,6 +261,14 @@ _Avoid_: zero pose, rest pose
 **Calibración (Calibration)**:
 El ajuste de los sensores de un mando (offset/escala de accel, bias de gyro, homografía de pointer) para que sus datos sean consistentes.
 _Avoid_: setup, configuración
+
+**Recentrar (Recenter)**:
+Recalibrar el neutro, volver `aim` al centro y vaciar las ventanas del reconocedor, desde el celular o desde el juego (`ctx.phone.recenter()`).
+_Avoid_: reset, calibrar de nuevo
+
+**Puntero por gyro (Air mouse, aim)**:
+Puntero relativo que integra la tasa angular de la pantalla con deadzone y sensibilidad; reemplaza al `pointer` absoluto mientras no hay touch.
+_Avoid_: mouse, cursor
 
 **Pointer**:
 Una coordenada de apuntado normalizada de 0 a 1, válida solo si el mando tiene pointer calibrado (IR o touch/gyro).

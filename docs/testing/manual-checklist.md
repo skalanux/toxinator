@@ -21,6 +21,11 @@ Copiá esta tabla al issue de release o al PR de validación:
 Para cada ítem: **pasos → esperado → resultado → evidencia** (log, captura o
 video corto). Un `blocked` no es un `pass`.
 
+**Hardware de referencia**: Raspberry Pi 5 (8 GB), Pi OS Trixie 64-bit, HDMI a
+1080p, cooler activo. **Mínimo**: 4 núcleos, 2 GB de RAM, OpenGL 2.1 con perfil
+compatibilidad y ventana de 1280×720. Anotar siempre la máquina y el driver
+reales, no solo el modelo.
+
 ## Celular / PWA
 
 - [ ] **QR y pairing**: escanear el QR de `toxinator dev phone`.
@@ -144,6 +149,9 @@ video corto). Un `blocked` no es un `pass`.
 
 - [ ] **60 FPS a 1080p** en la escena de bolos, 1 jugador.
       *Esperado*: frametime estable; sin stutter al lanzar.
+      *Cómo medir*: `uv run toxinator play maldito-pino --demo --fps`. El overlay
+      muestra FPS, frametime medio y peor frame del último segundo; **F3** lo
+      oculta. Anotar los valores, no solo "se ve fluido".
 - [ ] **4 jugadores**: split-screen o hot-seat según el modo.
       *Esperado*: 60 FPS o degradación explícita.
 - [ ] **Input <50 ms**: medir con overlay/stats y video.

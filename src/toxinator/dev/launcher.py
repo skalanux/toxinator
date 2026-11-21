@@ -10,6 +10,7 @@ from panda3d.core import loadPrcFileData
 from toxinator.core.external_games import external_entries
 from toxinator.core.games import load_catalog
 from toxinator.dev.announce import announce_phone
+from toxinator.dev.fps import FpsOverlay
 from toxinator.dev.session import start_phone_session
 from toxinator.launcher.app import ConsoleApp
 
@@ -32,6 +33,7 @@ def run_launcher(
     cert: Path | None = None,
     key: Path | None = None,
     cloudflare: bool = False,
+    show_fps: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -95,6 +97,8 @@ def run_launcher(
             phone=session.feedback,
             keyboard=session.keyboard,
         )
+        if show_fps:
+            FpsOverlay(app)
         app.run()
     finally:
         session.stop()

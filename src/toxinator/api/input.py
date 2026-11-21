@@ -13,6 +13,7 @@ CAPABILITIES: frozenset[str] = frozenset(
         "axes",
         "motion",
         "gyro",
+        "gestures",
         "pointer",
         "touch",
         "haptics",
@@ -39,11 +40,31 @@ class TouchPoint:
 
 
 @dataclass(frozen=True, slots=True)
+class Gesture:
+    """A discrete motion intent recognized by the platform.
+
+    ``direction`` is ``up``/``down``/``left``/``right``/``cw``/``ccw``/``none``;
+    ``intensity`` is normalized to 0..1. Gestures arrive once, in
+    ``InputState.gestures``, and are not part of ``ControllerFrame``.
+    """
+
+    slot: int
+    controller_id: str
+    name: str
+    direction: str
+    intensity: float
+    timestamp: float
+
+
+@dataclass(frozen=True, slots=True)
 class ControllerFrame:
     """One normalized sample from a controller.
 
     ``orientation`` is relative to the calibrated neutral pose, in degrees:
-    ``(alpha, beta, gamma)``. ``gyro`` is in rad/s and ``accel`` in m/s².
+    ``(alpha, beta, gamma)``. ``gyro`` is in rad/s, ``accel`` in m/s² including
+    gravity and ``linear_accel`` in m/s² with gravity removed. ``screen_angle``
+    is ``screen.orientation.angle`` (0/90/180/270) and lets the gesture
+    recognizer normalize device axes to the screen.
     """
 
     controller_id: str
@@ -55,6 +76,8 @@ class ControllerFrame:
     orientation: tuple[float, float, float] = (0.0, 0.0, 0.0)
     pointer: tuple[float, float] | None = None
     touch: tuple[TouchPoint, ...] = ()
+    screen_angle: int = 0
+    linear_accel: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
     def button(self, name: str) -> bool:
         return name in self.buttons
@@ -83,12 +106,24 @@ class InputState:
     timestamp: float
     frames: Mapping[int, ControllerFrame]
     controllers: Mapping[int, ControllerInfo]
+    gestures: tuple[Gesture, ...] = ()
 
     def frame(self, slot: int) -> ControllerFrame | None:
         return self.frames.get(slot)
 
     def controller(self, slot: int) -> ControllerInfo | None:
         return self.controllers.get(slot)
+
+    def gestures_for(self, slot: int) -> tuple[Gesture, ...]:
+        """Return the gestures fired by one slot since the previous poll."""
+        return tuple(g for g in self.gestures if g.slot == slot)
+
+    def gesture(self, name: str) -> Gesture | None:
+        """Return the first gesture of ``name`` fired since the previous poll."""
+        for gesture in self.gestures:
+            if gesture.name == name:
+                return gesture
+        return None
 
     def primary_slot(self) -> int | None:
         """Return the slot a single-player game should read.

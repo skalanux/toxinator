@@ -70,6 +70,15 @@ def move_axes(value: Any) -> tuple[float, float]:
     return (x, y)
 
 
+def screen_angle(value: Any) -> int:
+    """Parse ``screen.orientation.angle`` into one of 0/90/180/270."""
+    try:
+        angle = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return angle if angle in (0, 90, 180, 270) else 0
+
+
 def build_frame(
     payload: dict[str, Any],
     *,
@@ -81,6 +90,8 @@ def build_frame(
     gyro_deg = vec3(payload.get("gyro"))
     gyro = (math.radians(gyro_deg[0]), math.radians(gyro_deg[1]), math.radians(gyro_deg[2]))
     orientation = relative_orientation(vec3(payload.get("orientation")), neutral)
+    linear_accel = vec3(payload.get("linear"))
+    screen = screen_angle(payload.get("screen"))
 
     buttons = normalize_buttons(payload.get("buttons", []))
     move_x, move_y = move_axes(payload.get("move"))
@@ -117,4 +128,6 @@ def build_frame(
         orientation=orientation,
         pointer=pointer,
         touch=tuple(touches),
+        screen_angle=screen,
+        linear_accel=linear_accel,
     )

@@ -1,7 +1,7 @@
 id = "maldito-pino"
 name = "Maldito Pino, hijo de pu**"
 version = "0.1.0"
-requires_api = "0.3"
+requires_api = "0.4"
 description = "Bolos de barrio con pinos con actitud."
 locales = ["es", "en"]
 default_locale = "es"

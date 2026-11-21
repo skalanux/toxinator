@@ -13,6 +13,7 @@ from toxinator.api.game import Game, GameManifest
 from toxinator.core.external_games import find_external_game
 from toxinator.core.games import find_game
 from toxinator.dev.announce import announce_phone
+from toxinator.dev.fps import FpsOverlay
 from toxinator.dev.game_app import GameApp
 from toxinator.dev.session import start_phone_session
 
@@ -85,6 +86,7 @@ def run_play(
     cert: Path | None = None,
     key: Path | None = None,
     cloudflare: bool = False,
+    show_fps: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -142,6 +144,8 @@ def run_play(
             phone=session.feedback,
             keyboard=session.keyboard,
         )
+        if show_fps:
+            FpsOverlay(app)
         app.run()
     finally:
         session.stop()

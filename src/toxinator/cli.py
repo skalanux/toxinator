@@ -46,6 +46,14 @@ def _add_keyboard_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_fps_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--fps",
+        action="store_true",
+        help="mostrar overlay de FPS/frametime (F3 lo oculta); útil para medir hardware",
+    )
+
+
 def _add_cloudflare_argument(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--cloudflare",
@@ -79,6 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
     phone.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(phone)
     _add_cloudflare_argument(phone)
+    _add_fps_argument(phone)
     _add_keyboard_arguments(phone)
     phone.add_argument(
         "--demo",
@@ -120,6 +129,7 @@ def build_parser() -> argparse.ArgumentParser:
     launcher.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(launcher)
     _add_cloudflare_argument(launcher)
+    _add_fps_argument(launcher)
     _add_keyboard_arguments(launcher)
     launcher.add_argument(
         "--demo",
@@ -145,6 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
     play.add_argument("--token", default=None, help="fixed session token (dev)")
     _add_cert_arguments(play)
     _add_cloudflare_argument(play)
+    _add_fps_argument(play)
     _add_keyboard_arguments(play)
     play.add_argument(
         "--demo",
@@ -225,6 +236,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 cert=args.cert,
                 key=args.key,
                 cloudflare=args.cloudflare,
+                show_fps=args.fps,
             )
         except KeyboardInterrupt:
             return 130
@@ -250,6 +262,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 cert=args.cert,
                 key=args.key,
                 cloudflare=args.cloudflare,
+                show_fps=args.fps,
             )
         except KeyboardInterrupt:
             return 130
@@ -275,6 +288,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 cert=args.cert,
                 key=args.key,
                 cloudflare=args.cloudflare,
+                show_fps=args.fps,
             )
         except KeyboardInterrupt:
             return 130

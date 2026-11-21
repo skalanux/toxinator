@@ -10,6 +10,7 @@ from panda3d.core import loadPrcFileData
 
 from toxinator.api.input import InputState
 from toxinator.dev.announce import announce_phone
+from toxinator.dev.fps import FpsOverlay
 from toxinator.dev.phone_app import PhoneApp
 from toxinator.dev.session import start_phone_session
 
@@ -58,6 +59,7 @@ def run_phone_dev(
     cert: Path | None = None,
     key: Path | None = None,
     cloudflare: bool = False,
+    show_fps: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -85,6 +87,8 @@ def run_phone_dev(
         announce_phone(session, demo=demo)
 
         if headless:
+            if show_fps:
+                logger.info("--fps no aplica con --headless: no hay ventana")
             deadline = time.monotonic() + seconds if seconds is not None else None
             last_print = 0.0
             try:
@@ -121,6 +125,8 @@ def run_phone_dev(
             window_type=window_type,
             keyboard=session.keyboard,
         )
+        if show_fps:
+            FpsOverlay(app)
         app.run()
     finally:
         session.stop()

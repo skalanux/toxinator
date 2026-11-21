@@ -96,3 +96,14 @@ def test_cloudflare_flag_is_available_for_launcher_play_and_phone() -> None:
     ):
         args = parser.parse_args(command)
         assert args.cloudflare is True
+
+
+def test_fps_overlay_flag_is_available_for_launcher_play_and_phone() -> None:
+    parser = build_parser()
+
+    for command in (["launcher"], ["play"], ["dev", "phone"]):
+        args = parser.parse_args(command)
+        assert args.fps is False
+
+        args = parser.parse_args([*command, "--fps"])
+        assert args.fps is True

@@ -15,7 +15,10 @@ Ya corren tres cortes: el **launcher de Toxinator** (`toxinator`), **Maldito Pin
 - [docs/adr/](docs/adr/): decisiones de arquitectura.
 - [docs/adr/0007-phone-controller-v2.md](docs/adr/0007-phone-controller-v2.md): mando v2, fin del Wiimote y simulador de teclado/mouse.
 - [docs/adr/0008-avatar-from-photo.md](docs/adr/0008-avatar-from-photo.md): avatares 3D locales desde foto.
+- [docs/adr/0009-hardware-target.md](docs/adr/0009-hardware-target.md): hardware soportado y Raspberry Pi 5 como referencia ARM.
+- [docs/adr/0010-gesture-recognizer.md](docs/adr/0010-gesture-recognizer.md): gestos de plataforma, reconocedor en Python y catálogo declarativo.
 - [docs/design/controller-v2.md](docs/design/controller-v2.md): anatomía, perfil por juego y protocolo del mando v2.
+- [docs/design/gestures.md](docs/design/gestures.md): contrato de gestos, catálogo, aim y laboratorio de tuning.
 - [docs/design/launcher-toxinator.md](docs/design/launcher-toxinator.md): pantalla de inicio, catálogo y paleta Tokyo Night.
 - [docs/design/i18n.md](docs/design/i18n.md): internacionalización, catálogos y cambio de idioma en runtime.
 - [docs/design/testing.md](docs/design/testing.md): simulador de mandos, trazas y CI headless.
@@ -256,6 +259,7 @@ uv run toxinator dev phone --offscreen --screenshot /tmp/toxinator.png
 uv run toxinator dev phone --host 192.168.0.141 --port 8443
 uv run toxinator dev phone --https                # PWA/cámara (autofirmado)
 uv run toxinator dev phone --no-keyboard          # sin simulador de teclado/mouse
+uv run toxinator dev phone --fps                  # overlay de FPS/frametime
 ```
 
 En esta etapa el mando es el celular; el teclado/mouse funciona como simulador
@@ -374,6 +378,70 @@ Los prototipos viven en branches y no se mergean:
 
 - `prototype/bowling-physics`: física de pinos y tuning de bolos. Informe en
   `prototype/bowling-physics.md` del branch; video y mediciones incluidos.
+
+## Hardware
+
+Toxinator está pensado para **Linux 64-bit con glibc** y **OpenGL de escritorio
+con perfil compatibilidad**. La especificación es un objetivo a validar con el
+checklist manual; la referencia ARM es una **Raspberry Pi 5**, todavía no una
+máquina certificada ([ADR-0009](docs/adr/0009-hardware-target.md)).
+
+| | Mínimo | Recomendado |
+|---|---|---|
+| SO | Linux 64-bit x86_64 o aarch64 | Raspberry Pi OS Trixie 64-bit / Debian 13 |
+| CPU | 4 núcleos ~1.5 GHz (Cortex-A72 o x86-64 de 2013+) | Raspberry Pi 5 / Intel N100 |
+| GPU | OpenGL 2.1 con perfil compatibilidad; 3.1 deseable | VideoCore VII (Pi 5) o Intel UHD |
+| RAM | 2 GB | 4 GB |
+| Disco | ~1 GB libres | 2 GB |
+| Pantalla | 1280×720 | 1080p |
+| Red | LAN Wi-Fi o Ethernet (el celular es el mando) | 5 GHz o cable |
+| Python | 3.14 (lo instala `uv`) | igual |
+
+### Raspberry Pi 5
+
+Funciona con **Pi OS Trixie 64-bit con escritorio** (no Lite), cooler activo y
+la fuente oficial de 27 W. El wheel de Panda3D para aarch64 ya viene compilado;
+solo hay que bajar Python 3.14, que Pi OS no trae:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv python install 3.14
+git clone git@github.com:skalanux/toxinator.git
+cd toxinator
+uv sync --all-packages
+uv run toxinator play maldito-pino --demo
+```
+
+- Verificá con `glxinfo -B | grep "OpenGL"` (paquete `mesa-utils`) que el driver
+  reporta OpenGL 3.1; Wayland con XWayland funciona, igual que una sesión X11.
+- La ventana está fija en **1280×720** por PRC. Para 1080p hay que cambiarla y
+  volver a medir: es el gate de release, no una promesa.
+- Si bajo XWayland `sync-video` no limita los FPS, probá una sesión X11 para
+  medir con vsync.
+- Pi 4 de 4/8 GB debería alcanzar a 720p, pero no está validada. Pi Zero 2 W no.
+
+### Android boxes
+
+No sirven como consola tal cual: Android no es glibc (el wheel de Panda3D no
+instala) y con Termux/proot el render cae a software. Los SoC viejos (Amlogic
+S905 con Mali-450) solo tienen GLES 2.0, sin OpenGL de escritorio. Pasarlos a
+Armbian solo vale la pena en placas con GPU Panfrost (RK3399 y similares), y aun
+así es más trabajo que una Pi 5. Para x86 barato, un **mini PC o thin client
+usado** (Dell Wyse 5070, HP t640, Lenovo Tiny, N100) sale menos que una Pi 5
+completa y corre el wheel x86_64 sin fricción.
+
+### Medir performance
+
+```bash
+uv run toxinator launcher --fps
+uv run toxinator play maldito-pino --demo --fps
+uv run toxinator dev phone --fps
+```
+
+El overlay muestra FPS, frametime medio y **peor frame del último segundo**, más
+la resolución; **F3** lo oculta o lo muestra. `--fps` no aplica a
+`dev phone --headless` (no hay ventana). El checklist completo está en
+[docs/testing/manual-checklist.md](docs/testing/manual-checklist.md).
 
 ## Stack
 

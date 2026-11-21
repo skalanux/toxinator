@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from toxinator.api.input import ControllerFrame, ControllerInfo
+from toxinator.api.input import ControllerFrame, ControllerInfo, Gesture
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +15,7 @@ class SourceUpdate:
 
     info: ControllerInfo
     frame: ControllerFrame | None = None
+    gestures: tuple[Gesture, ...] = ()
 
 
 class ControllerSource(Protocol):

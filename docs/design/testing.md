@@ -168,6 +168,9 @@ UTF-8; `.jsonl.gz` opcional. `trace_version = 1`.
 - Se graba el `ControllerFrame` **normalizado**, no los sensores crudos. La
   calibración se testea con fixtures sintéticos de entrada cruda aparte; si hace
   falta depurar calibración, se agrega un formato raw después.
+- Las trazas de gestos usan el mismo formato y suman `screen` y `linear_accel`
+  opcionales; el ground truth de eventos va en un sidecar `*.expected.json`
+  junto a la traza (ver [gestures.md](gestures.md)).
 
 ### Grabación
 

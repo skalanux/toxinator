@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import threading
 import time
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
-from toxinator.api.input import ControllerFrame
+from toxinator.api.input import ControllerFrame, Gesture
+from toxinator.input.gestures import config
+from toxinator.input.gestures.recognizer import GestureRecognizer
 from toxinator.input.phone.protocol import Vec3, build_frame, vec3
 
 PHONE_CAPABILITIES: frozenset[str] = frozenset(
@@ -16,6 +18,7 @@ PHONE_CAPABILITIES: frozenset[str] = frozenset(
         "axes",
         "motion",
         "gyro",
+        "gestures",
         "pointer",
         "touch",
         "haptics",
@@ -39,6 +42,8 @@ class PhoneConnection:
     neutral: Vec3 | None = None
     raw_orientation: Vec3 = (0.0, 0.0, 0.0)
     last_payload: dict[str, Any] | None = None
+    recognizer: GestureRecognizer | None = None
+    pending_gestures: list[Gesture] = field(default_factory=list)
 
 
 class PhoneRegistry:
@@ -74,6 +79,9 @@ class PhoneRegistry:
                         remote=remote,
                         name=name,
                         last_seen=timestamp,
+                        recognizer=GestureRecognizer(
+                            slot=slot, controller_id=f"phone-{slot + 1}"
+                        ),
                     )
                     self._connections[slot] = connection
                     return replace(connection)
@@ -99,12 +107,31 @@ class PhoneRegistry:
             connection.connected = True
             connection.raw_orientation = vec3(payload.get("orientation"))
             connection.last_payload = dict(payload)
-            connection.frame = build_frame(
+            frame = build_frame(
                 payload,
                 controller_id=connection.controller_id,
                 timestamp=timestamp,
                 neutral=connection.neutral,
             )
+            if connection.recognizer is not None:
+                postures, events = connection.recognizer.update(frame)
+                if postures:
+                    frame = replace(frame, axes={**frame.axes, **postures})
+                for event in events:
+                    connection.pending_gestures.append(event)
+                    if len(connection.pending_gestures) > config.EVENT_QUEUE:
+                        connection.pending_gestures.pop(0)
+            connection.frame = frame
+
+    def take_gestures(self, slot: int) -> list[Gesture]:
+        """Drain and return the gestures fired since the last drain."""
+        with self._lock:
+            connection = self._connections.get(slot)
+            if connection is None:
+                return []
+            events = connection.pending_gestures
+            connection.pending_gestures = []
+            return events
 
     def calibrate(self, slot: int) -> None:
         with self._lock:
@@ -112,6 +139,8 @@ class PhoneRegistry:
             if connection is None:
                 return
             connection.neutral = connection.raw_orientation
+            if connection.recognizer is not None:
+                connection.recognizer.reset()
             if connection.last_payload is not None:
                 connection.frame = build_frame(
                     connection.last_payload,

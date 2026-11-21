@@ -26,6 +26,7 @@ class PhoneSource:
     def poll(self, now: float) -> Sequence[SourceUpdate]:
         updates: list[SourceUpdate] = []
         for connection in self._registry.snapshot():
+            gestures = self._registry.take_gestures(connection.slot)
             frame = connection.frame
             if not connection.connected or frame is None:
                 continue
@@ -39,5 +40,5 @@ class PhoneSource:
                 connected=True,
                 display_name=f"Celular P{connection.slot + 1}",
             )
-            updates.append(SourceUpdate(info, frame))
+            updates.append(SourceUpdate(info, frame, tuple(gestures)))
         return updates

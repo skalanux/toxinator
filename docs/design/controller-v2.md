@@ -132,6 +132,7 @@ skin = "toxinator"        # skin engine se mantiene; v1 solo trae "toxinator"
 orientation = "auto"      # auto | portrait | landscape
 hint = "Mantené × para cargar"   # ≤ 80
 camera = false
+gestures = ["tilt", "flick"]     # ver docs/design/gestures.md
 
 [controller.labels]
 cross = "Tirar"           # ≤ 24
@@ -141,6 +142,10 @@ triangle = ""
 options = ""
 l1 = ""
 r1 = ""
+
+[controller.gestures]     # opcional: labels de la banda de gestos
+tilt = "Inclinar"
+flick = "Sacudir"
 
 [controller.panel]        # opcional
 title = "Mapa"            # ≤ 40
@@ -159,6 +164,9 @@ fit = "contain"           # contain | cover | stretch
 - El perfil que viaja por WebSocket agrega `buttons` (qué controles mostrar) y
   `panel`; el servidor resuelve `panel.image` a una `url` bajo
   `/game-assets/<game-id>/`.
+- `gestures` declara los gestos de plataforma que el juego consume; viaja en el
+  perfil como `[{name, label, kind}]` y la PWA muestra la banda de gestos. El
+  contrato completo está en [gestures.md](gestures.md).
 
 ## Protocolo WebSocket v2
 

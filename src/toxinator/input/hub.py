@@ -8,7 +8,14 @@ from collections.abc import Callable, Sequence
 from dataclasses import replace
 from types import MappingProxyType
 
-from toxinator.api.input import ControllerFrame, ControllerInfo, InputEvent, InputState
+from toxinator.api.input import (
+    ControllerFrame,
+    ControllerInfo,
+    Gesture,
+    InputEvent,
+    InputState,
+)
+from toxinator.input.gestures import config
 from toxinator.input.source import ControllerSource
 
 logger = logging.getLogger(__name__)
@@ -27,6 +34,8 @@ class InputHub:
         self._infos: dict[int, ControllerInfo] = {}
         self._last_seen: dict[int, float] = {}
         self._listeners: list[Callable[[InputEvent], None]] = []
+        self._gestures: dict[int, list[Gesture]] = {}
+        self._enabled_gestures: frozenset[str] | None = None
         self._started = False
 
     def add_source(self, source: ControllerSource) -> None:
@@ -42,6 +51,14 @@ class InputHub:
                 self._listeners.remove(listener)
 
         return unsubscribe
+
+    def set_enabled_gestures(self, names: Sequence[str] | None) -> None:
+        """Restrict delivered gesture events to ``names``; ``None`` enables all."""
+        self._enabled_gestures = None if names is None else frozenset(names)
+
+    def clear_gestures(self) -> None:
+        """Drop every pending gesture, used on mode switches."""
+        self._gestures.clear()
 
     def start(self) -> None:
         if self._started:
@@ -66,6 +83,8 @@ class InputHub:
                 continue
             for update in updates:
                 self._apply_update(update.info, update.frame, timestamp)
+                if update.gestures:
+                    self._collect_gestures(update.info.slot, update.gestures)
 
         self._expire(timestamp)
 
@@ -73,7 +92,26 @@ class InputHub:
             timestamp=timestamp,
             frames=MappingProxyType(dict(self._frames)),
             controllers=MappingProxyType(dict(self._infos)),
+            gestures=self._drain_gestures(),
         )
+
+    def _collect_gestures(self, slot: int, events: Sequence[Gesture]) -> None:
+        bucket = self._gestures.setdefault(slot, [])
+        for event in events:
+            bucket.append(event)
+        while len(bucket) > config.EVENT_QUEUE:
+            bucket.pop(0)
+
+    def _drain_gestures(self) -> tuple[Gesture, ...]:
+        gestures = tuple(
+            event for bucket in self._gestures.values() for event in bucket
+        )
+        self._gestures.clear()
+        if self._enabled_gestures is not None:
+            gestures = tuple(
+                event for event in gestures if event.name in self._enabled_gestures
+            )
+        return gestures
 
     def _apply_update(
         self,
@@ -111,6 +149,7 @@ class InputHub:
                 self._frames.pop(slot, None)
                 self._infos.pop(slot, None)
                 self._last_seen.pop(slot, None)
+                self._gestures.pop(slot, None)
                 self._emit("leave", info, now)
 
     def _emit(self, kind: str, info: ControllerInfo, now: float) -> None:

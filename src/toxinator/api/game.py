@@ -11,7 +11,7 @@ from typing import Any, Protocol
 from toxinator.api.input import CANONICAL_BUTTONS, InputState
 from toxinator.api.phone import PhoneService
 
-API_VERSION = "0.3"
+API_VERSION = "0.4"
 
 CONTROLLER_LAYOUTS = ("default", "motion", "touch")
 CONTROLLER_SKINS = ("toxinator",)
