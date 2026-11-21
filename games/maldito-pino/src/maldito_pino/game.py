@@ -14,10 +14,16 @@ from panda3d.core import (
     Vec4,
 )
 
+from maldito_pino.delivery import (
+    power_from_button,
+    power_from_swing,
+    speed_from_power,
+    spin_from_tilt,
+)
 from maldito_pino.lane import DT, HEAD_PIN_Y, POCKET_X, Lane
 from maldito_pino.scoring import BowlingMatch
 from toxinator.api.game import GameContext, GameManifest
-from toxinator.api.input import ControllerFrame
+from toxinator.api.input import ControllerFrame, InputState
 
 CREAM = Vec4(0.95, 0.92, 0.84, 1.0)
 GOLD = Vec4(0.89, 0.70, 0.25, 1.0)
@@ -114,7 +120,7 @@ class MalditoPinoGame:
             return
 
         if self.state == "aim":
-            self._update_aim(frame)
+            self._update_aim(frame, state)
         elif self.state == "charge":
             self._update_charge(dt, frame)
         elif self.state == "rolling":
@@ -126,18 +132,22 @@ class MalditoPinoGame:
 
     # -- states -------------------------------------------------------------
 
-    def _update_aim(self, frame: ControllerFrame | None) -> None:
+    def _update_aim(self, frame: ControllerFrame | None, state: InputState) -> None:
         assert self.lane is not None
         if frame is None:
             self._pose_hand(charging=False)
             return
-        self.last_spin = self._spin_from()
+        spin = spin_from_tilt(frame.axis("tilt_x"))
+        self.last_spin = spin
         self._pose_hand(charging=False)
         self.lane.hide_power()
         if frame.pointer is not None:
             self.aim_x = max(-0.45, min(0.45, -0.2 + 0.55 * frame.pointer[0]))
             self.lane.show_aim(self.aim_x)
-        if frame.button("cross"):
+        swing = state.gesture("swing")
+        if swing is not None:
+            self._throw(power_from_swing(swing.intensity, frame.axis("tilt_y")), spin)
+        elif frame.button("cross"):
             self.state = "charge"
             self.charge = 0.0
             self.message = ""
@@ -147,24 +157,18 @@ class MalditoPinoGame:
         self.charge = min(1.0, self.charge + dt * 0.85)
         if frame is None:
             return
-        self.last_spin = self._spin_from()
+        spin = spin_from_tilt(frame.axis("tilt_x"))
+        self.last_spin = spin
         self._pose_hand(charging=True)
         assert self.lane is not None
-        self.lane.show_power(self._power_level())
+        power = power_from_button(self.charge, frame.axis("tilt_y"))
+        self.lane.show_power(power)
         if not frame.button("cross"):
-            self._throw(frame)
+            self._throw(power, spin)
 
-    def _spin_from(self) -> float:
-        return max(-1.0, min(1.0, self.hand_gamma / 30.0)) * 12.0
-
-    def _power_level(self) -> float:
-        beta_power = max(-1.0, min(1.0, self.hand_beta / 45.0))
-        return max(0.0, min(1.0, 0.70 * self.charge + 0.30 * (0.5 + 0.5 * beta_power)))
-
-    def _throw(self, frame: ControllerFrame) -> None:
+    def _throw(self, power: float, spin: float) -> None:
         assert self.lane is not None
-        spin = self._spin_from()
-        speed = 5.5 + 4.5 * self._power_level()
+        speed = speed_from_power(power)
         self.last_spin = spin
         self._start_swing()
         self.lane.throw(speed, self.aim_x, spin)
@@ -487,13 +491,13 @@ class MalditoPinoGame:
             self._hud["power"].setText("")
         elif self.state == "aim":
             self._hud["prompt"].setText(
-                "Tocá para apuntar | incliná para efecto | mantené X"
+                "Apuntá | incliná para efecto | swing para tirar (× respaldo)"
             )
             self._hud["power"].setText(
                 f"OBJETIVO {self.aim_x:+.2f} m  |  EFECTO {self.last_spin:+.0f}"
             )
         elif self.state == "charge":
-            filled = int(self._power_level() * 10)
+            filled = int(power_from_button(self.charge, frame.axis("tilt_y")) * 10)
             bar = "#" * filled + "-" * (10 - filled)
             self._hud["prompt"].setText("Soltá X para tirar")
             self._hud["power"].setText(f"POTENCIA [{bar}]")
