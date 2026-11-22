@@ -75,7 +75,6 @@ def run_launcher(
         loadPrcFileData(
             "",
             "win-size 1280 720\n"
-            "audio-library-name null\n"
             f"sync-video {sync_video}\n"
             "notify-level-display error\n"
             "notify-level-glgsg error\n",
